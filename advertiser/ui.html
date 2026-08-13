@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mutexx Advertiser</title>
+<style>
+  :root{
+    --bg:#0b0809; --panel:#141011; --panel-2:#1c1617; --line:#2e2325;
+    --text:#e8dedd; --muted:#9a8b8c; --accent:#c1272d; --accent-soft:#7d1a1e;
+    --green:#3f7d54; --yellow:#a8842c; --red:#a33036; --grey:#5b5052;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 "Segoe UI",system-ui,sans-serif}
+  a{color:#e0a3a5}
+  header{padding:18px 24px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#1a1213,#0b0809);display:flex;
+    align-items:center;gap:18px;flex-wrap:wrap}
+  h1{margin:0;font-size:20px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);font-weight:600}
+  h1 small{display:block;font-size:11px;letter-spacing:.18em;color:var(--muted);
+    text-transform:none;margin-top:3px}
+  nav{display:flex;gap:4px;padding:0 24px;border-bottom:1px solid var(--line);
+    background:var(--panel);flex-wrap:wrap}
+  nav button{background:none;border:none;color:var(--muted);padding:12px 16px;
+    cursor:pointer;font-size:14px;border-bottom:2px solid transparent}
+  nav button.active{color:var(--text);border-bottom-color:var(--accent)}
+  main{padding:22px 24px 60px}
+  .row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  button.btn{background:var(--accent-soft);color:#fff;border:1px solid var(--accent);
+    padding:9px 16px;border-radius:3px;cursor:pointer;font-size:14px}
+  button.btn:hover{background:var(--accent)}
+  button.btn.ghost{background:transparent;border-color:var(--line);color:var(--text)}
+  button.btn.ghost:hover{border-color:var(--accent)}
+  button.btn:disabled{opacity:.45;cursor:not-allowed}
+  input,select,textarea{background:var(--panel-2);color:var(--text);
+    border:1px solid var(--line);border-radius:3px;padding:8px 10px;font:inherit}
+  textarea{width:100%;min-height:230px;font-family:Consolas,monospace;font-size:13px}
+  .bar{height:6px;background:var(--panel-2);border-radius:3px;overflow:hidden;flex:1;min-width:220px}
+  .bar span{display:block;height:100%;background:var(--accent);transition:width .3s}
+  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px}
+  th{text-align:left;color:var(--muted);font-weight:500;padding:8px 10px;
+    border-bottom:1px solid var(--line);font-size:12px;letter-spacing:.06em;
+    text-transform:uppercase}
+  td{padding:9px 10px;border-bottom:1px solid #1e1718;vertical-align:top}
+  tr.sel{background:#1a1213}
+  tr:hover td{background:#161011;cursor:pointer}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;
+    letter-spacing:.04em;white-space:nowrap}
+  .gruen{background:#1c2f24;color:#8ed9a8;border:1px solid var(--green)}
+  .gelb{background:#2f2716;color:#e3c477;border:1px solid var(--yellow)}
+  .rot{background:#301619;color:#e8969b;border:1px solid var(--red)}
+  .grau{background:#221d1e;color:#a99c9d;border:1px solid var(--grey)}
+  .score{font-variant-numeric:tabular-nums;color:var(--accent);font-weight:600}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:4px;
+    padding:18px;margin-top:18px}
+  .panel h3{margin:0 0 10px;font-size:15px;letter-spacing:.06em;color:#e0a3a5}
+  .muted{color:var(--muted);font-size:13px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:1000px){.grid2{grid-template-columns:1fr}}
+  ul.checklist{margin:8px 0 0;padding-left:18px}
+  ul.checklist li{margin-bottom:5px}
+  .evidence{border-left:2px solid var(--accent-soft);padding:6px 0 6px 12px;
+    margin:8px 0;font-size:13px;color:var(--muted)}
+  .evidence b{color:#e0a3a5;font-weight:500}
+  .kv{display:grid;grid-template-columns:180px 1fr;gap:8px 14px;font-size:14px}
+  .kv div:nth-child(odd){color:var(--muted)}
+  .warn{background:#2b1416;border:1px solid var(--red);padding:12px 14px;
+    border-radius:3px;margin:12px 0;font-size:14px}
+  .ok{background:#15251b;border:1px solid var(--green);padding:10px 14px;
+    border-radius:3px;margin:10px 0;font-size:14px}
+  .tag{display:inline-block;background:#241b1c;border:1px solid var(--line);
+    padding:2px 8px;border-radius:3px;font-size:12px;margin:2px 4px 2px 0}
+  .scroll{max-height:520px;overflow:auto}
+  /* Anleitung */
+  .doc{max-width:900px;line-height:1.7}
+  .doc h2{font-size:18px;color:#e0a3a5;margin:34px 0 10px;padding-bottom:6px;
+    border-bottom:1px solid var(--line);scroll-margin-top:20px}
+  .doc h2:first-of-type{margin-top:10px}
+  .doc p{margin:10px 0}
+  .doc ul,.doc ol{margin:10px 0;padding-left:22px}
+  .doc li{margin-bottom:7px}
+  .doc code{background:var(--panel-2);border:1px solid var(--line);border-radius:3px;
+    padding:1px 6px;font-family:Consolas,monospace;font-size:13px}
+  .doc i{color:#e0a3a5;font-style:normal}
+  .doc table{margin:14px 0}
+  .doc td{font-size:14px}
+  .doc td:first-child{white-space:nowrap;color:var(--muted)}
+  .toc{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;margin-bottom:8px}
+  .toc b{width:100%;color:var(--muted);font-weight:500;font-size:12px;
+    letter-spacing:.08em;text-transform:uppercase}
+  .toc a{font-size:13px;text-decoration:none;border-bottom:1px solid transparent}
+  .toc a:hover{border-bottom-color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Mutexx Advertiser<small>Community-Recherche, Regelpruefung und Kampagnensteuerung</small></h1>
+  <div class="row" style="margin-left:auto">
+    <button class="btn" id="scanBtn">Scan starten</button>
+    <span class="muted" id="scanMsg">bereit</span>
+  </div>
+  <div class="bar" id="scanBarWrap" style="display:none"><span id="scanBar" style="width:0"></span></div>
+</header>
+
+<nav>
+  <button data-tab="communities" class="active">Communities</button>
+  <button data-tab="kampagne">Kampagne</button>
+  <button data-tab="kanaele">Auto-Kanaele</button>
+  <button data-tab="verlauf">Verlauf</button>
+  <button data-tab="einstellungen">Einstellungen</button>
+  <button data-tab="anleitung">Anleitung</button>
+</nav>
+
+<main>
+  <!-- ================= COMMUNITIES ================= -->
+  <section id="tab-communities">
+    <div class="row">
+      <input id="filterText" placeholder="Suchen ..." style="min-width:240px">
+      <select id="filterPlatform">
+        <option value="">Alle Plattformen</option>
+        <option value="reddit">Reddit</option>
+        <option value="forum">Foren &amp; Wikis</option>
+      </select>
+      <select id="filterVerdict">
+        <option value="">Alle Bewertungen</option>
+        <option value="gruen">Gruen - kein Promo-Verbot</option>
+        <option value="gelb">Gelb - mit Auflagen</option>
+        <option value="rot">Rot - Werbung verboten</option>
+        <option value="grau">Grau - unklar</option>
+      </select>
+      <span class="muted" id="countInfo"></span>
+      <button class="btn ghost" id="toggleAdd" style="margin-left:auto">Community von Hand aufnehmen</button>
+    </div>
+
+    <div class="panel" id="addPanel" hidden>
+      <h3>Community von Hand aufnehmen</h3>
+      <p class="muted">Fuer Subreddits reicht der Name. Oeffne die Sidebar-Regeln im Browser,
+        markiere sie, kopiere sie hierher &mdash; die Ampel-Analyse laeuft genauso wie bei
+        automatisch geholten Regeln, samt Originalzitaten.</p>
+      <div class="kv">
+        <div>Plattform</div><div><select id="addPlatform">
+          <option value="reddit">Reddit (Subreddit)</option>
+          <option value="forum">Forum / Wiki</option>
+          <option value="discord">Discord-Server</option></select></div>
+        <div>Name bzw. Subreddit</div><div><input id="addHandle" style="width:100%" placeholder="z.B. Demonolatry (ohne r/)"></div>
+        <div>URL <span class="muted">(bei Reddit optional)</span></div><div><input id="addUrl" style="width:100%"></div>
+        <div>Mitglieder <span class="muted">(optional)</span></div><div><input id="addSubs" type="number" style="width:140px"></div>
+        <div>Regeltext einfuegen</div><div><textarea id="addRules" style="min-height:150px"
+          placeholder="Regeln der Community hier einfuegen ..."></textarea></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="addCommunity">Aufnehmen und pruefen</button>
+        <span class="muted" id="addMsg"></span>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Score</th><th>Community</th><th>Groesse</th><th>Aktiv</th><th>Bewertung</th></tr></thead>
+          <tbody id="commRows"></tbody>
+        </table>
+      </div>
+      <div id="detail"><div class="panel muted">Links eine Community auswaehlen.</div></div>
+    </div>
+  </section>
+
+  <!-- ================= KAMPAGNE ================= -->
+  <section id="tab-kampagne" hidden>
+    <div class="panel">
+      <h3>Alles auf einmal vorbereiten</h3>
+      <p class="muted">Erzeugt fuer jede geeignete Community einen eigenen Entwurf, verteilt
+        Termine und legt alles fertig in die Queue. Rote Communities werden uebersprungen,
+        bereits bespielte ebenfalls.</p>
+      <div class="row">
+        <label class="muted">Anzahl <input id="prepLimit" type="number" value="25" style="width:80px"></label>
+        <label class="muted"><input type="checkbox" id="prepGreenOnly"> nur gruene</label>
+        <label class="muted"><input type="checkbox" id="prepApi"> per KI schreiben lassen</label>
+        <button class="btn" id="prepBtn">Kampagne vorbereiten</button>
+        <span class="muted" id="prepMsg"></span>
+      </div>
+    </div>
+
+    <div class="panel" id="runPanel" hidden>
+      <div class="row">
+        <h3 style="margin:0" id="runHead"></h3>
+        <button class="btn ghost" id="runExit" style="margin-left:auto">Modus verlassen</button>
+      </div>
+      <div class="bar" style="margin:12px 0"><span id="runBar" style="width:0"></span></div>
+      <div id="runBody"></div>
+    </div>
+
+    <div class="panel">
+      <div class="row">
+        <h3 style="margin:0">Posting-Queue</h3>
+        <button class="btn" id="runStart" style="margin-left:auto">Posting-Modus starten</button>
+      </div>
+      <p class="muted">Jeder Eintrag hat ein Datum. Der Reddit-Teil ist auf das Tageslimit aus
+        den Einstellungen verteilt &mdash; das ist die wirksamste einzelne Massnahme gegen eine
+        Domain-Sperre.</p>
+      <div id="queueList"></div>
+    </div>
+  </section>
+
+  <!-- ================= AUTO-KANAELE ================= -->
+  <section id="tab-kanaele" hidden>
+    <div class="panel">
+      <h3>Vollautomatisches Posten</h3>
+      <p class="muted">Hier eingetragene Kanaele werden ohne Rueckfrage bespielt. Trage nur
+        Kanaele ein, die dir selbst gehoeren oder in denen Bot-Posts ausdruecklich erlaubt sind.</p>
+
+      <h3 style="margin-top:18px">Discord-Webhooks (eigene Server)</h3>
+      <div id="hookList"></div>
+      <div class="row" style="margin-top:10px">
+        <input id="hookName" placeholder="Name, z.B. Vault Server / #announcements" style="min-width:260px">
+        <input id="hookUrl" placeholder="https://discord.com/api/webhooks/..." style="min-width:340px">
+        <button class="btn ghost" id="addHook">Hinzufuegen</button>
+      </div>
+      <p class="muted" style="margin-top:8px">Discord &rarr; Servereinstellungen &rarr; Integrationen &rarr;
+        Webhooks &rarr; Neuer Webhook &rarr; URL kopieren.</p>
+
+      <h3 style="margin-top:22px">Mastodon (eigener Account)</h3>
+      <div class="row">
+        <input id="mastoInstance" placeholder="z.B. mastodon.social" style="min-width:240px">
+        <input id="mastoToken" placeholder="Access Token" type="password" style="min-width:300px">
+        <button class="btn ghost" id="saveMasto">Speichern</button>
+      </div>
+
+      <div class="row" style="margin-top:22px">
+        <button class="btn" id="autoBlast">Ankuendigung an alle eigenen Kanaele senden</button>
+      </div>
+      <div id="autoResult"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Discord-Server finden</h3>
+      <p class="muted">Fremde Discord-Server werden bewusst nicht automatisch bespielt. Diese
+        Suchen oeffnen die Verzeichnisse; passende Server traegst du unten als Community ein
+        und arbeitest sie ueber die Queue ab.</p>
+      <div id="discordSearches"></div>
+      <div class="row" style="margin-top:14px">
+        <input id="manName" placeholder="Name" style="min-width:200px">
+        <input id="manUrl" placeholder="URL (Einladung / Forum)" style="min-width:320px">
+        <select id="manPlatform">
+          <option value="discord">Discord</option>
+          <option value="forum">Forum / Wiki</option>
+        </select>
+        <button class="btn ghost" id="addManual">Als Community aufnehmen</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= VERLAUF ================= -->
+  <section id="tab-verlauf" hidden>
+    <div class="panel"><h3>Was wurde wann wo gepostet</h3><div id="historyList"></div></div>
+  </section>
+
+  <!-- ================= EINSTELLUNGEN ================= -->
+  <section id="tab-einstellungen" hidden>
+    <div class="panel">
+      <h3>Website</h3>
+      <div class="kv">
+        <div>Name</div><div><input id="cfgName" style="width:100%"></div>
+        <div>URL</div><div><input id="cfgUrl" style="width:100%"></div>
+        <div>Version</div><div><input id="cfgVersion" style="width:120px"></div>
+        <div>Reddit-Nutzername</div><div><input id="cfgRedditUser" style="width:220px" placeholder="ohne u/"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Reddit-API (Pflicht fuer den Reddit-Teil)</h3>
+      <p class="muted">Reddit beantwortet Programmanfragen ohne registrierte App mit 403.
+        Auf <a href="https://www.reddit.com/prefs/apps" target="_blank" rel="noopener">reddit.com/prefs/apps</a>
+        ganz unten &bdquo;create another app&ldquo; &rarr; Typ <b>script</b> &rarr; Name
+        <b>VaultOutreachNavigator</b>, redirect uri <b>http://localhost:8777</b>.
+        Die Client-ID steht danach klein <i>unter</i> dem App-Namen. Kostenlos, nur Lesezugriff.</p>
+      <div class="kv">
+        <div>Client-ID</div><div><input id="cfgRedditId" style="width:100%"></div>
+        <div>Client-Secret</div><div><input id="cfgRedditSecret" type="password" style="width:100%"></div>
+      </div>
+      <p class="muted" style="margin-top:14px"><b>Bot-Konto</b> &mdash; nur ausfuellen, wenn der
+        Verbindungstest oben mit 401 fehlschlaegt. Reddit verlangt fuer Script-Apps inzwischen
+        meist ein <i>eigenes</i> Konto (nicht dein Hauptkonto), das bei der App unter
+        prefs/apps als Developer eingetragen ist. Die Daten bleiben lokal in
+        <code>config.json</code> auf diesem Rechner.</p>
+      <div class="kv">
+        <div>Bot-Benutzername</div><div><input id="cfgBotUser" style="width:100%" placeholder="ohne u/"></div>
+        <div>Bot-Passwort</div><div><input id="cfgBotPass" type="password" style="width:100%"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" id="testReddit">Verbindung testen</button>
+        <span class="muted" id="redditMsg"></span>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Suche</h3>
+      <div class="kv">
+        <div>Stichwoerter (Komma)</div><div><textarea id="cfgKeywords" style="min-height:90px"></textarea></div>
+        <div>Max. Communities</div><div><input id="cfgMax" type="number" style="width:120px"></div>
+        <div>Tiefenscan Top-N</div><div><input id="cfgDeep" type="number" style="width:120px"></div>
+        <div>Mindest-Mitglieder</div><div><input id="cfgMinSubs" type="number" style="width:120px"></div>
+        <div>Pause zwischen Requests (s)</div><div><input id="cfgDelay" type="number" step="0.1" style="width:120px"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Schutzschalter</h3>
+      <div class="kv">
+        <div>Max. Reddit-Posts pro Tag</div><div><input id="cfgMaxDay" type="number" style="width:120px"></div>
+        <div>Mindestabstand je Community (Tage)</div><div><input id="cfgMinDays" type="number" style="width:120px"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Anthropic-API (optional)</h3>
+      <p class="muted">Ohne Schluessel arbeitet die App mit Vorlagen. Mit Schluessel werden die
+        Entwuerfe frei auf die jeweilige Community geschrieben.</p>
+      <div class="kv">
+        <div>API-Key</div><div><input id="cfgApiKey" type="password" style="width:100%" placeholder="sk-ant-..."></div>
+        <div>Modell</div><div><input id="cfgModel" style="width:260px"></div>
+      </div>
+    </div>
+    <button class="btn" id="saveCfg">Einstellungen speichern</button>
+    <span class="muted" id="cfgMsg"></span>
+  </section>
+
+  <!-- ================= ANLEITUNG ================= -->
+  <section id="tab-anleitung" hidden>
+    <div class="doc">
+      <div class="toc panel">
+        <b>Inhalt</b>
+        <a href="#a-idee">1. Was die App macht</a>
+        <a href="#a-schnellstart">2. Schnellstart</a>
+        <a href="#a-scan">3. Scan</a>
+        <a href="#a-manuell">4. Communities von Hand aufnehmen</a>
+        <a href="#a-ampel">5. Die Ampel lesen</a>
+        <a href="#a-entwurf">6. Entwürfe und Blickwinkel</a>
+        <a href="#a-kampagne">7. Kampagne und Posting-Modus</a>
+        <a href="#a-auto">8. Vollautomatische Kanäle</a>
+        <a href="#a-reddit">9. Reddit-API und die Freigabe</a>
+        <a href="#a-schutz">10. Der Schutzschalter</a>
+        <a href="#a-technik">11. Dateien und Technik</a>
+        <a href="#a-grenzen">12. Grenzen, ehrlich benannt</a>
+      </div>
+
+      <h2 id="a-idee">1. Was die App macht</h2>
+      <p>Der Navigator sucht Communities, in denen <b>Vault of Demons</b> thematisch passt,
+        liest deren Regeln, bewertet jede einzeln, schreibt für jede einen eigenen Beitrag und
+        legt alles terminiert zum Abschicken bereit. Alles außer dem Abschicken selbst läuft
+        automatisch.</p>
+      <p>Der Grundsatz hinter allen Texten lautet <b>erst Nutzen, dann Link</b>. Ein Beitrag,
+        der auch ohne den Link lesenswert wäre, wird nicht als Werbung gelesen — und genau das
+        ist in Fachcommunities der Unterschied zwischen Zuspruch und Löschung.</p>
+
+      <h2 id="a-schnellstart">2. Schnellstart</h2>
+      <ol>
+        <li><b>Einstellungen</b> öffnen, Website-Angaben prüfen (Name, URL, Version),
+          <i>Einstellungen speichern</i>.</li>
+        <li><b>Scan starten</b> oben rechts. Ohne Reddit-Freigabe werden Foren und Wikis
+          durchsucht.</li>
+        <li>Im Tab <b>Communities</b> deine Wunsch-Subreddits von Hand aufnehmen und je die
+          Regeln einfügen (Abschnitt 4).</li>
+        <li>Tab <b>Kampagne</b> → <i>Kampagne vorbereiten</i>. Danach steht alles fertig.</li>
+        <li><i>Posting-Modus starten</i> und die Queue abarbeiten.</li>
+      </ol>
+
+      <h2 id="a-scan">3. Scan</h2>
+      <p>Der Scan prüft die hinterlegten Foren und Wikis auf Erreichbarkeit, sucht ihre
+        Regelseiten und erntet aus den Startseiten Links auf weitere Foren, die er ebenfalls
+        prüft. Nicht erreichbare Seiten rutschen automatisch ans Ende der Liste.</p>
+      <p>Liegt eine Reddit-Freigabe vor, kommt die Subreddit-Suche dazu: Stichwortsuche über
+        alle Schlagwörter aus den Einstellungen, ein zusätzlicher Sprung über Verweise in den
+        Sidebars — so tauchen die kleinen, thematisch dichten Subs auf, die keine Suche
+        ausspuckt — und für die aussichtsreichsten Kandidaten Regeln und Posting-Frequenz.</p>
+      <p>Zwischen zwei Anfragen liegt immer eine Pause (Voreinstellung 1,3 Sekunden). Das ist
+        Absicht: höfliches Tempo verhindert, dass die App als Last auffällt.</p>
+
+      <h2 id="a-manuell">4. Communities von Hand aufnehmen</h2>
+      <p>Der Weg, der immer funktioniert — auch ohne jede API. Im Tab <b>Communities</b> oben
+        rechts auf <i>Community von Hand aufnehmen</i>:</p>
+      <ol>
+        <li>Plattform wählen: Subreddit, Forum oder Discord.</li>
+        <li>Bei Reddit reicht der Name <b>ohne</b> <code>r/</code>, also z.&nbsp;B.
+          <code>Demonolatry</code>. URL und Anzeigename baut die App selbst.</li>
+        <li>Die Regeln der Community im Browser markieren, kopieren und in das große Feld
+          einfügen.</li>
+        <li><i>Aufnehmen und prüfen</i>.</li>
+      </ol>
+      <p>Die Analyse läuft dabei exakt wie bei automatisch geholten Regeln: dieselbe Ampel,
+        dieselben Originalzitate, dieselbe Auflagen-Checkliste, derselbe Entwurf. Der einzige
+        Unterschied ist, dass du die Kandidatenliste selbst zusammenstellst.</p>
+
+      <h2 id="a-ampel">5. Die Ampel lesen</h2>
+      <table>
+        <thead><tr><th>Stufe</th><th>Bedeutung</th><th>Was zu tun ist</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge gruen">grün</span></td>
+              <td>kein Werbeverbot in den Regeln gefunden</td>
+              <td>posten, aber wertig</td></tr>
+          <tr><td><span class="badge gelb">gelb</span></td>
+              <td>erlaubt mit Auflagen: Ratio, Flair, Sammelthread, Mod-Freigabe</td>
+              <td>Checkliste im Entwurf abarbeiten</td></tr>
+          <tr><td><span class="badge rot">rot</span></td>
+              <td>Eigenwerbung ausdrücklich verboten</td>
+              <td>nicht posten — kostet Account und Domain</td></tr>
+          <tr><td><span class="badge grau">grau</span></td>
+              <td>Regeln nicht abrufbar</td>
+              <td>selbst nachlesen und von Hand eintragen</td></tr>
+        </tbody>
+      </table>
+      <p>Rechts neben jeder Community stehen immer die <b>Originalzitate</b>, aus denen die
+        Einstufung stammt. Die Ampel ist eine Textanalyse, kein Ersatz fürs Lesen — bei
+        ungewöhnlich formulierten Regeln entscheidest du.</p>
+
+      <h2 id="a-entwurf">6. Entwürfe und Blickwinkel</h2>
+      <p>Für jede Community wählt die App automatisch den passenden Blickwinkel. Über
+        <i>Variante</i> bekommst du eine andere Formulierung, über das Auswahlfeld einen
+        anderen Ansatz.</p>
+      <table>
+        <thead><tr><th>Blickwinkel</th><th>wofür</th></tr></thead>
+        <tbody>
+          <tr><td>Ressource teilen</td><td>grüne Communities, direkter Nutzen</td></tr>
+          <tr><td>Um Korrekturen bitten</td><td>Fach-Communities — wirkt dort am besten</td></tr>
+          <tr><td>Projekt vorstellen</td><td>Entwickler- und Projekt-Subs</td></tr>
+          <tr><td>Fachfrage mit Kontext</td><td>Communities mit Ratio-Regel</td></tr>
+          <tr><td>Forum-Vorstellung</td><td>klassische Foren</td></tr>
+        </tbody>
+      </table>
+      <p>Der stärkste ist <b>Um Korrekturen bitten</b>. Fachleute reagieren auf die Bitte, einen
+        Eintrag zu korrigieren, deutlich besser als auf eine Ankündigung — und die Antworten
+        verbessern nebenbei deine Inhalte.</p>
+      <p>Trägst du unter <i>Einstellungen → Anthropic-API</i> einen Schlüssel ein, werden die
+        Entwürfe frei auf die jeweilige Community und deren Regeln geschrieben statt aus
+        Vorlagen erzeugt.</p>
+
+      <h2 id="a-kampagne">7. Kampagne und Posting-Modus</h2>
+      <p><b>Kampagne vorbereiten</b> erzeugt in einem Rutsch für jede geeignete Community einen
+        eigenen Entwurf. Rote Communities und bereits bespielte werden übersprungen, die
+        Reihenfolge richtet sich nach der Bewertung, und jeder Beitrag bekommt ein Datum —
+        Reddit streng nach Tageslimit, Foren zu dritt pro Tag.</p>
+      <p><b>Posting-Modus starten</b> führt dich Station für Station durch die Queue. Pro
+        Station siehst du Einstufung, Auflagen-Checkliste und den fertigen Text, den du direkt
+        bearbeiten kannst.</p>
+      <ul>
+        <li><i>Text kopieren und Formular öffnen</i> — legt den Beitrag in die Zwischenablage
+          und öffnet das vorausgefüllte Formular. Bei Reddit stehen Titel und Text schon drin,
+          bei Foren einmal Strg+V.</li>
+        <li><i>Gepostet – weiter</i> — schreibt den Verlauf, setzt die Wiederholungssperre und
+          springt zur nächsten Station.</li>
+        <li><i>Überspringen</i> — lässt den Eintrag in der Queue.</li>
+      </ul>
+
+      <h2 id="a-auto">8. Vollautomatische Kanäle</h2>
+      <p>Im Tab <b>Auto-Kanäle</b> hinterlegte Kanäle werden <b>ohne Rückfrage</b> bespielt.
+        Dorthin gehört nur, was dir selbst gehört:</p>
+      <ul>
+        <li><b>Discord-Webhook</b> deines eigenen Servers: Servereinstellungen → Integrationen
+          → Webhooks → Neuer Webhook → URL kopieren.</li>
+        <li><b>Mastodon</b>: Instanz und Zugangstoken deines eigenen Kontos.</li>
+      </ul>
+      <p>Fremde Discord-Server werden bewusst nicht automatisch bespielt. Die Suchlinks im
+        selben Tab öffnen die Server-Verzeichnisse; passende Server nimmst du als Community auf
+        und arbeitest sie über die Queue ab.</p>
+
+      <h2 id="a-reddit">9. Reddit-API und die Freigabe</h2>
+      <p>Reddits <i>Responsible Builder Policy</i> lässt seit Ende 2025 keinen
+        Selbstbedienungs-Zugang mehr zu: <i>„Approval is required: You must request access and
+        get explicit approval before accessing any Reddit data through our API."</i></p>
+      <p>Ohne Freigabe bleibt die automatische Subreddit-Suche leer. Das ist kein Fehler der
+        App, und es gibt dafür keinen legitimen Umweg — wer ohne Freigabe scrapt, riskiert genau
+        das, was diese App verhindern soll: gesperrte Konten und eine gesperrte Domain.
+        <b>Alles andere funktioniert ohne Freigabe</b>, siehe Abschnitt 4.</p>
+      <p>Liegt eine Freigabe vor: unter <a href="https://www.reddit.com/prefs/apps"
+        target="_blank" rel="noopener">reddit.com/prefs/apps</a> eine App vom Typ
+        <b>script</b> anlegen, Client-ID (steht klein <i>unter</i> dem App-Namen) und Secret in
+        die Einstellungen eintragen, <i>Verbindung testen</i>. Verlangt Reddit zusätzlich ein
+        eigenes Bot-Konto, kommen dessen Zugangsdaten in die Felder darunter. Die App liest
+        ausschließlich — über diesen Zugang kann sie nichts posten.</p>
+
+      <h2 id="a-schutz">10. Der Schutzschalter</h2>
+      <p>Voreinstellung: <b>ein Reddit-Beitrag pro Tag</b> und <b>45 Tage Mindestabstand</b> pro
+        Community. Beides in den Einstellungen änderbar.</p>
+      <p>Diese Zahlen sind nicht willkürlich. Derselbe Link, in kurzer Zeit über viele
+        Subreddits verteilt, ist nach Reddits Regeln Spam — wörtlich: <i>„Apps must not engage
+        in spamming activity through automated posts, comments, or direct messages. This
+        includes posting identical or substantially similar content across subreddits."</i>
+        Die Folge ist üblicherweise kein einzelner Account-Ban, sondern eine Sperre der Domain
+        vaultofdemons.com. Dann verschwinden auch die Links, die andere freiwillig setzen, und
+        das bekommt man praktisch nicht zurück.</p>
+
+      <h2 id="a-technik">11. Dateien und Technik</h2>
+      <p>Reines Python ohne Fremdbibliotheken. Der Server hört nur auf <code>127.0.0.1</code>,
+        ist also aus dem Netzwerk nicht erreichbar. Alle Daten liegen als lesbares JSON neben
+        der App.</p>
+      <table>
+        <tbody>
+          <tr><td><code>Start.bat</code></td><td>Starter für Windows</td></tr>
+          <tr><td><code>config.json</code></td><td>Einstellungen und Zugangsdaten</td></tr>
+          <tr><td><code>data/communities.json</code></td><td>gefundene Communities</td></tr>
+          <tr><td><code>data/queue.json</code></td><td>vorbereitete Kampagne</td></tr>
+          <tr><td><code>data/history.json</code></td><td>Verlauf und Wiederholungssperre</td></tr>
+          <tr><td><code>vod/rules.py</code></td><td>Regel-Analyse und Ampel</td></tr>
+          <tr><td><code>vod/drafts.py</code></td><td>Entwürfe und Blickwinkel</td></tr>
+          <tr><td><code>vod/discovery.py</code></td><td>Suche und Bewertung</td></tr>
+        </tbody>
+      </table>
+      <p><code>config.json</code> enthält nach der Einrichtung Zugangsdaten — nicht in ein
+        öffentliches Repository legen.</p>
+
+      <h2 id="a-grenzen">12. Grenzen, ehrlich benannt</h2>
+      <ul>
+        <li>Die Ampel erkennt die üblichen Formulierungen zuverlässig, aber eine ungewöhnlich
+          formulierte Regel kann durchrutschen. Deshalb stehen die Originalzitate daneben.</li>
+        <li>Die Foren-Startliste ist ein Ausgangspunkt, keine geprüfte Wahrheit. Einige Seiten
+          blocken automatisierte Zugriffe und müssen von Hand angesehen werden.</li>
+        <li>Discord-Verzeichnisse lassen sich nicht automatisiert durchsuchen — die Suchen
+          öffnest du selbst, gefundene Server trägst du einmalig ein.</li>
+        <li>Das Abschicken eines Beitrags in fremde Communities bleibt dein Klick. Dafür wäre
+          Schreibzugriff nötig, den Reddit nicht vergibt — und ein Bot, der ihn hätte, wäre
+          genau das Spam-Werkzeug, das die Domain kostet.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<script>
+let STATE = {config:{}, communities:[], queue:[], history:[], discord_searches:[], angles:{}, verdict_text:{}};
+let SELECTED = null, DRAFT = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const api = async (path, body) => {
+  const opts = body ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)} : {};
+  const res = await fetch(path, opts);
+  return res.json();
+};
+
+// ---------- Tabs ----------
+document.querySelectorAll('nav button').forEach(btn => btn.onclick = () => {
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['communities','kampagne','kanaele','verlauf','einstellungen','anleitung'].forEach(t =>
+    $('tab-' + t).hidden = (t !== btn.dataset.tab));
+  window.scrollTo(0,0);
+});
+
+function openTab(name){
+  document.querySelectorAll('nav button').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === name));
+  ['communities','kampagne','kanaele','verlauf','einstellungen','anleitung'].forEach(t =>
+    $('tab-' + t).hidden = (t !== name));
+  window.scrollTo(0,0);
+}
+
+// ---------- Laden ----------
+async function refresh(){
+  STATE = await api('/api/state');
+  fillSettings();
+  renderCommunities();
+  renderQueue();
+  renderChannels();
+  renderHistory();
+}
+
+// ---------- Scan ----------
+$('scanBtn').onclick = async () => {
+  const res = await api('/api/scan/start', {platforms:['reddit','forum']});
+  if (res.error) { alert(res.error); return; }
+  $('scanBarWrap').style.display = '';
+  pollScan();
+};
+
+async function pollScan(){
+  const s = await api('/api/scan/status');
+  $('scanMsg').textContent = s.error ? ('Fehler: ' + s.error) : s.message;
+  $('scanBtn').disabled = s.running;
+  const pct = s.total ? Math.round(100 * s.done / s.total) : 0;
+  $('scanBar').style.width = pct + '%';
+  if (s.running) { setTimeout(pollScan, 1200); }
+  else { $('scanBarWrap').style.display='none'; refresh(); }
+}
+
+// ---------- Communities ----------
+function filtered(){
+  const q = $('filterText').value.toLowerCase();
+  const p = $('filterPlatform').value, v = $('filterVerdict').value;
+  return STATE.communities.filter(c =>
+    (!p || c.platform === p) &&
+    (!v || (c.analysis||{}).verdict === v) &&
+    (!q || (c.name + ' ' + (c.title||'') + ' ' + (c.description||'')).toLowerCase().includes(q)));
+}
+
+function renderCommunities(){
+  const list = filtered();
+  $('countInfo').textContent = list.length + ' von ' + STATE.communities.length + ' angezeigt';
+  $('commRows').innerHTML = list.map(c => {
+    const v = (c.analysis||{}).verdict || 'grau';
+    const size = c.subscribers ? (c.subscribers >= 1000 ? Math.round(c.subscribers/1000)+'k' : c.subscribers) : '-';
+    return `<tr data-id="${esc(c.id)}" class="${SELECTED===c.id?'sel':''}">
+      <td class="score">${(c.score ?? 0).toFixed(0)}</td>
+      <td>${esc(c.name)}<div class="muted">${esc((c.title||c.description||'').slice(0,70))}</div></td>
+      <td>${size}</td>
+      <td>${c.posts_per_day ? c.posts_per_day + '/Tag' : '-'}</td>
+      <td><span class="badge ${v}">${esc(STATE.verdict_text[v]||v)}</span></td></tr>`;
+  }).join('') || `<tr><td colspan="5" class="muted">Noch keine Daten. Oben rechts
+    <b>Scan starten</b>, Communities von Hand aufnehmen &ndash; oder erst die
+    <a href="#" id="emptyHelp">Anleitung</a> lesen.</td></tr>`;
+  if ($('emptyHelp')) $('emptyHelp').onclick = (e) => { e.preventDefault(); openTab('anleitung'); };
+
+  document.querySelectorAll('#commRows tr[data-id]').forEach(tr =>
+    tr.onclick = () => { SELECTED = tr.dataset.id; DRAFT = null; renderCommunities(); renderDetail(); });
+}
+['filterText','filterPlatform','filterVerdict'].forEach(id => $(id).oninput = renderCommunities);
+
+$('toggleAdd').onclick = () => { $('addPanel').hidden = !$('addPanel').hidden; };
+
+$('addCommunity').onclick = async () => {
+  const platform = $('addPlatform').value;
+  const handle = $('addHandle').value.trim();
+  const url = $('addUrl').value.trim();
+  if (!handle && !url) { $('addMsg').textContent = 'Name oder URL angeben.'; return; }
+  $('addMsg').textContent = 'wird geprueft ...';
+  const res = await api('/api/community/add', {community:{
+    platform, handle: handle || url, url,
+    subscribers: +$('addSubs').value || 0,
+    rules_text: $('addRules').value}});
+  if (res.error) { $('addMsg').textContent = res.error; return; }
+  const v = (res.community.analysis||{}).verdict;
+  $('addMsg').innerHTML = 'Aufgenommen &mdash; Einstufung: <span class="badge ' + v + '">' +
+    esc(STATE.verdict_text[v]||v) + '</span>';
+  $('addHandle').value=''; $('addUrl').value=''; $('addSubs').value=''; $('addRules').value='';
+  await refresh();
+};
+
+function current(){ return STATE.communities.find(c => c.id === SELECTED); }
+
+function renderDetail(){
+  const c = current();
+  if (!c) { $('detail').innerHTML = '<div class="panel muted">Keine Auswahl.</div>'; return; }
+  const a = c.analysis || {};
+  const v = a.verdict || 'grau';
+
+  const evidence = (a.evidence||[]).map(e =>
+    `<div class="evidence"><b>${esc(e.label)}</b> &mdash; ${esc(e.source)}<br>${esc(e.quote)}</div>`).join('')
+    || '<p class="muted">Keine einschlaegigen Regeltexte gefunden.</p>';
+
+  const angleOpts = Object.entries(STATE.angles||{}).map(([k,l]) =>
+    `<option value="${k}">${esc(l)}</option>`).join('');
+
+  $('detail').innerHTML = `
+    <div class="panel">
+      <h3>${esc(c.name)} <span class="badge ${v}">${esc(STATE.verdict_text[v]||v)}</span></h3>
+      <div class="muted">${esc(c.title||'')}</div>
+      <p style="font-size:14px">${esc((c.description||'').slice(0,400))}</p>
+      <div>${(a.labels||[]).map(l => `<span class="tag">${esc(l)}</span>`).join('')}</div>
+      <p><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.url)}</a></p>
+      ${v==='rot' ? '<div class="warn"><b>Nicht posten.</b> Diese Community verbietet Eigenwerbung. Ein Beitrag hier kostet dich den Account und potenziell die Domain.</div>' : ''}
+      <h3 style="margin-top:16px">Ausschlaggebende Regeltexte</h3>
+      ${evidence}
+    </div>
+
+    <div class="panel">
+      <h3>Beitragsentwurf</h3>
+      <div class="row">
+        <select id="angleSel">${angleOpts}</select>
+        <label class="muted"><input type="checkbox" id="useApi"> per KI schreiben lassen</label>
+        <button class="btn ghost" id="genBtn">Entwurf erzeugen</button>
+        <button class="btn ghost" id="varBtn">Variante</button>
+      </div>
+      <div id="draftBox"></div>
+    </div>`;
+
+  $('genBtn').onclick = () => generate(false);
+  $('varBtn').onclick = () => generate(true);
+  if (DRAFT && DRAFT.community_id === c.id) renderDraft(); else generate(false);
+}
+
+async function generate(variant){
+  const c = current(); if (!c) return;
+  $('draftBox').innerHTML = '<p class="muted">Wird erzeugt ...</p>';
+  DRAFT = await api('/api/draft', {
+    community_id: c.id,
+    angle: $('angleSel').value,
+    use_api: $('useApi').checked,
+    seed: variant ? Math.floor(Math.random()*99999) : null
+  });
+  renderDraft();
+}
+
+function renderDraft(){
+  const c = current(); if (!c || !DRAFT) return;
+  const box = $('draftBox');
+  box.innerHTML = `
+    ${DRAFT.warning ? `<div class="warn">${esc(DRAFT.warning)}</div>` : ''}
+    <p class="muted">Blickwinkel: ${esc(DRAFT.angle_label)} &middot; erzeugt per ${esc(DRAFT.generated_by)}</p>
+    <input id="dTitle" style="width:100%;margin-bottom:8px" value="${esc(DRAFT.title)}">
+    <textarea id="dBody">${esc(DRAFT.body)}</textarea>
+    <h3 style="margin-top:14px">Vor dem Posten erledigen</h3>
+    <ul class="checklist">${(DRAFT.requirements||[]).map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
+    <div class="row" style="margin-top:14px">
+      <button class="btn ghost" id="copyBtn">Text kopieren</button>
+      <button class="btn ghost" id="queueBtn">In Kampagne uebernehmen</button>
+      <button class="btn" id="openBtn">Formular oeffnen</button>
+      <button class="btn ghost" id="doneBtn">Als gepostet markieren</button>
+    </div>
+    <div id="guardBox"></div>`;
+
+  const sync = () => { DRAFT.title = $('dTitle').value; DRAFT.body = $('dBody').value; };
+  $('dTitle').oninput = sync; $('dBody').oninput = sync;
+
+  $('copyBtn').onclick = () => { sync();
+    navigator.clipboard.writeText(DRAFT.title + '\n\n' + DRAFT.body);
+    $('copyBtn').textContent = 'kopiert'; setTimeout(()=>$('copyBtn').textContent='Text kopieren',1500); };
+
+  $('queueBtn').onclick = async () => { sync();
+    await api('/api/queue/add', {draft: DRAFT}); await refresh();
+    $('guardBox').innerHTML = '<div class="ok">In die Kampagne uebernommen.</div>'; };
+
+  $('openBtn').onclick = async () => {
+    sync();
+    const res = await api('/api/assist', {community_id: c.id, draft: DRAFT});
+    if (!res.guard.allowed){
+      $('guardBox').innerHTML = `<div class="warn"><b>Schutzschalter:</b><ul class="checklist">
+        ${res.guard.reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
+        <button class="btn ghost" id="forceBtn">Trotzdem oeffnen</button></div>`;
+      $('forceBtn').onclick = () => window.open(res.url, '_blank', 'noopener');
+      return;
+    }
+    $('guardBox').innerHTML = '<div class="ok">Formular geoeffnet. Abschicken machst du selbst.</div>';
+    window.open(res.url, '_blank', 'noopener');
+  };
+
+  $('doneBtn').onclick = async () => { sync();
+    await api('/api/log', {community_id: c.id, draft: DRAFT, channel: c.name, result: 'gepostet'});
+    await refresh();
+    $('guardBox').innerHTML = '<div class="ok">Im Verlauf vermerkt.</div>'; };
+}
+
+// ---------- Kampagne ----------
+$('prepBtn').onclick = async () => {
+  $('prepMsg').textContent = 'Entwuerfe werden geschrieben ...';
+  const res = await api('/api/queue/prepare', {
+    limit: +$('prepLimit').value || 25,
+    verdicts: $('prepGreenOnly').checked ? ['gruen'] : ['gruen','gelb'],
+    use_api: $('prepApi').checked});
+  $('prepMsg').textContent = res.count + ' Beitraege fertig vorbereitet.';
+  await refresh();
+};
+
+// ---------- Posting-Modus ----------
+let RUN = -1;
+
+$('runStart').onclick = () => { if (STATE.queue.length){ RUN = 0; renderRun(); } };
+$('runExit').onclick = () => { RUN = -1; $('runPanel').hidden = true; };
+
+function renderRun(){
+  if (RUN < 0 || RUN >= STATE.queue.length){
+    $('runPanel').hidden = true;
+    if (RUN >= 0) alert('Queue abgearbeitet.');
+    RUN = -1; return;
+  }
+  const q = STATE.queue[RUN];
+  $('runPanel').hidden = false;
+  $('runHead').textContent = `Schritt ${RUN+1} von ${STATE.queue.length}: ${q.community}`;
+  $('runBar').style.width = Math.round(100*RUN/STATE.queue.length) + '%';
+  const today = new Date().toISOString().slice(0,10);
+  const late = q.scheduled_for && q.scheduled_for > today;
+
+  $('runBody').innerHTML = `
+    <div class="row">
+      <span class="badge ${q.verdict||'grau'}">${esc(STATE.verdict_text[q.verdict]||'')}</span>
+      <span class="tag">${esc(q.angle_label||'')}</span>
+      <span class="tag">geplant: ${esc(q.scheduled_for||'-')}</span>
+    </div>
+    ${late ? '<div class="warn">Dieser Beitrag ist erst fuer ein spaeteres Datum eingeplant. Mehrere an einem Tag ist das Muster, das als Spam erkannt wird.</div>' : ''}
+    <h3 style="margin-top:14px">Vor dem Posten erledigen</h3>
+    <ul class="checklist">${(q.requirements||[]).map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
+    <input id="runTitle" style="width:100%;margin:10px 0 8px" value="${esc(q.title)}">
+    <textarea id="runText">${esc(q.body)}</textarea>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="runOpen">Text kopieren und Formular oeffnen</button>
+      <button class="btn ghost" id="runDone">Gepostet &ndash; weiter</button>
+      <button class="btn ghost" id="runSkip">Ueberspringen</button>
+    </div>
+    <p class="muted" id="runHint"></p>`;
+
+  const sync = () => { q.title = $('runTitle').value; q.body = $('runText').value; };
+  $('runTitle').oninput = sync; $('runText').oninput = sync;
+
+  $('runOpen').onclick = async () => {
+    sync();
+    await navigator.clipboard.writeText(q.title + '\n\n' + q.body).catch(()=>{});
+    const res = await api('/api/assist', {community_id: q.community_id, draft: q});
+    window.open(res.url || q.target_url, '_blank', 'noopener');
+    $('runHint').textContent = res.guard.allowed
+      ? 'Text liegt in der Zwischenablage. Im Formular gegenlesen und abschicken.'
+      : 'Hinweis: ' + res.guard.reasons.join(' ');
+  };
+  $('runDone').onclick = async () => {
+    sync();
+    await api('/api/log', {community_id: q.community_id, draft: q,
+      channel: q.community, result: 'gepostet'});
+    await refresh();
+    renderRun();   // Eintrag ist raus, derselbe Index zeigt auf den naechsten
+  };
+  $('runSkip').onclick = () => { RUN++; renderRun(); };
+}
+
+function renderQueue(){
+  if (!STATE.queue.length){
+    $('queueList').innerHTML = '<p class="muted">Queue ist leer &mdash; oben "Kampagne vorbereiten".</p>';
+    return;
+  }
+  $('queueList').innerHTML = STATE.queue.map((q,i) => `
+    <div class="panel" style="margin-top:12px">
+      <h3>${i+1}. ${esc(q.community)} <span class="tag">${esc(q.angle_label||'')}</span>
+        <span class="tag">${esc(q.scheduled_for||'')}</span>
+        <span class="badge ${q.verdict||'grau'}">${esc(STATE.verdict_text[q.verdict]||'')}</span></h3>
+      <b>${esc(q.title)}</b>
+      <pre style="white-space:pre-wrap;font-size:13px;color:var(--muted)">${esc((q.body||'').slice(0,600))}</pre>
+      <ul class="checklist">${(q.requirements||[]).map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
+      <div class="row">
+        <button class="btn ghost" data-copy="${i}">Kopieren</button>
+        <button class="btn ghost" data-del="${esc(q.community_id)}">Entfernen</button>
+      </div>
+    </div>`).join('');
+
+  document.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => {
+    const q = STATE.queue[+b.dataset.copy];
+    navigator.clipboard.writeText(q.title + '\n\n' + q.body);
+    b.textContent = 'kopiert'; setTimeout(()=>b.textContent='Kopieren',1500);
+  });
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    await api('/api/queue/remove', {community_id: b.dataset.del}); refresh();
+  });
+}
+
+// ---------- Kanaele ----------
+function renderChannels(){
+  const hooks = (STATE.config.auto_channels||{}).discord_webhooks || [];
+  $('hookList').innerHTML = hooks.length ? hooks.map((h,i) =>
+    `<div class="row" style="margin:6px 0"><span class="tag">${esc(h.name||'Discord')}</span>
+     <span class="muted">${esc((h.url||'').slice(0,60))}...</span>
+     <button class="btn ghost" data-hookdel="${i}">Entfernen</button></div>`).join('')
+    : '<p class="muted">Noch kein Webhook hinterlegt.</p>';
+  document.querySelectorAll('[data-hookdel]').forEach(b => b.onclick = async () => {
+    const list = hooks.slice(); list.splice(+b.dataset.hookdel,1);
+    await api('/api/config', {config:{auto_channels:{discord_webhooks:list}}}); refresh();
+  });
+
+  const m = (STATE.config.auto_channels||{}).mastodon || {};
+  $('mastoInstance').value = m.instance || ''; $('mastoToken').value = m.access_token || '';
+
+  $('discordSearches').innerHTML = (STATE.discord_searches||[]).map(d =>
+    `<a class="tag" href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.name)}</a>`).join('');
+}
+
+$('addHook').onclick = async () => {
+  const hooks = ((STATE.config.auto_channels||{}).discord_webhooks || []).slice();
+  if (!$('hookUrl').value.trim()) return;
+  hooks.push({name:$('hookName').value.trim()||'Discord', url:$('hookUrl').value.trim()});
+  await api('/api/config', {config:{auto_channels:{discord_webhooks:hooks}}});
+  $('hookName').value=''; $('hookUrl').value=''; refresh();
+};
+
+$('saveMasto').onclick = async () => {
+  await api('/api/config', {config:{auto_channels:{mastodon:{
+    instance:$('mastoInstance').value.trim(), access_token:$('mastoToken').value.trim()}}}});
+  refresh();
+};
+
+$('autoBlast').onclick = async () => {
+  const c = current();
+  const draft = DRAFT || {title:`${STATE.config.site.name} ${STATE.config.site.version}`,
+    body: STATE.config.site.one_liner + '\n\n' + STATE.config.site.url};
+  const res = await api('/api/publish/auto', {draft});
+  $('autoResult').innerHTML = (res.results||[]).map(r =>
+    `<div class="${r.ok?'ok':'warn'}">${esc(r.channel)}: ${r.ok?'gesendet':'Fehler '+r.status+' '+esc(r.detail)}</div>`
+  ).join('') || '<p class="muted">Keine eigenen Kanaele konfiguriert.</p>';
+};
+
+$('addManual').onclick = async () => {
+  if (!$('manUrl').value.trim()) return;
+  await api('/api/community/add', {community:{
+    name: $('manName').value.trim() || $('manUrl').value.trim(),
+    url: $('manUrl').value.trim(),
+    platform: $('manPlatform').value,
+    id: $('manPlatform').value + ':' + $('manUrl').value.trim(),
+    description: 'Manuell aufgenommen'}});
+  $('manName').value=''; $('manUrl').value=''; refresh();
+};
+
+// ---------- Verlauf ----------
+function renderHistory(){
+  if (!STATE.history.length){ $('historyList').innerHTML='<p class="muted">Noch nichts gepostet.</p>'; return; }
+  $('historyList').innerHTML = '<table><thead><tr><th>Datum</th><th>Community</th><th>Kanal</th><th>Titel</th><th>Ergebnis</th></tr></thead><tbody>'
+    + STATE.history.slice().reverse().map(h => `<tr><td>${new Date(h.ts*1000).toLocaleString('de-DE')}</td>
+      <td>${esc(h.community)}</td><td>${esc(h.channel)}</td>
+      <td>${esc((h.title||'').slice(0,60))}</td><td>${esc(h.result)}</td></tr>`).join('')
+    + '</tbody></table>';
+}
+
+// ---------- Einstellungen ----------
+function fillSettings(){
+  const c = STATE.config; if (!c.site) return;
+  $('cfgName').value = c.site.name; $('cfgUrl').value = c.site.url;
+  $('cfgVersion').value = c.site.version; $('cfgRedditUser').value = c.site.reddit_username||'';
+  $('cfgKeywords').value = (c.discovery.keywords||[]).join(', ');
+  $('cfgMax').value = c.discovery.max_communities;
+  $('cfgDeep').value = c.discovery.deep_scan_top_n;
+  $('cfgMinSubs').value = c.discovery.min_subscribers;
+  $('cfgDelay').value = c.request_delay_seconds;
+  $('cfgMaxDay').value = c.safety.max_reddit_posts_per_day;
+  $('cfgMinDays').value = c.safety.min_days_between_same_subreddit;
+  $('cfgApiKey').value = (c.anthropic||{}).api_key || '';
+  $('cfgModel').value = (c.anthropic||{}).model || '';
+  $('cfgRedditId').value = (c.reddit||{}).client_id || '';
+  $('cfgRedditSecret').value = (c.reddit||{}).client_secret || '';
+  $('cfgBotUser').value = (c.reddit||{}).bot_username || '';
+  $('cfgBotPass').value = (c.reddit||{}).bot_password || '';
+}
+
+const redditCfg = () => ({client_id:$('cfgRedditId').value.trim(),
+  client_secret:$('cfgRedditSecret').value.trim(),
+  bot_username:$('cfgBotUser').value.trim(), bot_password:$('cfgBotPass').value});
+
+$('testReddit').onclick = async () => {
+  $('redditMsg').textContent = 'pruefe ...';
+  await api('/api/config', {config:{reddit: redditCfg()}});
+  const res = await api('/api/reddit/check', {});
+  $('redditMsg').textContent = res.detail;
+  $('redditMsg').style.color = res.ok ? '#8ed9a8' : '#e8969b';
+};
+
+$('saveCfg').onclick = async () => {
+  await api('/api/config', {config:{
+    site:{name:$('cfgName').value, url:$('cfgUrl').value, version:$('cfgVersion').value,
+          reddit_username:$('cfgRedditUser').value},
+    discovery:{keywords: $('cfgKeywords').value.split(',').map(s=>s.trim()).filter(Boolean),
+      max_communities:+$('cfgMax').value, deep_scan_top_n:+$('cfgDeep').value,
+      min_subscribers:+$('cfgMinSubs').value},
+    request_delay_seconds: +$('cfgDelay').value,
+    safety:{max_reddit_posts_per_day:+$('cfgMaxDay').value,
+            min_days_between_same_subreddit:+$('cfgMinDays').value},
+    anthropic:{api_key:$('cfgApiKey').value, model:$('cfgModel').value},
+    reddit: redditCfg()}});
+  $('cfgMsg').textContent = 'gespeichert';
+  setTimeout(()=>$('cfgMsg').textContent='', 2000);
+  refresh();
+};
+
+refresh();
+pollScan();
+</script>
+</body>
+</html>

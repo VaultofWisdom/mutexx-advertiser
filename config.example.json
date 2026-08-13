@@ -1,0 +1,42 @@
+{
+  "_hinweis": "Diese Datei ist nur ein Beispiel. Die App legt beim ersten Start ihre eigene config.json an; dort eingetragene Zugangsdaten bleiben lokal und werden nie ins Repository aufgenommen.",
+
+  "site": {
+    "name": "Mein Produkt",
+    "url": "https://example.com",
+    "version": "1.0",
+    "one_liner": "Kurzbeschreibung deines Produkts in einem Satz.",
+    "reddit_username": ""
+  },
+
+  "user_agent": "MutexxAdvertiser/1.0 (Recherche-Tool; Kontakt: deine@adresse.tld)",
+  "request_delay_seconds": 1.3,
+
+  "discovery": {
+    "max_communities": 140,
+    "deep_scan_top_n": 70,
+    "min_subscribers": 400,
+    "keywords": ["stichwort eins", "stichwort zwei", "stichwort drei"]
+  },
+
+  "auto_channels": {
+    "discord_webhooks": [
+      { "name": "Eigener Server / #ankuendigungen", "url": "https://discord.com/api/webhooks/..." }
+    ],
+    "mastodon": { "instance": "", "access_token": "" }
+  },
+
+  "reddit": {
+    "client_id": "",
+    "client_secret": "",
+    "bot_username": "",
+    "bot_password": ""
+  },
+
+  "anthropic": { "api_key": "", "model": "claude-opus-5" },
+
+  "safety": {
+    "max_reddit_posts_per_day": 1,
+    "min_days_between_same_subreddit": 45
+  }
+}

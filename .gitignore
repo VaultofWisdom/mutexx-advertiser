@@ -1,0 +1,16 @@
+# Zugangsdaten und lokale Daten - duerfen NIE ins Repository
+config.json
+data/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Windows / Editoren
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
