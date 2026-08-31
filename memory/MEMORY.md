@@ -1,0 +1,1 @@
+- [Mutexx Advertiser](mutexx-advertiser.md) — Mutexx Advertiser - Marketing-/Werbetool von Mutexx Production (ehemals Vault Outreach Navigator); Repo, Aufbau, Reddit-Sperre, Produktrichtung
