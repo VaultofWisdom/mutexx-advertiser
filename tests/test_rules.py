@@ -82,6 +82,52 @@ class ConditionsAreDetected(unittest.TestCase):
                 self.assertEqual(result["verdict"], rules.CONDITIONAL)
                 self.assertIn(label, result["labels"])
 
+    RATIO_IN_WORDS = [
+        # Lobsters, word for word - the case that turned this up.
+        "Self-promotion: self-promo should be less than a quarter of your submissions.",
+        "No more than 10% of your posts may be your own content.",
+        "Roughly 1 in 10 submissions may be your own work.",
+        "At most a third of your submissions may be self-promotion.",
+        "Eigenwerbung höchstens ein Viertel deiner Beiträge.",
+        "Eigene Beiträge: nicht mehr als 20 Prozent.",
+    ]
+
+    def test_a_ratio_written_out_in_words_is_still_a_ratio(self) -> None:
+        """Every one of these used to come back green - a promotion limit read as no
+        limit at all, which is the expensive direction of this heuristic. Only the
+        '9:1' notation was recognised, and most forums do not write it that way."""
+        for text in self.RATIO_IN_WORDS:
+            with self.subTest(text=text):
+                result = rules.analyse({"Regel": text})
+                self.assertEqual(result["verdict"], rules.CONDITIONAL)
+                self.assertIn("rule.ratio", result["labels"])
+
+    NOT_A_RATIO = [
+        # A quantity with nothing to do with promotion.
+        "No more than 3 posts per day, please.",
+        "Up to 10 images per post.",
+        "Threads are locked after 30 days.",
+        "At most two tags per submission.",
+        # A promotion word with no quantity anywhere near it.
+        "Discuss your own experience with the software.",
+        "Tell us about your own setup.",
+    ]
+
+    def test_a_quantity_alone_is_not_a_promotion_limit(self) -> None:
+        """The other direction: both halves have to be there. A posting limit is a
+        different rule, and marking every forum that counts something as a ratio
+        forum would make the label meaningless."""
+        for text in self.NOT_A_RATIO:
+            with self.subTest(text=text):
+                self.assertNotIn("rule.ratio", rules.analyse({"Regel": text})["labels"])
+
+    def test_the_ratio_quote_shows_the_actual_limit(self) -> None:
+        """The number is the whole point - a user who reads 'ratio rule' without it
+        cannot tell a 9:1 forum from a one-in-four forum."""
+        result = rules.analyse({"Regel": self.RATIO_IN_WORDS[0]})
+        quote = next(e["quote"] for e in result["evidence"] if e["label"] == "rule.ratio")
+        self.assertIn("quarter", quote)
+
     def test_no_spam_is_not_a_promotion_ban(self) -> None:
         """'No spam' appears in almost every rule list. Turning that red would drop
         half the list - the most common mistake in tools like this."""

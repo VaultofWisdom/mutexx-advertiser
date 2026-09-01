@@ -104,6 +104,34 @@ so it is fenced in on three sides: name **and** description must both invite sha
 amber is the ceiling, and the sentence it rests on is carried into the evidence. The tests
 for it are written around the false positive, not the true one.
 
+**Hacker News and Lobsters are done** (`aggregators.py`). They needed a different shape
+from everything above: neither is discovered, because there is one of each. What has to be
+worked out is whether the product belongs there — and for Hacker News, size and rules say
+nothing at all about that. It is enormous and it buries what does not fit its taste without
+any rule being broken.
+
+So the evidence is the record. Through the open Algolia search the last twelve months are
+counted: how many stories on this topic, and what score the middle one reached. The median
+rather than the average, because one front-page story would otherwise make a dead topic
+look alive; volume discounted by score, because a topic posted constantly and ignored every
+time is a topic the audience has already answered. A note-taking app gets 612 stories at a
+median of 3; a demonology reference work gets none. Both are answers.
+
+This is the first thing in the app that scores a channel on evidence rather than on keyword
+density, and it is a small, self-contained preview of what stage 7 wants for all of them.
+
+Two smaller decisions came out of it:
+
+* **Lobsters is never green.** Accounts exist by invitation only, so without one the rules
+  do not matter. A green light on a site you cannot post to costs the user the time to find
+  that out.
+* **A member count nobody publishes is not a member count of zero.** Scored as size, that
+  zero pushed Hacker News below a forum with forty members. Platforms that publish none are
+  now scored on the figures that are real for them (`discovery._NO_SIZE_PLATFORMS`).
+
+While reading Lobsters' rules a defect turned up in the traffic light itself, which is
+recorded under stage 8.
+
 Three things did not carry over from Reddit and are worth knowing before adding the next
 channel, because every one of them is a decision about the traffic light rather than about
 plumbing:
@@ -150,12 +178,21 @@ real numbers instead of keyword density.
 
 ### Stage 8 — Hardening — partial
 
-141 tests cover the traffic light, the strategy promises, the draft templates, the character
+163 tests cover the traffic light, the strategy promises, the draft templates, the character
 limits of the assets, the completeness of the translation catalogue, the Lemmy channel (its
-verdicts, the deduplication across federated instances, the size scale and the daily limit)
-and the Discourse path (identification, the rule pages, and above all the showcase category
-that turns a red verdict amber) — all against stubbed responses rather than the live
-network. The three original
+verdicts, the deduplication across federated instances, the size scale and the daily limit),
+the Discourse path (identification, the rule pages, and above all the showcase category that
+turns a red verdict amber) and the aggregators (above all their ability to answer "not
+here") — all against stubbed responses rather than the live network.
+
+**One real defect found and fixed along the way.** The ratio rule was only recognised in
+`9:1` notation. Written out — "self-promo should be less than a quarter of your
+submissions", "no more than 10% of your posts", "at most a third", and the German
+equivalents — it was not recognised at all, and every one of those came back **green**: a
+promotion limit read as no limit. It surfaced from Lobsters' own wording, which is exactly
+the shape most forums use. Both directions are pinned down now: the quantity and the
+promotion word have to appear together, so "no more than 3 posts per day" stays what it
+is. The three original
 defects are fixed: `one_liner` is editable, `/api/draft` no longer throws a 500 on an
 unknown angle, the old branding is gone.
 

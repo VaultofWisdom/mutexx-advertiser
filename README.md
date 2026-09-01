@@ -84,12 +84,12 @@ read the interface in English.
 * **Batch preparation** of whole campaigns with scheduling and a posting mode
 * **Fully automatic publishing** to your own Discord and Mastodon channels
 * **Safety catch** against exceeding the daily limit and against repeats
-* Full manual inside the interface, 20 chapters, in both languages
+* Full manual inside the interface, 21 chapters, in both languages
 
 Stated honestly, what is missing:
 
-* **Further channels** are not connected yet — Hacker News and Lobsters, Stack Exchange,
-  AlternativeTo, Product Hunt. Lemmy and Discourse are done; see
+* **Further channels** are not connected yet — Stack Exchange, AlternativeTo, Product
+  Hunt. Lemmy, Discourse, Hacker News and Lobsters are done; see
   [the roadmap](docs/ROADMAP.md), stage 5, for the rest.
 * There is **no feedback loop**. The UTM tagging is in place, but nothing reports back
   which channel actually carried, so channels are still scored by keyword density rather
@@ -119,7 +119,7 @@ On first start the app creates a `config.json`. `config.example.json` shows what
 it. The real `config.json` and the `data/` folder are excluded by `.gitignore` — that is
 where credentials live.
 
-Tests run without any extra tooling (141 of them, under a second):
+Tests run without any extra tooling (163 of them, under a second):
 
 ```bash
 python -m unittest discover -s tests
@@ -166,7 +166,7 @@ app carries the channel.
 | Kind | Channels | Automation |
 |---|---|---|
 | owned | Owned channels, product page | the app publishes itself |
-| organic | Communities and forums, directories and portals, content and search, store listing, open-source visibility, trade press, mailing list, video | the app prepares, or supplies copy |
+| organic | Communities and forums, aggregators (Hacker News, Lobsters), directories and portals, content and search, store listing, open-source visibility, trade press, mailing list, video | the app prepares, or supplies copy |
 | paid | Google search ads, Google Shopping, Meta, Reddit, Microsoft, YouTube/TikTok, sponsorship | the app prepares; you run it in your own ad account |
 
 Channels that do not fit are not dropped quietly — they are listed under *Rejected* with a
@@ -212,6 +212,38 @@ copy in the profile is only German, the draft stays German — and the app says 
 rather than shipping a half-German post.
 
 ---
+
+## Hacker News and Lobsters
+
+Neither is discovered — there is one of each — so the work is a different one: deciding
+whether your product belongs there at all.
+
+For a subreddit, size and rules say most of it. For Hacker News they say nothing. It is
+enormous, and it will bury a submission that does not fit its taste without a single rule
+being broken — and you only find that out afterwards, in public. So the evidence is the
+record itself: through the open Algolia search the last twelve months are counted. How
+many stories on your topic were posted, and what score the middle one reached.
+
+A note-taking app gets 612 stories and a median of 3 points — a busy topic that mostly
+dies quietly. A demonology reference work gets none. Those are answers, and better ones
+than any channel-fit heuristic would produce. The numbers and the stories behind them are
+shown; you draw the conclusion.
+
+The middle story counts rather than the average, because one submission that reached the
+front page would otherwise make a dead topic look alive.
+
+**Lobsters** hands out accounts by invitation only. Whatever its rules permit, without an
+invitation you cannot post there — so it is never green, and the entry says why. Its own
+rule ("self-promo should be less than a quarter of your submissions") is read from its
+about page like any other.
+
+Neither site publishes a member count, and neither gets one invented. Their zero means
+"not published" rather than "nobody is there", so they are scored on the two figures that
+are real for them instead of being ranked below a forum with forty members.
+
+A Show HN counts against the same daily limit as a Reddit post. A launch spread across
+both on the same morning is the pattern people recognise as a campaign — and recognising
+it is what sinks it.
 
 ## Discourse forums
 
@@ -321,6 +353,7 @@ advertiser/drafts.py       drafts and angles
 advertiser/reddit_api.py   Reddit access, read-only
 advertiser/lemmy_api.py    Lemmy access, read-only - open, no approval needed
 advertiser/discourse_api.py Discourse forums, read-only - figures, rules, categories
+advertiser/aggregators.py  Hacker News and Lobsters, read-only - the topic's record
 advertiser/publish.py      owned channels, posting assistant, safety catch
 advertiser/server.py       local server
 advertiser/ui.html         interface

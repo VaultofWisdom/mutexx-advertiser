@@ -269,6 +269,38 @@ and has no write access whatsoever.</p>
 """,
     },
     {
+        "id": "aggregators",
+        "title": "Hacker News and Lobsters",
+        "html": """
+<p>Neither of these is searched for - there is one of each. The work is a different one:
+deciding whether your product belongs there at all.</p>
+<p>For a subreddit, size and rules say most of it. For Hacker News they say nothing. It is
+enormous, and it will bury a submission that does not fit its taste without a single rule
+being broken - and you find that out afterwards, in public.</p>
+<p>So the app counts the record instead. Through the open Algolia search it reads the last
+twelve months: how many stories on your topic were posted, and what score the middle one
+reached. A note-taking app gets several hundred stories at a median of three points - a
+busy topic that mostly dies quietly. A demonology reference work gets none at all. Those
+are answers, and better ones than any channel-fit rule of thumb. The numbers and the
+stories behind them are shown in the community view; you draw the conclusion.</p>
+<p>The <i>middle</i> story counts, not the average: one submission that reached the front
+page would otherwise make a dead topic look alive.</p>
+<p>The path that matters on Hacker News is <b>Show HN</b> - the one place there where your
+own work is what is being asked for. Read its rules before you post; the app fetches them
+with everything else.</p>
+<p><b>Lobsters</b> hands out accounts by invitation only. Whatever its rules permit,
+without an invitation you cannot post - so it never shows green here, and the entry says
+why. Its own rule (self-promotion under a quarter of your submissions) is read from its
+about page like any other.</p>
+<p>Neither site publishes a member count, and the app does not invent one. Their zero
+means "not published", not "nobody is there", so both are ranked on the figures that are
+real for them.</p>
+<p>One more thing worth knowing: a Show HN counts against the same daily limit as a Reddit
+post. A launch spread across both on the same morning is the pattern people recognise as a
+campaign - and recognising it is what sinks it.</p>
+""",
+    },
+    {
         "id": "discourse",
         "title": "Discourse forums and the showcase category",
         "html": """
@@ -635,6 +667,40 @@ Werkzeug verhindern soll.</p>
 <p>Mit Freigabe: App vom Typ <i>script</i> unter reddit.com/prefs/apps anlegen, Client-ID
 und Secret in den Einstellungen eintragen, <i>Verbindung testen</i>. Die App liest
 ausschließlich und hat keinerlei Schreibzugriff.</p>
+""",
+    },
+    {
+        "id": "aggregators",
+        "title": "Hacker News und Lobsters",
+        "html": """
+<p>Nach diesen beiden wird nicht gesucht - es gibt von jedem genau eines. Die Arbeit ist
+eine andere: zu entscheiden, ob dein Produkt dort überhaupt hingehört.</p>
+<p>Bei einem Subreddit sagen Größe und Regeln das meiste. Bei Hacker News sagen sie gar
+nichts. Die Seite ist riesig, und sie begräbt einen Beitrag, der ihrem Geschmack nicht
+entspricht, ohne dass eine einzige Regel gebrochen wäre - und du erfährst es hinterher, in
+aller Öffentlichkeit.</p>
+<p>Deshalb zählt die App stattdessen die Vorgeschichte. Über die offene Algolia-Suche liest
+sie die letzten zwölf Monate: wie viele Beiträge zu deinem Thema dort standen und wie viele
+Punkte der mittlere davon bekam. Eine Notiz-App kommt auf mehrere hundert Beiträge bei
+einem Median von drei Punkten - ein reges Thema, das meistens still stirbt. Ein
+Dämonologie-Nachschlagewerk kommt auf keinen einzigen. Das sind Antworten, und bessere als
+jede Kanal-Faustregel. Die Zahlen und die Beiträge dahinter stehen in der
+Community-Ansicht; den Schluss ziehst du.</p>
+<p>Es zählt der <i>mittlere</i> Beitrag, nicht der Durchschnitt: Ein einziger, der es auf
+die Startseite geschafft hat, ließe ein totes Thema sonst lebendig aussehen.</p>
+<p>Der Weg, der auf Hacker News zählt, ist <b>Show HN</b> - die eine Stelle dort, an der
+nach der eigenen Arbeit ausdrücklich gefragt wird. Lies die Regeln dazu, bevor du postest;
+die App holt sie mit.</p>
+<p><b>Lobsters</b> vergibt Konten nur auf Einladung. Was die Regeln auch erlauben - ohne
+Einladung kannst du dort nicht posten. Deshalb steht die Ampel dort nie auf Grün, und der
+Eintrag sagt warum. Die eigene Regel der Seite (Eigenwerbung unter einem Viertel der
+Beiträge) wird wie jede andere von ihrer Seite gelesen.</p>
+<p>Keine der beiden Seiten veröffentlicht eine Mitgliederzahl, und die App erfindet keine.
+Die Null bedeutet dort „nicht veröffentlicht", nicht „da ist niemand" - beide werden
+deshalb nach den Zahlen bewertet, die für sie echt sind.</p>
+<p>Und noch etwas: Ein Show HN zählt gegen dasselbe Tageslimit wie ein Reddit-Beitrag. Ein
+Start, der sich am selben Morgen über beide verteilt, ist genau das Muster, das Leute als
+Kampagne erkennen - und erkannt zu werden ist, was sie versenkt.</p>
 """,
     },
     {

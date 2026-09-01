@@ -38,6 +38,30 @@ _PATTERNS: list[tuple[str, str, re.Pattern[str]]] = [
     (CONDITIONAL, "rule.ratio", re.compile(
         r"\b(9\s*[:/]\s*1|10\s*[:/]\s*1|1\s*[:/]\s*(9|10)|90\s*/\s*10)\b"
         r"|reddiquette|self[\s-]?promo\w*\s+(ratio|guidelines)", re.I)),
+    # The same rule written out in words. Lobsters says "self-promo should be less
+    # than a quarter of your submissions", others say "no more than 10% of your
+    # posts" - none of which the notation above catches, and every one of them came
+    # back green: a promotion limit read as no limit at all.
+    #
+    # Both halves have to appear close together, in either order. A quantity on its
+    # own ("no more than 3 posts per day") is a different rule, and a promotion word
+    # on its own is the case the patterns above already cover.
+    (CONDITIONAL, "rule.ratio", re.compile(
+        r"(?:(?P<promo1>self[\s-]?promo\w*|your\s+own\s+(?:content|work|links?|posts?|"
+        r"submissions?|projects?|sites?)|eigenwerbung|eigene\s+(?:beitr|inhalte|links))"
+        r"[^.!?]{0,90}?(?P<limit1>(?:no\s+more\s+than|less\s+than|at\s+most|up\s+to|"
+        r"h(?:oe|ö)chstens|maximal|nicht\s+mehr\s+als)\s+(?:an?\s+|ein(?:e[nmrs]?)?\s+)?"
+        r"(?:quarter|third|half|fifth|tenth|viertel|drittel|h(?:ae|ä)lfte|f(?:ue|ü)nftel|"
+        r"zehntel|\d+\s*(?:%|percent|prozent))"
+        r"|\b1\s+(?:in|out\s+of|von)\s+\d+\b))"
+        r"|(?P<limit2>(?:no\s+more\s+than|less\s+than|at\s+most|up\s+to|h(?:oe|ö)chstens|"
+        r"maximal|nicht\s+mehr\s+als)\s+(?:an?\s+|ein(?:e[nmrs]?)?\s+)?"
+        r"(?:quarter|third|half|fifth|tenth|viertel|drittel|h(?:ae|ä)lfte|f(?:ue|ü)nftel|"
+        r"zehntel|\d+\s*(?:%|percent|prozent))"
+        r"|\b1\s+(?:in|out\s+of|von)\s+\d+\b)"
+        r"[^.!?]{0,90}?(?P<promo2>self[\s-]?promo\w*|your\s+own\s+(?:content|work|links?|"
+        r"posts?|submissions?|projects?|sites?)|eigenwerbung|eigene\s+(?:beitr|inhalte|links))",
+        re.I)),
     (CONDITIONAL, "rule.megathread", re.compile(
         r"(mega|sticky|stickied|weekly|monthly|friday|saturday|sunday)[\s-]*(thread|post|megathread)"
         r"|self[\s-]?promo\w*\s+thread|promo\s+thread|share\s+your\s+work\s+thread", re.I)),

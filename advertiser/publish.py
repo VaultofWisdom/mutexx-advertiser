@@ -104,9 +104,12 @@ def reddit_submit_url(subreddit: str, draft: dict) -> str:
 # Platforms where a human submits the post into someone else's community. The
 # daily limit covers all of them together, not each one separately: the damage
 # the limit exists to prevent - the same link appearing everywhere within a day -
-# does not care which network it happened on. The config key still says "reddit"
-# because renaming it would silently reset the number an existing user chose.
-MANUAL_PLATFORMS = ("reddit", "lemmy")
+# does not care which network it happened on. Hacker News belongs in this list for
+# a second reason: a Show HN and a Reddit post on the same morning is the pattern
+# people recognise as a launch campaign, and recognising it is what sinks it.
+# The config key still says "reddit" because renaming it would silently reset the
+# number an existing user chose.
+MANUAL_PLATFORMS = ("reddit", "lemmy", "hackernews", "lobsters")
 
 
 def check_guard(entry: dict, config: dict, history: list[dict]) -> dict:

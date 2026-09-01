@@ -5,7 +5,9 @@ Reddit goes through the official API (read-only, see reddit_api.py). Lemmy needs
 approval at all and federates, so a few instances reach most of the network.
 Forums are checked for reachability and yield further candidates through link
 harvesting; where a forum runs Discourse it is asked about itself instead of
-guessed at (see discourse_api.py).
+guessed at (see discourse_api.py). Hacker News and Lobsters are not discovered but
+known, so what is worked out for them is whether the product belongs there at all
+(see aggregators.py).
 """
 
 from __future__ import annotations
@@ -18,7 +20,7 @@ import time
 import urllib.parse
 from typing import Callable
 
-from . import core, discourse_api, lemmy_api, reddit_api, rules, seeds
+from . import aggregators, core, discourse_api, lemmy_api, reddit_api, rules, seeds
 
 Progress = Callable[[str, int, int], None]
 
@@ -561,6 +563,77 @@ def scan_lemmy(config: dict, keywords: list[str], instances: list[str] | None = 
 
 
 # ---------------------------------------------------------------------------
+# Hacker News and Lobsters
+# ---------------------------------------------------------------------------
+
+# The record on Hacker News stands in for the keyword density used everywhere
+# else: 400 stories on the topic in a year is a full fit, and the median score
+# discounts it, because a topic with many stories that all die at two points is
+# not a topic this audience wants. The raw numbers stay on the entry so the user
+# can overrule the arithmetic - which is the point of showing them.
+_HN_STORIES_FOR_FULL_FIT = 400
+_HN_POINTS_FOR_FULL_QUALITY = 20
+_HN_FIT_CEILING = 40.0
+
+
+def _hn_fit(record: dict) -> float:
+    volume = min(record.get("stories", 0) / _HN_STORIES_FOR_FULL_FIT, 1.0)
+    quality = min((record.get("median_points", 0) or 0) / _HN_POINTS_FOR_FULL_QUALITY, 1.0)
+    # A floor under the quality term: a topic that lands quietly is still a topic
+    # that lands, and zeroing it would hide the channel completely.
+    return round(volume * max(quality, 0.25) * _HN_FIT_CEILING, 2)
+
+
+def scan_aggregators(config: dict, keywords: list[str],
+                     progress: Progress = _noop) -> list[dict]:
+    """Hacker News and Lobsters. Neither is discovered - there is one of each -
+    so the work is deciding whether this product belongs there."""
+    ua = config["user_agent"]
+    entries: list[dict] = []
+
+    progress("Hacker News: Regeln und Themenlage", 0, 2)
+    entry = aggregators.hacker_news(keywords, ua)
+    entry["fit_raw"] = _hn_fit(entry["topic_record"])
+    _finish_aggregator(entry)
+    entries.append(entry)
+
+    progress("Lobsters: Regeln und passende Tags", 1, 2)
+    entry = aggregators.lobsters(keywords, ua)
+    # Lobsters sorts everything by tag. No matching tag, no place for the topic -
+    # and that is a fit of zero, not a small one.
+    entry["fit_raw"] = float(len(entry["matching_tags"]) * 4)
+    _finish_aggregator(entry)
+    if entry["invite_only"]:
+        _apply_invite_only(entry)
+    entries.append(entry)
+
+    return entries
+
+
+def _finish_aggregator(entry: dict) -> None:
+    texts = entry.pop("_rule_texts", {})
+    entry["rules"] = [{"name": name, "text": text[:1200]} for name, text in texts.items()]
+    entry["analysis"] = rules.analyse(texts)
+
+
+def _apply_invite_only(entry: dict) -> None:
+    """Lobsters hands out accounts by invitation only. Whatever its rules permit,
+    a user without an invitation cannot post there at all - and a green light on a
+    site you have no account for is worse than no entry, because it costs the user
+    the time to find that out.
+
+    It becomes a condition rather than a ban: the invitation is a real hurdle, not
+    a prohibition, and someone who has one should not be told the door is shut.
+    """
+    analysis = entry["analysis"]
+    if analysis["verdict"] == rules.FORBIDDEN:
+        return
+    analysis["verdict"] = rules.CONDITIONAL
+    if "rule.invite_only" not in analysis["labels"]:
+        analysis["labels"].insert(0, "rule.invite_only")
+
+
+# ---------------------------------------------------------------------------
 # Scoring and merging
 # ---------------------------------------------------------------------------
 
@@ -569,6 +642,14 @@ def scan_lemmy(config: dict, keywords: list[str], instances: list[str] | None = 
 # is small. Against one common scale every Lemmy entry would score as tiny and
 # the ranking would say "go to Reddit" no matter what the rules there said.
 _SIZE_SCALE = {"reddit": 7.0, "lemmy": 4.9, "forum": 7.0}
+
+# Platforms that publish no member count at all. Their zero means "not published",
+# not "nobody is there" - counting it as an empty community would push Hacker News
+# below a forum with forty members. The size weight is redistributed over the two
+# figures that ARE real for them instead of being scored as zero.
+_NO_SIZE_PLATFORMS = frozenset({"hackernews", "lobsters"})
+
+_W_FIT, _W_SIZE, _W_ACTIVITY = 0.58, 0.24, 0.18
 
 
 def score_all(entries: list[dict]) -> list[dict]:
@@ -580,7 +661,11 @@ def score_all(entries: list[dict]) -> list[dict]:
         scale = _SIZE_SCALE.get(entry.get("platform", ""), 7.0)
         size = math.log10(max(entry.get("subscribers", 0), 1) + 1) / scale
         activity = min(entry.get("posts_per_day", 0) / max_act, 1.0)
-        score = fit * 0.58 + min(size, 1.0) * 0.24 + activity * 0.18
+        if entry.get("platform") in _NO_SIZE_PLATFORMS:
+            share = _W_FIT + _W_ACTIVITY
+            score = (fit * _W_FIT + activity * _W_ACTIVITY) / share
+        else:
+            score = fit * _W_FIT + min(size, 1.0) * _W_SIZE + activity * _W_ACTIVITY
 
         verdict = entry.get("analysis", {}).get("verdict", rules.UNKNOWN)
         if verdict == rules.FORBIDDEN:

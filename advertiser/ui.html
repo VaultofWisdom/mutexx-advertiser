@@ -238,9 +238,10 @@
   <section id="tab-communities" hidden>
     <div class="row">
       <input id="filterText" style="min-width:250px" data-i18n-ph="communities.search">
-      <select id="filterPlatform"><option value="">reddit / lemmy / forum</option>
+      <select id="filterPlatform"><option value="" data-i18n="communities.all_platforms"></option>
         <option value="reddit">reddit</option><option value="lemmy">lemmy</option>
-        <option value="forum">forum</option></select>
+        <option value="forum">forum</option><option value="hackernews">Hacker News</option>
+        <option value="lobsters">Lobsters</option></select>
       <select id="filterVerdict"><option value=""></option>
         <option value="gruen"></option><option value="gelb"></option>
         <option value="rot"></option><option value="grau"></option></select>
@@ -599,7 +600,8 @@ function renderLanguage(){
 
 /* ---------- Job progress ---------- */
 $('scanBtn').onclick = async () => {
-  const res = await api('/api/scan/start', {platforms:['reddit','lemmy','forum']});
+  const res = await api('/api/scan/start',
+    {platforms:['reddit','lemmy','forum','hackernews','lobsters']});
   if (res.error) { $('scanMsg').textContent = res.error; return; }
   $('scanBarWrap').style.display = '';
   pollJob();
@@ -1045,6 +1047,19 @@ function renderDetail(){
   // The category that lifted a ban to a condition is the whole point of the
   // amber verdict here - naming it without linking it would leave the user to
   // hunt for it on the forum.
+  // Hacker News publishes no member count, so the record replaces it: what this
+  // topic actually did there over the last year. Numbers, with the stories behind
+  // them - the user draws the conclusion.
+  const tr = c.topic_record;
+  const record = tr ? `<div class="evidence"><b>${esc(t('communities.hn_record',
+      {stories: tr.stories, days: tr.window_days, points: tr.median_points}))}</b>
+      ${(tr.examples||[]).slice(0,3).map(x =>
+        `<br><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.points)} &middot; ${esc(x.title)}</a>`
+      ).join('')}</div>` : '';
+  const tags = (c.matching_tags||[]).length
+    ? `<div class="evidence"><b>${esc(t('communities.lobsters_tags'))}</b><br>${
+        c.matching_tags.map(x => `<span class="tag">${esc(x)}</span>`).join('')}</div>`
+    : '';
   const sc = c.showcase_category;
   const showcase = sc ? `<div class="evidence"><b>${esc(t('communities.showcase'))}</b><br>
       <a href="${esc(sc.url)}" target="_blank" rel="noopener">${esc(sc.name)}</a>
@@ -1060,6 +1075,8 @@ function renderDetail(){
       <div>${(a.labels||[]).map(l => `<span class="tag">${esc(t(l))}</span>`).join('')}</div>
       <p><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.url)}</a></p>
       ${showcase}
+      ${record}
+      ${tags}
       ${v==='rot' ? `<div class="warn">${t('communities.do_not_post')}</div>` : ''}
       <h3 style="margin-top:18px">${esc(t('communities.evidence'))}</h3>
       ${evidence}

@@ -106,6 +106,12 @@ def _run_scan(platforms: list[str], slug: str) -> None:
             # is simply skipped inside scan_lemmy.
             entries += discovery.scan_lemmy(config, keywords,
                                             seed_data["lemmy_instances"], _progress)
+        if "hackernews" in platforms or "lobsters" in platforms:
+            # Neither is discovered - there is one of each - so there are no seeds
+            # and nothing to configure. Both are asked whether this product belongs
+            # there, and both answer with numbers rather than an opinion.
+            entries += [entry for entry in discovery.scan_aggregators(config, keywords, _progress)
+                        if entry["platform"] in platforms]
         if "forum" in platforms:
             if seed_data["forums"]:
                 entries += discovery.scan_forums(config, keywords, seed_data["forums"], _progress)
@@ -382,7 +388,8 @@ class Handler(BaseHTTPRequestHandler):
         if not _start_job("scan"):
             self._send(409, {"error_key": "scan.busy"})
             return
-        platforms = body.get("platforms") or ["reddit", "lemmy", "forum"]
+        platforms = body.get("platforms") or ["reddit", "lemmy", "forum",
+                                              "hackernews", "lobsters"]
         threading.Thread(target=_run_scan, args=(platforms, slug), daemon=True).start()
         self._send(200, {"ok": True})
 
@@ -459,7 +466,7 @@ class Handler(BaseHTTPRequestHandler):
                 # so it gets its own page, and the assistant fills the form there.
                 draft["target_url"] = (publish.reddit_submit_url(entry["handle"], draft)
                                        if entry.get("platform") == "reddit"
-                                       else entry.get("url", ""))
+                                       else entry.get("submit_url") or entry.get("url", ""))
             else:
                 day = counters["other"] // 3
                 counters["other"] += 1
@@ -504,7 +511,9 @@ class Handler(BaseHTTPRequestHandler):
         if entry.get("platform") == "reddit":
             url = publish.reddit_submit_url(entry["handle"], body.get("draft") or {})
         else:
-            url = entry.get("url", "")
+            # Hacker News and Lobsters carry their own submission form; everything
+            # else opens at the community itself.
+            url = entry.get("submit_url") or entry.get("url", "")
         self._send(200, {"guard": guard, "url": url})
 
     def _post_publish_auto(self, body: dict) -> None:
