@@ -54,8 +54,33 @@ def message(key: str, **params: Any) -> dict:
 
     Runtime warnings carry numbers and names; storing the finished sentence would
     freeze the language. Storing key plus parameters keeps it switchable.
+
+    Parameters are coerced to something JSON can hold. Nearly every caller here is
+    reporting a failure and passes the exception straight in, which reads perfectly
+    well and then cannot be written to disk or sent to the interface. Coercing at the
+    one place they all pass through is the only fix that also covers the next caller
+    to do it.
     """
-    return {"key": key, "params": params}
+    return {"key": key, "params": {name: _storable(value) for name, value in params.items()}}
+
+
+def _storable(value: Any) -> Any:
+    """JSON can hold it, or it becomes text.
+
+    Dicts and lists are walked rather than flattened: a parameter is allowed to be
+    another message, or a list of them, and render() resolves those in the reading
+    language. Turning one into a string here would freeze it - which is the very
+    thing this whole module exists to prevent.
+    """
+    if isinstance(value, bool) or value is None:
+        return value
+    if isinstance(value, (str, int, float)):
+        return value
+    if isinstance(value, dict):
+        return {str(name): _storable(item) for name, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_storable(item) for item in value]
+    return str(value)
 
 
 def render(entry: Any, language: str = DEFAULT_LANGUAGE) -> str:
@@ -528,6 +553,42 @@ EN: dict[str, str] = {
     "platform.lemmy": "Lemmy",
     "scan.lemmy_none": "Lemmy searched, nothing above the size floor found. That is a result "
                        "too - the network is small, and not every subject has a community there yet.",
+    "tab.run": "Run",
+    "run.title": "Run the whole plan",
+    "run.what": "Analysis, strategy, seed lists, scan, assets and a prepared campaign - "
+                "in one pass, in the only order they work in. Each stage feeds the next.",
+    "run.start": "Run everything",
+    "run.running": "running - this takes a few minutes",
+    "run.nothing_published": "Nothing is published by this. The run ends where the app "
+                             "always ends: with the work laid out for you to send.",
+    "run.stage.analysis": "1/6 reading the product page",
+    "run.stage.strategy": "2/6 working out the channel plan",
+    "run.stage.seeds": "3/6 starting points for the scan",
+    "run.stage.scan": "4/6 searching communities and reading their rules",
+    "run.stage.assets": "5/6 writing the copy",
+    "run.stage.campaign": "6/6 preparing the campaign",
+    "run.done.analysis": "Analysis: {count} keywords",
+    "run.done.strategy": "Strategy: {count} channels worth it",
+    "run.done.seeds": "Seed lists: {subs} subreddits, {forums} forums proposed",
+    "run.done.scan": "Scan: {count} communities found and assessed",
+    "run.done.assets": "Assets: {count} written",
+    "run.done.campaign": "Campaign: {count} drafts prepared",
+    "run.skipped.analysis": "Analysis failed ({error}) - everything after it worked from "
+                            "the last one on file.",
+    "run.skipped.strategy": "Strategy failed ({error}).",
+    "run.skipped.seeds": "Seed suggestion failed ({error}).",
+    "run.skipped.seeds_present": "Seed lists left alone - yours were already there.",
+    "run.skipped.seeds_no_key": "No seed suggestion: that needs an Anthropic key. Enter "
+                                "subreddits and forums under Seed lists yourself.",
+    "run.skipped.scan_no_keywords": "Scan skipped: no keywords. Fill in the product "
+                                    "profile or let the analysis run.",
+    "run.skipped.reddit": "Reddit skipped: {error}",
+    "run.skipped.asset": "Asset {asset} failed ({error}).",
+    "run.skipped.campaign": "Campaign preparation failed ({error}).",
+    "run.finished": "Done: {done} stages through, {skipped} notes.",
+    "run.aborted": "Run aborted.",
+    "run.report": "What the run did",
+    "run.report_skipped": "What it left out, and why",
     "scan.no_forum_seeds": "No forum seed list for this product. Add some under Seed lists or ask "
                            "for suggestions.",
     "scan.nothing_yet": "Nothing has run yet.",
@@ -1074,6 +1135,45 @@ DE: dict[str, str] = {
     "scan.lemmy_none": "Lemmy durchsucht, nichts oberhalb der Größenschwelle gefunden. Auch das "
                        "ist ein Ergebnis - das Netz ist klein, und nicht zu jedem Thema gibt es "
                        "dort schon eine Community.",
+    "tab.run": "Durchlauf",
+    "run.title": "Den ganzen Plan durchlaufen lassen",
+    "run.what": "Analyse, Strategie, Startlisten, Scan, Werbetexte und eine vorbereitete "
+                "Kampagne - in einem Durchgang, in der einzigen Reihenfolge, in der das "
+                "funktioniert. Jede Stufe füttert die nächste.",
+    "run.start": "Alles durchlaufen lassen",
+    "run.running": "läuft - das dauert ein paar Minuten",
+    "run.nothing_published": "Dabei wird nichts veröffentlicht. Der Durchlauf endet da, wo "
+                             "die App immer endet: bei der Arbeit, die für dich zum "
+                             "Abschicken bereitliegt.",
+    "run.stage.analysis": "1/6 Produktseite lesen",
+    "run.stage.strategy": "2/6 Kanalplan erstellen",
+    "run.stage.seeds": "3/6 Startpunkte für den Scan",
+    "run.stage.scan": "4/6 Communities suchen und ihre Regeln lesen",
+    "run.stage.assets": "5/6 Werbetexte schreiben",
+    "run.stage.campaign": "6/6 Kampagne vorbereiten",
+    "run.done.analysis": "Analyse: {count} Stichwörter",
+    "run.done.strategy": "Strategie: {count} Kanäle lohnen sich",
+    "run.done.seeds": "Startlisten: {subs} Subreddits, {forums} Foren vorgeschlagen",
+    "run.done.scan": "Scan: {count} Communities gefunden und bewertet",
+    "run.done.assets": "Werbetexte: {count} geschrieben",
+    "run.done.campaign": "Kampagne: {count} Entwürfe vorbereitet",
+    "run.skipped.analysis": "Analyse fehlgeschlagen ({error}) - alles danach hat mit der "
+                            "zuletzt gespeicherten weitergearbeitet.",
+    "run.skipped.strategy": "Strategie fehlgeschlagen ({error}).",
+    "run.skipped.seeds": "Vorschlag für die Startlisten fehlgeschlagen ({error}).",
+    "run.skipped.seeds_present": "Startlisten unangetastet - deine waren schon da.",
+    "run.skipped.seeds_no_key": "Kein Vorschlag für die Startlisten: dafür braucht es einen "
+                                "Anthropic-Schlüssel. Subreddits und Foren unter Startlisten "
+                                "selbst eintragen.",
+    "run.skipped.scan_no_keywords": "Scan übersprungen: keine Stichwörter. Produktprofil "
+                                    "ausfüllen oder die Analyse laufen lassen.",
+    "run.skipped.reddit": "Reddit übersprungen: {error}",
+    "run.skipped.asset": "Werbetext {asset} fehlgeschlagen ({error}).",
+    "run.skipped.campaign": "Vorbereitung der Kampagne fehlgeschlagen ({error}).",
+    "run.finished": "Fertig: {done} Stufen durch, {skipped} Hinweise.",
+    "run.aborted": "Durchlauf abgebrochen.",
+    "run.report": "Was der Durchlauf getan hat",
+    "run.report_skipped": "Was er ausgelassen hat, und warum",
     "scan.no_forum_seeds": "Keine Foren-Startliste für dieses Produkt. Unter Startlisten welche "
                            "eintragen oder vorschlagen lassen.",
     "scan.nothing_yet": "Noch nichts gelaufen.",

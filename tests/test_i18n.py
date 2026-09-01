@@ -15,6 +15,7 @@ Run:  python -m unittest discover -s tests
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import unittest
@@ -62,6 +63,55 @@ class CatalogueIsComplete(unittest.TestCase):
 
     def test_an_unknown_language_falls_back_to_english(self) -> None:
         self.assertEqual(i18n.t("tab.product", "fr"), i18n.t("tab.product", "en"))
+
+
+class MessagesSurviveBeingStored(unittest.TestCase):
+    """Every message here is either written to a JSON file or polled by the interface
+    over HTTP. One that cannot be serialised does not degrade - it takes down the
+    request or the save with it.
+
+    This is not hypothetical. Nine call sites across five modules report a failure by
+    passing the exception straight in, which reads perfectly well and produced a 500
+    from /api/job/status the first time a real run hit a Reddit without approval -
+    which is every run, since Reddit approval is closed.
+    """
+
+    def test_an_exception_as_a_parameter_survives(self) -> None:
+        stored = i18n.message("run.skipped.reddit", error=RuntimeError("no app registered"))
+        json.dumps(stored)
+        self.assertIn("no app registered", i18n.render(stored, "en"))
+
+    def test_every_reporting_call_site_can_be_stored(self) -> None:
+        """The whole family, not just the one that was caught."""
+        error = ValueError("boom")
+        for key, params in (
+            ("analysis.warn.api_failed", {"error": error}),
+            ("assets.warn.api_failed", {"error": error}),
+            ("strategy.warn.api_failed", {"error": error}),
+            ("run.skipped.analysis", {"error": error}),
+            ("run.skipped.strategy", {"error": error}),
+            ("run.skipped.seeds", {"error": error}),
+            ("run.skipped.campaign", {"error": error}),
+            ("run.skipped.asset", {"asset": "press_kit", "error": error}),
+        ):
+            with self.subTest(key=key):
+                json.dumps(i18n.message(key, **params))
+
+    def test_ordinary_parameters_keep_their_type(self) -> None:
+        """Numbers must stay numbers - a count rendered as '12' is fine, but storing
+        it as text would break anything that later does arithmetic on it."""
+        params = i18n.message("x", count=12, ratio=1.5, flag=True, nothing=None)["params"]
+        self.assertEqual(params, {"count": 12, "ratio": 1.5, "flag": True, "nothing": None})
+
+    def test_a_nested_message_is_not_flattened_into_text(self) -> None:
+        """The one thing the coercion must not touch: a message inside a message is
+        resolved in the reading language, and a string would freeze it."""
+        stored = i18n.message("draft.language_warning",
+                              community_language=i18n.message("language.en"),
+                              product_language=i18n.message("language.de"))
+        json.dumps(stored)
+        self.assertIn("English", i18n.render(stored, "en"))
+        self.assertIn("englisch", i18n.render(stored, "de"))
 
 
 class MessagesStaySwitchable(unittest.TestCase):

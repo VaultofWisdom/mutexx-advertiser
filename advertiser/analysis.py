@@ -464,3 +464,72 @@ def merged_keywords(product: dict, result: dict, limit: int = 40) -> list[str]:
         if term and term not in out:
             out.append(term)
     return out[:limit]
+
+
+# Below this weight a term is a word the product page happens to contain, not a
+# thing the product is about. Such terms still count when scoring a community that
+# already matched, but they do not go out as searches of their own.
+SEARCH_WEIGHT = 0.5
+
+# What a page-derived term is worth at best. It has to stay clearly under a term
+# the user named themselves: they know what the product is, the word counter only
+# knows what was on the page.
+_PAGE_CEILING = 0.6
+
+
+def keyword_weights(product: dict, result: dict, limit: int = 40) -> dict[str, float]:
+    """How much each keyword is worth as evidence that a community fits.
+
+    Not all keywords are the same, and treating them as if they were is how a
+    note-taking app ends up ranked into a wildlife photography community: both
+    matched the word "graph", and nothing said that "note taking" - which the user
+    entered - carries more than a word the page happened to repeat.
+
+    1.0 is what the user or the analysis named as the subject. Page-derived terms
+    are scaled against the strongest of their own kind, so a page with one dominant
+    word does not make its runners-up look decisive.
+    """
+    weights: dict[str, float] = {}
+    for term in product.get("keywords", []):
+        if term.strip():
+            weights.setdefault(term.lower().strip(), 1.0)
+    for term in result.get("search_terms", []):
+        if term.strip():
+            weights.setdefault(term.lower().strip(), 1.0)
+
+    # analysis.json is read from disk and may have been written by an older version
+    # or edited by hand. A stale file must not take the scan down with it, so
+    # anything that is not a scored term is treated as an unscored one.
+    scored: list[tuple[str, float]] = []
+    for item in result.get("keywords", []):
+        if isinstance(item, str):
+            scored.append((item.lower().strip(), 0.0))
+            continue
+        if not isinstance(item, dict):
+            continue
+        term = str(item.get("term") or "").lower().strip()
+        try:
+            score = float(item.get("score") or 0)
+        except (TypeError, ValueError):
+            score = 0.0
+        scored.append((term, score))
+    scored = [(term, score) for term, score in scored if term]
+    # Terms the user already named come back through the analysis too. Their 1.0
+    # stands; the page score does not get to lower it.
+    page = [(term, score) for term, score in scored if term not in weights]
+    top = max((score for _term, score in page), default=0.0)
+    for term, score in page:
+        weights[term] = round(_PAGE_CEILING * (score / top), 3) if top > 0 else 0.2
+
+    return dict(list(weights.items())[:limit])
+
+
+def search_terms_of(weights: dict[str, float], limit: int = 12) -> list[str]:
+    """The terms worth sending out as a search. A search for "graph" comes back with
+    the whole internet, and every one of those hits then has to be fetched, read and
+    ruled on - so the weak terms are kept for scoring and left out of the searching."""
+    strong = [term for term, weight in weights.items() if weight >= SEARCH_WEIGHT]
+    if not strong:
+        # Nothing strong on file: better a broad search than none at all.
+        strong = sorted(weights, key=lambda term: weights[term], reverse=True)[:4]
+    return strong[:limit]

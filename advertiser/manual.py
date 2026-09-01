@@ -63,6 +63,42 @@ communities, queue and history are kept strictly apart per product.</p>
 """,
     },
     {
+        "id": "run_all",
+        "title": "Run everything in one pass",
+        "html": """
+<p>Fill in the product profile, press <b>Run everything</b>, read the report. That is the
+short way through the whole app.</p>
+<p>The run walks six stages in the only order they work in, because each one feeds the
+next: the analysis produces the keywords the scan searches with, the strategy decides which
+copy is worth writing, and the scan produces what the campaign is built from. Doing them
+out of order produces a plausible-looking result built on nothing.</p>
+<ol>
+<li><b>Analysis</b> - reads your product page and derives the keywords.</li>
+<li><b>Strategy</b> - which channels are worth it, and which are not, with reasons.</li>
+<li><b>Seed lists</b> - only if yours are empty and an Anthropic key is on file. What you
+entered yourself is never overwritten.</li>
+<li><b>Scan</b> - searches communities and reads their rules.</li>
+<li><b>Copy</b> - writes the assets for the channels the strategy put forward.</li>
+<li><b>Campaign</b> - a draft per community, dates spread, safety catch applied.</li>
+</ol>
+<p>It takes a few minutes, mostly waiting politely between requests to other people's
+servers.</p>
+<h4>What the report tells you</h4>
+<p>Two lists: what each stage produced, and what it left out. The second one is the one to
+read. A stage that failed does not stop the run - four working stages and an honest note
+about the fifth are worth more than an empty interface you have to diagnose - so the note
+is where you find out that, say, your product page answered with a 403 and everything
+after it worked from the last analysis on file.</p>
+<h4>What it does not do</h4>
+<p><b>It publishes nothing.</b> The run ends exactly where the app always ends: with the
+work laid out for you to send. That is not a gap in the automation, it is the thing the
+automation exists to protect. It spends no money either - the same rule as everywhere
+else.</p>
+<p>You can still walk the stages one at a time from their own tabs. The run does not
+replace them; it just saves you doing it in the right order by hand.</p>
+""",
+    },
+    {
         "id": "product",
         "title": "The product profile",
         "html": """
@@ -176,6 +212,18 @@ as well. Unreachable sites slide to the bottom of the list automatically.</p>
 <p>With Reddit approval in place the subreddit search joins in: keyword search across the
 official API, then one hop over sidebar mentions, then a deep scan of the most promising
 candidates for rules and activity.</p>
+<h4>Not every keyword counts the same</h4>
+<p>What you entered in the profile, and what the analysis names as a search term, count
+fully. Words merely read off your product page count for less, and never as much as
+something you named yourself - you know what your product is, the word counter only knows
+what was on the page.</p>
+<p>This is not fussiness. Without it a note-taking app ranked into a wildlife photography
+community, because both matched the word "graph". The weak words still count when scoring
+a community that matched on something real - five weak matches are a signal - but they are
+not sent out as searches of their own. A search for "graph" comes back with the whole
+network, and every one of those has to be fetched, read and ruled on afterwards.</p>
+<p>If the results look off, look at the keywords first. They are shown under
+<i>Seed lists</i>, and the profile is where you correct them.</p>
 <p>The scan is polite by design - a fixed pause between requests, an honest user agent,
 backoff on rate limits. It takes longer that way. That is intentional.</p>
 """,
@@ -456,6 +504,46 @@ ihnen; Communities, Warteschlange und Verlauf sind je Produkt streng getrennt.</
 """,
     },
     {
+        "id": "run_all",
+        "title": "Alles in einem Durchgang",
+        "html": """
+<p>Produktprofil ausfüllen, <b>Alles durchlaufen lassen</b> drücken, Bericht lesen. Das ist
+der kurze Weg durch die ganze App.</p>
+<p>Der Durchlauf geht sechs Stufen ab, in der einzigen Reihenfolge, in der das funktioniert
+- jede füttert die nächste: Die Analyse liefert die Stichwörter, mit denen der Scan sucht,
+die Strategie entscheidet, welche Texte sich lohnen, und der Scan liefert das, woraus die
+Kampagne gebaut wird. In falscher Reihenfolge entsteht ein plausibel aussehendes Ergebnis,
+das auf nichts steht.</p>
+<ol>
+<li><b>Analyse</b> - liest deine Produktseite und gewinnt die Stichwörter.</li>
+<li><b>Strategie</b> - welche Kanäle sich lohnen und welche nicht, mit Begründung.</li>
+<li><b>Startlisten</b> - nur, wenn deine leer sind und ein Anthropic-Schlüssel hinterlegt
+ist. Was du selbst eingetragen hast, wird nie überschrieben.</li>
+<li><b>Scan</b> - sucht Communities und liest ihre Regeln.</li>
+<li><b>Texte</b> - schreibt die Werbetexte für die Kanäle, die die Strategie vorschlägt.</li>
+<li><b>Kampagne</b> - ein Entwurf je Community, Termine verteilt, Schutzschalter
+angewandt.</li>
+</ol>
+<p>Das dauert ein paar Minuten, größtenteils höfliches Warten zwischen Anfragen an fremde
+Server.</p>
+<h4>Was der Bericht sagt</h4>
+<p>Zwei Listen: was jede Stufe hervorgebracht hat, und was ausgelassen wurde. Die zweite
+ist die wichtigere. Eine fehlgeschlagene Stufe stoppt den Durchlauf nicht - vier
+funktionierende Stufen und ein ehrlicher Hinweis zur fünften sind mehr wert als eine leere
+Oberfläche, die du selbst auseinandernehmen musst - und im Hinweis steht dann, dass etwa
+deine Produktseite mit 403 geantwortet hat und alles danach mit der zuletzt gespeicherten
+Analyse weitergearbeitet hat.</p>
+<h4>Was er nicht tut</h4>
+<p><b>Er veröffentlicht nichts.</b> Der Durchlauf endet genau da, wo die App immer endet:
+bei der Arbeit, die für dich zum Abschicken bereitliegt. Das ist keine Lücke in der
+Automatisierung, sondern das, was die Automatisierung schützen soll. Geld gibt er auch
+keins aus - dieselbe Regel wie überall sonst.</p>
+<p>Die Stufen lassen sich weiterhin einzeln über ihre eigenen Reiter starten. Der Durchlauf
+ersetzt sie nicht, er nimmt dir nur ab, sie von Hand in der richtigen Reihenfolge
+anzustoßen.</p>
+""",
+    },
+    {
         "id": "product",
         "title": "Das Produktprofil",
         "html": """
@@ -576,6 +664,19 @@ erreichbare Seiten rutschen automatisch ans Ende der Liste.</p>
 <p>Liegt eine Reddit-Freigabe vor, kommt die Subreddit-Suche dazu: Stichwortsuche über die
 offizielle API, dann ein Hop über Sidebar-Erwähnungen, dann ein Tiefenscan der
 aussichtsreichsten Kandidaten auf Regeln und Aktivität.</p>
+<h4>Nicht jedes Stichwort zählt gleich viel</h4>
+<p>Was du im Profil eingetragen hast und was die Analyse als Suchbegriff nennt, zählt voll.
+Wörter, die nur von deiner Produktseite abgelesen wurden, zählen weniger - und nie so viel
+wie etwas, das du selbst benannt hast: Du weißt, was dein Produkt ist, der Wortzähler weiß
+nur, was auf der Seite stand.</p>
+<p>Das ist keine Pedanterie. Ohne diese Gewichtung landete eine Notiz-App in einer
+Community für Wildtierfotografie, weil beide das Wort „graph" enthielten. Die schwachen
+Wörter zählen weiterhin mit, wenn eine Community ohnehin schon zu etwas Echtem passt -
+fünf schwache Treffer sind ein Signal -, aber sie gehen nicht als eigene Suche hinaus. Eine
+Suche nach „graph" bringt das halbe Netz zurück, und jeder dieser Treffer muss danach
+geholt, gelesen und beurteilt werden.</p>
+<p>Wenn die Ergebnisse komisch aussehen: zuerst die Stichwörter ansehen. Sie stehen unter
+<i>Startlisten</i>, korrigiert werden sie im Profil.</p>
 <p>Der Scan ist absichtlich höflich - feste Pause zwischen Anfragen, ehrliche Kennung,
 Backoff bei Rate-Limits. Er dauert dadurch länger. Das ist gewollt.</p>
 """,

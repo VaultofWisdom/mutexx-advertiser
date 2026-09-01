@@ -170,6 +170,50 @@ Two promises that separate the module from a text generator:
 
 Plus per channel a list of negative keywords and the destination URL with UTM tagging.
 
+### Stage 12 — The chain in one run — **done**
+
+Six stages that each had to be started by hand were six chances to stop halfway, and the
+order between them is not obvious from the interface: the analysis produces the keywords
+the scan searches with, the strategy decides which copy is worth writing, the scan produces
+what the campaign is built from. Getting that order wrong produces a plausible-looking
+result built on nothing.
+
+`_run_everything` walks all six and reports per stage what it produced. Three decisions in
+it are worth keeping:
+
+* **A stage that fails does not stop the run.** Four working stages and an honest note
+  about the fifth are worth more than an empty interface the user has to diagnose. The
+  analysis is the likeliest to fail — it fetches somebody else's page — and everything
+  after it falls back to the analysis already on file.
+* **Seed lists the user entered are never overwritten.** They are the one thing in the
+  chain the app did not produce, and no other stage could recover them.
+* **The campaign goes through the same `prepare_queue` as the Campaign tab.** A second
+  copy would drift, and the half that drifted would be the safety catch.
+
+It publishes nothing, and the tests hold it to that. The run is a way to reach the last
+click faster, not a way around it.
+
+### Stage 13 — Keyword weighting — **done**
+
+Found by looking at the output of the first full run rather than by reasoning about the
+code. For a note-taking app the top eight communities included `!wildlifephotography`,
+`!cartographyanarchy` and `!learningrustandlemmy` — all because the product page contained
+"graph" and "thinking", and `fit_score` counted every keyword the same.
+
+That is not a ranking nicety. The app's one promise is that it does not propose posting
+your link where it does not belong, and a campaign opening with a note-taking app in a
+wildlife photography community is how a domain gets banned.
+
+`analysis.keyword_weights` now returns what each term is worth: 1.0 for what the user
+entered and what the analysis names as a search term, scaled and capped below that for
+terms read off the page. `search_terms_of` separates the two jobs — everything is scored
+against, only the strong ones are searched with, because a search for "graph" comes back
+with the whole network and each hit then costs a fetch, a read and a verdict.
+
+The defect itself is kept as a test: unweighted, the wrong community wins; weighted, the
+right one does. Communities added by hand still go through the same function with no
+weights, and that path is tested to be unchanged.
+
 ### Stage 7 — Feedback — partial
 
 The UTM tagging is in place (stage 6, `assets.utm_url`). What is missing is the return
@@ -178,12 +222,16 @@ real numbers instead of keyword density.
 
 ### Stage 8 — Hardening — partial
 
-163 tests cover the traffic light, the strategy promises, the draft templates, the character
+191 tests cover the traffic light, the strategy promises, the draft templates, the character
 limits of the assets, the completeness of the translation catalogue, the Lemmy channel (its
 verdicts, the deduplication across federated instances, the size scale and the daily limit),
 the Discourse path (identification, the rule pages, and above all the showcase category that
 turns a red verdict amber) and the aggregators (above all their ability to answer "not
-here") — all against stubbed responses rather than the live network.
+here") and the whole-chain run (that every stage runs, that one failing does not stop
+the others, that seed lists survive it, and that it never reaches the publishing code) —
+all against stubbed responses rather than the live network. The keyword weighting is
+covered in both directions: the strong terms must dominate, and the weak ones must keep
+counting for something.
 
 **One real defect found and fixed along the way.** The ratio rule was only recognised in
 `9:1` notation. Written out — "self-promo should be less than a quarter of your

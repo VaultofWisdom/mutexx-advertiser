@@ -150,7 +150,8 @@
   </div>
   <div class="row" style="margin-left:auto">
     <select id="productSel" style="min-width:200px"></select>
-    <button class="btn" id="scanBtn" data-i18n="action.scan"></button>
+    <button class="btn" id="runAllBtn" data-i18n="run.start"></button>
+    <button class="btn ghost" id="scanBtn" data-i18n="action.scan"></button>
     <span class="muted" id="scanMsg"></span>
   </div>
   <div class="bar" id="scanBarWrap" style="display:none"><span id="scanBar" style="width:0"></span></div>
@@ -235,6 +236,26 @@
   </section>
 
   <!-- ============ COMMUNITIES ============ -->
+  <section id="tab-run" hidden>
+    <div class="panel">
+      <h3 data-i18n="run.title"></h3>
+      <p class="muted" data-i18n="run.what"></p>
+      <p style="margin-top:12px" data-i18n="run.nothing_published"></p>
+      <div class="row" style="margin-top:14px">
+        <button class="btn" id="runAllBtn2" data-i18n="run.start"></button>
+        <label class="check"><input type="checkbox" id="runUseApi">
+          <span data-i18n="assets.use_api"></span></label>
+        <span class="muted" id="runMsg"></span>
+      </div>
+    </div>
+    <div class="panel" id="runReport" hidden>
+      <h3 data-i18n="run.report"></h3>
+      <div id="runDone"></div>
+      <h3 style="margin-top:18px" data-i18n="run.report_skipped"></h3>
+      <div id="runSkipped"></div>
+    </div>
+  </section>
+
   <section id="tab-communities" hidden>
     <div class="row">
       <input id="filterText" style="min-width:250px" data-i18n-ph="communities.search">
@@ -459,9 +480,9 @@ let STATE = {config:{}, product:{}, products:[], communities:[], queue:[], histo
 let LANG = 'en';
 let SELECTED = null, DRAFT = null, RUN = -1;
 
-const TABS = ['product','analysis','strategy','assets','communities','seeds','campaign',
-              'channels','history','manual','settings'];
-const TAB_KEY = {product:'tab.product', analysis:'tab.analysis', strategy:'tab.strategy',
+const TABS = ['product','run','analysis','strategy','assets','communities','seeds',
+              'campaign','channels','history','manual','settings'];
+const TAB_KEY = {product:'tab.product', run:'tab.run', analysis:'tab.analysis', strategy:'tab.strategy',
   assets:'tab.assets', communities:'tab.communities', seeds:'tab.seeds',
   campaign:'tab.campaign', channels:'tab.channels', history:'tab.history',
   manual:'tab.manual', settings:'tab.settings'};
@@ -598,6 +619,29 @@ function renderLanguage(){
   };
 }
 
+/* ---------- The whole chain ---------- */
+async function runEverything(){
+  const res = await api('/api/run/all', {use_api: $('runUseApi') && $('runUseApi').checked});
+  if (res.error) { $('scanMsg').textContent = res.error; return; }
+  $('runReport').hidden = true;
+  $('scanBarWrap').style.display = '';
+  pollJob();
+}
+$('runAllBtn').onclick = runEverything;
+$('runAllBtn2').onclick = runEverything;
+
+/* What the run did, and what it left out. Both halves matter: a stage that was
+   skipped is the one the user has to do something about. */
+function renderRunReport(report){
+  if (!report || (!(report.done||[]).length && !(report.skipped||[]).length)) return;
+  const line = (m) => `<div class="evidence">${esc(tr(m))}</div>`;
+  $('runDone').innerHTML = (report.done||[]).map(line).join('')
+    || `<p class="muted">&mdash;</p>`;
+  $('runSkipped').innerHTML = (report.skipped||[]).map(line).join('')
+    || `<p class="muted">&mdash;</p>`;
+  $('runReport').hidden = false;
+}
+
 /* ---------- Job progress ---------- */
 $('scanBtn').onclick = async () => {
   const res = await api('/api/scan/start',
@@ -612,6 +656,9 @@ async function pollJob(){
   $('scanMsg').textContent = s.error ? tr(s.error) : tr(s.message);
   $('scanBtn').disabled = s.running;
   $('anaBtn').disabled = s.running;
+  $('runAllBtn').disabled = s.running;
+  if ($('runAllBtn2')) $('runAllBtn2').disabled = s.running;
+  if (!s.running && s.kind === 'run') renderRunReport(s.report);
   const pct = s.total ? Math.round(100 * s.done / s.total) : 0;
   $('scanBar').style.width = pct + '%';
   if (s.running) { $('scanBarWrap').style.display=''; setTimeout(pollJob, 1200); }

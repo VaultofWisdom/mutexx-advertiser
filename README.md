@@ -24,6 +24,11 @@ Product profile  ->  Analysis  ->  Strategy  ->  Assets  ->  Campaign
                                    budget)
 ```
 
+**Run everything** walks that whole line in one pass — analysis, strategy, seed lists,
+scan, copy, prepared campaign — and hands back a report of what each stage produced and
+what it left out. It publishes nothing. The run ends where the app always ends: with the
+work laid out for a human to send.
+
 Several products run side by side. The switcher at the top right moves between them;
 communities, queue and history are kept strictly apart per product.
 
@@ -62,6 +67,8 @@ read the interface in English.
 
 **Version 0.3.** What works:
 
+* **One-click run** — the whole chain in a single pass, with a report of what each
+  stage produced. A stage that fails does not stop the others; it says which one and why
 * **Product profiles** — as many as you like, with separate data per product
 * **Product analysis** — reads the product page, derives keywords, guesses category and
   pricing from signals in the text and shows the passage each guess rests on. With an
@@ -74,7 +81,9 @@ read the interface in English.
   SEO fields, announcement for owned channels. Plus negative keywords and the destination
   URL with UTM tagging
 * **Community discovery** — Lemmy through its open API, forums and wikis including link
-  harvesting, subreddits through the Reddit API. A forum running **Discourse** is asked
+  harvesting, subreddits through the Reddit API. Keywords are weighted: what you typed in
+  outranks a word your page happened to repeat, and only the strong ones go out as
+  searches. A forum running **Discourse** is asked
   about itself instead of guessed at: real member count, real activity, the rules at their
   known address, and the category where sharing your own work is invited
 * **Rule analysis** with a traffic light and original quotes, for rules fetched
@@ -84,7 +93,7 @@ read the interface in English.
 * **Batch preparation** of whole campaigns with scheduling and a posting mode
 * **Fully automatic publishing** to your own Discord and Mastodon channels
 * **Safety catch** against exceeding the daily limit and against repeats
-* Full manual inside the interface, 21 chapters, in both languages
+* Full manual inside the interface, 22 chapters, in both languages
 
 Stated honestly, what is missing:
 
@@ -119,7 +128,7 @@ On first start the app creates a `config.json`. `config.example.json` shows what
 it. The real `config.json` and the `data/` folder are excluded by `.gitignore` — that is
 where credentials live.
 
-Tests run without any extra tooling (163 of them, under a second):
+Tests run without any extra tooling (191 of them, under a second):
 
 ```bash
 python -m unittest discover -s tests
@@ -128,6 +137,9 @@ python -m unittest discover -s tests
 ---
 
 ## First steps
+
+The short way: fill in the product profile, then press **Run everything** and read the
+report. The long way, if you would rather watch each stage:
 
 1. **Product** — name, URL, one-liner, category, pricing, audience and monthly budget, then
    *Save profile*.
@@ -193,6 +205,21 @@ is printed in a press kit. Sentences like those go unnoticed precisely because t
 familiar — and they still end up published in the user's name.
 
 ---
+
+## Which keywords count
+
+Not all of them equally, and the reason is a result rather than a theory. An early full
+run for a note-taking app put `!wildlifephotography`, `!cartographyanarchy` and
+`!learningrustandlemmy` into its top eight communities. They were there because the product
+page contained the words "graph" and "thinking", and nothing said that "note taking" —
+typed in by the user — was worth more than a word the page repeated.
+
+So each keyword carries a weight. What you entered, and what the analysis names as a search
+term, count fully; terms read off the page are scaled against the strongest of their own
+kind and never reach that. The weak ones still count when scoring a community that matched
+on something real — five weak matches are a signal — but they are not sent out as searches
+of their own, because a search for "graph" returns the whole network and every hit then has
+to be fetched, read and ruled on.
 
 ## Angles
 
@@ -354,6 +381,7 @@ advertiser/reddit_api.py   Reddit access, read-only
 advertiser/lemmy_api.py    Lemmy access, read-only - open, no approval needed
 advertiser/discourse_api.py Discourse forums, read-only - figures, rules, categories
 advertiser/aggregators.py  Hacker News and Lobsters, read-only - the topic's record
+                           (the whole-chain run lives in server.py: _run_everything)
 advertiser/publish.py      owned channels, posting assistant, safety catch
 advertiser/server.py       local server
 advertiser/ui.html         interface
