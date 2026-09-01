@@ -262,6 +262,7 @@ EN: dict[str, str] = {
     "rule.karma": "Minimum karma or account age",
     "rule.no_monetisation": "No surveys or monetisation",
     "rule.mods_only": "Only moderators may post here",
+    "rule.showcase_category": "One category invites you to share your own work",
     "rule.explicitly_allowed": "Self-promotion explicitly allowed",
 
     "requirement.ratio": "Write at least 5-10 genuine comments in this community first.",
@@ -461,6 +462,8 @@ EN: dict[str, str] = {
     "communities.need_handle": "Give a name or a URL.",
     "communities.checking": "checking ...",
     "communities.evidence": "The rule texts this rests on",
+    "communities.showcase": "The category where sharing is invited",
+    "communities.showcase_only": "post there and nowhere else on this forum",
     "communities.no_evidence": "No relevant rule texts found.",
     "communities.do_not_post": "<b>Do not post.</b> This community forbids self-promotion. A post "
                                "here costs you the account and possibly the domain.",
@@ -790,6 +793,7 @@ DE: dict[str, str] = {
     "rule.karma": "Mindest-Karma oder Kontoalter",
     "rule.no_monetisation": "Keine Umfragen oder Monetarisierung",
     "rule.mods_only": "Hier dürfen nur Moderatoren posten",
+    "rule.showcase_category": "Eine Kategorie lädt ausdrücklich dazu ein, Eigenes zu zeigen",
     "rule.explicitly_allowed": "Eigenwerbung ausdrücklich erlaubt",
 
     "requirement.ratio": "Vorher mindestens 5-10 echte Kommentare in dieser Community schreiben.",
@@ -996,6 +1000,8 @@ DE: dict[str, str] = {
     "communities.need_handle": "Name oder URL angeben.",
     "communities.checking": "wird geprüft ...",
     "communities.evidence": "Ausschlaggebende Regeltexte",
+    "communities.showcase": "Die Kategorie, in der Zeigen erwünscht ist",
+    "communities.showcase_only": "dort posten und sonst nirgends in diesem Forum",
     "communities.no_evidence": "Keine einschlägigen Regeltexte gefunden.",
     "communities.do_not_post": "<b>Nicht posten.</b> Diese Community verbietet Eigenwerbung. Ein "
                                "Beitrag hier kostet dich den Account und möglicherweise die Domain.",

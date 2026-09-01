@@ -92,6 +92,18 @@ confirmed it: the whole channel is one API module plus one `scan_*` function.
 and no account. Because it federates, the seed list holds instances rather than
 communities, and a search on a few large ones reaches most of the network.
 
+**Discourse is done** (`discourse_api.py`, inside `_probe_forum`). It is not a new channel
+but a sharper reading of the existing one: `/about.json` gives the real member count and
+the activity of the last seven days, `/guidelines` and `/tos` give the rules at a known
+address, and `/categories.json` gives something no scrape could — the category where
+sharing your own work is invited. Forums that forbid promotion everywhere and keep one
+category for exactly that used to read as red and drop out of every campaign.
+
+That last part is the only heuristic in this app that makes a verdict *more* permissive,
+so it is fenced in on three sides: name **and** description must both invite sharing,
+amber is the ceiling, and the sentence it rests on is carried into the evidence. The tests
+for it are written around the false positive, not the true one.
+
 Three things did not carry over from Reddit and are worth knowing before adding the next
 channel, because every one of them is a decision about the traffic light rather than about
 plumbing:
@@ -138,15 +150,18 @@ real numbers instead of keyword density.
 
 ### Stage 8 — Hardening — partial
 
-118 tests cover the traffic light, the strategy promises, the draft templates, the character
-limits of the assets, the completeness of the translation catalogue, and the Lemmy channel
-(its verdicts, the deduplication across federated instances, the size scale and the daily
-limit) against a stubbed API rather than the live network. The three original
+141 tests cover the traffic light, the strategy promises, the draft templates, the character
+limits of the assets, the completeness of the translation catalogue, the Lemmy channel (its
+verdicts, the deduplication across federated instances, the size scale and the daily limit)
+and the Discourse path (identification, the rule pages, and above all the showcase category
+that turns a red verdict amber) — all against stubbed responses rather than the live
+network. The three original
 defects are fixed: `one_liner` is editable, `/api/draft` no longer throws a 500 on an
 unknown angle, the old branding is gone.
 
 Open: `scan_reddit` and `scan_forums` are still untested, and `server.py` entirely so —
 there is no coverage of the scan flow against broken HTML responses and timeouts.
+`_probe_forum` is now covered for both branches, which is the half that was riskiest.
 
 ### Stage 9 — House style and two languages — **done**
 

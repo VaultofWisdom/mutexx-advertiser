@@ -1042,6 +1042,13 @@ function renderDetail(){
   const evidence = (a.evidence||[]).map(e =>
     `<div class="evidence"><b>${esc(t(e.label))}</b> &mdash; ${esc(e.source)}<br>${esc(e.quote)}</div>`)
     .join('') || `<p class="muted">${esc(t('communities.no_evidence'))}</p>`;
+  // The category that lifted a ban to a condition is the whole point of the
+  // amber verdict here - naming it without linking it would leave the user to
+  // hunt for it on the forum.
+  const sc = c.showcase_category;
+  const showcase = sc ? `<div class="evidence"><b>${esc(t('communities.showcase'))}</b><br>
+      <a href="${esc(sc.url)}" target="_blank" rel="noopener">${esc(sc.name)}</a>
+      &mdash; ${esc(t('communities.showcase_only'))}</div>` : '';
   const angleOpts = Object.entries(STATE.angles||{}).map(([k, key]) =>
     `<option value="${esc(k)}">${esc(t(key))}</option>`).join('');
 
@@ -1052,6 +1059,7 @@ function renderDetail(){
       <p style="font-size:14px">${esc((c.description||'').slice(0,400))}</p>
       <div>${(a.labels||[]).map(l => `<span class="tag">${esc(t(l))}</span>`).join('')}</div>
       <p><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.url)}</a></p>
+      ${showcase}
       ${v==='rot' ? `<div class="warn">${t('communities.do_not_post')}</div>` : ''}
       <h3 style="margin-top:18px">${esc(t('communities.evidence'))}</h3>
       ${evidence}

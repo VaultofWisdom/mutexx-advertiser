@@ -269,6 +269,36 @@ and has no write access whatsoever.</p>
 """,
     },
     {
+        "id": "discourse",
+        "title": "Discourse forums and the showcase category",
+        "html": """
+<p>A forum running Discourse answers questions about itself, so nothing has to be guessed.
+You do not configure anything - a Discourse forum in your seed list is recognised during
+the scan. Three things get better:</p>
+<ul>
+<li><b>Real numbers.</b> Its member count, and its activity over the last seven days
+rather than a lifetime average - a forum that was busy in 2014 and quiet ever since no
+longer looks alive.</li>
+<li><b>The rules at their known address</b>, <i>/guidelines</i> and <i>/tos</i>, instead of
+whichever link on the front page happens to contain the word "rules".</li>
+<li><b>The category list</b> - and that one changes an answer rather than sharpening
+it.</li>
+</ul>
+<p>Many forums forbid self-promotion everywhere and then keep one category for exactly
+that: <i>Share &amp; showcase</i>, <i>Show and tell</i>, <i>Eigene Projekte</i>. Read
+without the category list such a forum is red and drops out of your campaign - and the
+post you were actually invited to write never gets written.</p>
+<p>So the verdict becomes <b>amber</b> and names the category, with a link. Amber, not
+green, because the condition is real: post there and nowhere else on that forum.</p>
+<p>This is the only place in the app where an assessment is made <i>more</i> permissive by
+a heuristic, so it is deliberately narrow. The category's name and its own description
+must both invite sharing - "Projects" is where people discuss projects at least as often
+as where they announce their own, and reading that as permission is how a forum bans a
+domain. As everywhere else, the sentence the assessment rests on is shown with it. Read
+it before you post.</p>
+""",
+    },
+    {
         "id": "lemmy",
         "title": "Lemmy - the channel that needs nobody's approval",
         "html": """
@@ -605,6 +635,36 @@ Werkzeug verhindern soll.</p>
 <p>Mit Freigabe: App vom Typ <i>script</i> unter reddit.com/prefs/apps anlegen, Client-ID
 und Secret in den Einstellungen eintragen, <i>Verbindung testen</i>. Die App liest
 ausschließlich und hat keinerlei Schreibzugriff.</p>
+""",
+    },
+    {
+        "id": "discourse",
+        "title": "Discourse-Foren und die Zeig-her-Kategorie",
+        "html": """
+<p>Ein Forum, das auf Discourse läuft, beantwortet Fragen über sich selbst - da muss nichts
+geraten werden. Einzustellen ist nichts: Ein Discourse-Forum in deiner Startliste wird beim
+Scan erkannt. Drei Dinge werden besser:</p>
+<ul>
+<li><b>Echte Zahlen.</b> Mitgliederzahl und die Aktivität der letzten sieben Tage statt
+eines Durchschnitts über die gesamte Laufzeit - ein Forum, das 2014 brummte und seither
+still ist, sieht nicht mehr lebendig aus.</li>
+<li><b>Die Regeln an ihrer bekannten Adresse</b>, <i>/guidelines</i> und <i>/tos</i>, statt
+irgendeines Links auf der Startseite, in dem zufällig „Regeln" vorkommt.</li>
+<li><b>Die Kategorienliste</b> - und die ändert eine Antwort, statt sie nur zu
+schärfen.</li>
+</ul>
+<p>Viele Foren verbieten Eigenwerbung überall und halten dann genau dafür eine Kategorie
+bereit: <i>Share &amp; showcase</i>, <i>Show and tell</i>, <i>Eigene Projekte</i>. Ohne die
+Kategorienliste gelesen, ist so ein Forum rot und fällt aus der Kampagne - und der Beitrag,
+zu dem du ausdrücklich eingeladen warst, wird nie geschrieben.</p>
+<p>Das Urteil wird deshalb <b>gelb</b> und nennt die Kategorie, mit Link. Gelb, nicht grün,
+weil die Auflage echt ist: dort posten und sonst nirgends in diesem Forum.</p>
+<p>Das ist die einzige Stelle der App, an der eine Bewertung durch eine Heuristik
+<i>großzügiger</i> wird, deshalb ist sie bewusst eng. Name <b>und</b> eigene Beschreibung
+der Kategorie müssen zum Zeigen einladen - „Projekte" ist mindestens so oft der Ort, an dem
+über Projekte geredet wird, wie der, an dem eigene vorgestellt werden, und das als Erlaubnis
+zu lesen ist der Weg, auf dem ein Forum eine Domain sperrt. Wie überall sonst wird der Satz
+mitgeliefert, auf dem die Bewertung beruht. Lies ihn, bevor du postest.</p>
 """,
     },
     {

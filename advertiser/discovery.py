@@ -4,7 +4,8 @@ Discovery: finds suitable communities and scores them.
 Reddit goes through the official API (read-only, see reddit_api.py). Lemmy needs no
 approval at all and federates, so a few instances reach most of the network.
 Forums are checked for reachability and yield further candidates through link
-harvesting.
+harvesting; where a forum runs Discourse it is asked about itself instead of
+guessed at (see discourse_api.py).
 """
 
 from __future__ import annotations
@@ -17,7 +18,7 @@ import time
 import urllib.parse
 from typing import Callable
 
-from . import core, lemmy_api, reddit_api, rules, seeds
+from . import core, discourse_api, lemmy_api, reddit_api, rules, seeds
 
 Progress = Callable[[str, int, int], None]
 
@@ -234,6 +235,53 @@ def scan_forums(config: dict, keywords: list[str], seed_list: list[dict] | None 
     return list(found.values())
 
 
+def _enrich_discourse(entry: dict, profile: dict, texts: dict[str, str], ua: str) -> None:
+    """Replaces the three guesses of the generic forum probe with what the forum
+    says about itself: its size, its real activity, and its rules."""
+    entry["forum_software"] = "discourse"
+    entry["title"] = profile["title"] or entry["title"]
+    if profile["description"]:
+        entry["description"] = profile["description"]
+    entry["subscribers"] = profile["users"]
+    entry["posts_per_day"] = profile["posts_per_day"]
+
+    rule_pages = discourse_api.rule_texts(profile["base"], ua)
+    texts.update(rule_pages)
+    entry["rules"] = [{"name": label, "text": text[:1200]} for label, text in rule_pages.items()]
+
+    entry["categories"] = discourse_api.categories(profile["base"], ua)
+    showcase = discourse_api.showcase_category(entry["categories"])
+    entry["showcase_category"] = showcase
+    if showcase:
+        # Into the rule analysis as well: a category that invites you to share your
+        # work is part of what this forum permits, not decoration beside it.
+        texts[f"Kategorie: {showcase['name']}"] = showcase["description"]
+
+
+def _apply_showcase(entry: dict) -> None:
+    """A forum that forbids self-promotion everywhere and keeps one category for
+    exactly that is not closed - it is a forum with one condition.
+
+    Without this it reads as red and drops out of every campaign, which is both
+    wrong and the more expensive of the two errors here: the honest, invited post
+    is the one that never gets written. It stays amber rather than green, because
+    the condition is real - post in that category and nowhere else - and the
+    quote the category rests on travels with the verdict so the user can check it.
+    """
+    showcase = entry.get("showcase_category")
+    analysis = entry["analysis"]
+    if not showcase or analysis["verdict"] != rules.FORBIDDEN:
+        return
+    analysis["verdict"] = rules.CONDITIONAL
+    if "rule.showcase_category" not in analysis["labels"]:
+        analysis["labels"].insert(0, "rule.showcase_category")
+    analysis["evidence"].insert(0, {
+        "source": showcase["name"],
+        "label": "rule.showcase_category",
+        "quote": showcase["quote"],
+    })
+
+
 def _probe_forum(url: str, name: str, note: str, ua: str, keywords: list[str]) -> dict:
     host = urllib.parse.urlparse(url).netloc.lower().removeprefix("www.")
     entry = {
@@ -279,21 +327,31 @@ def _probe_forum(url: str, name: str, note: str, ua: str, keywords: list[str]) -
     lowered = text.lower()
     entry["fit_raw"] = sum(min(lowered.count(k.lower()), 4) for k in keywords)
 
-    # Read the rules or terms as well, if they are linked.
     texts = {"Startseite": text[:20000]}
-    for link in _LINK.findall(body)[:400]:
-        low = link.lower()
-        if any(marker in low for marker in ("/rules", "/terms", "faq", "guidelines", "regeln")):
-            try:
-                sub_status, sub_raw = core.fetch(link, user_agent=ua, retries=1, timeout=15)
-                if sub_status == 200:
-                    texts["Regelseite"] = _text_of(sub_raw)[:20000]
-                    entry["rules"] = [{"name": "Regelseite", "text": link}]
-            except core.HttpError:
-                pass
-            break
+
+    # Discourse answers questions about itself, so nothing here has to be guessed.
+    # Everything below the branch is the fallback for forums that do not.
+    profile = discourse_api.about(url, ua)
+    if profile:
+        _enrich_discourse(entry, profile, texts, ua)
+    else:
+        # Read the rules or terms as well, if they are linked.
+        for link in _LINK.findall(body)[:400]:
+            low = link.lower()
+            if any(marker in low for marker in ("/rules", "/terms", "faq", "guidelines", "regeln")):
+                try:
+                    sub_status, sub_raw = core.fetch(link, user_agent=ua, retries=1, timeout=15)
+                    if sub_status == 200:
+                        texts["Regelseite"] = _text_of(sub_raw)[:20000]
+                        entry["rules"] = [{"name": "Regelseite", "text": link}]
+                except core.HttpError:
+                    pass
+                break
 
     entry["analysis"] = rules.analyse(texts)
+
+    if profile:
+        _apply_showcase(entry)
 
     # Harvest links to other forums.
     for link in _LINK.findall(body)[:400]:

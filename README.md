@@ -74,7 +74,9 @@ read the interface in English.
   SEO fields, announcement for owned channels. Plus negative keywords and the destination
   URL with UTM tagging
 * **Community discovery** — Lemmy through its open API, forums and wikis including link
-  harvesting, subreddits through the Reddit API
+  harvesting, subreddits through the Reddit API. A forum running **Discourse** is asked
+  about itself instead of guessed at: real member count, real activity, the rules at their
+  known address, and the category where sharing your own work is invited
 * **Rule analysis** with a traffic light and original quotes, for rules fetched
   automatically **and** for rules you paste in yourself
 * **Drafts** in five angles, English and German, filled from profile and analysis — from
@@ -82,12 +84,12 @@ read the interface in English.
 * **Batch preparation** of whole campaigns with scheduling and a posting mode
 * **Fully automatic publishing** to your own Discord and Mastodon channels
 * **Safety catch** against exceeding the daily limit and against repeats
-* Full manual inside the interface, 19 chapters, in both languages
+* Full manual inside the interface, 20 chapters, in both languages
 
 Stated honestly, what is missing:
 
-* **Further channels** are not connected yet — Hacker News and Lobsters, Discourse
-  instances, Stack Exchange, AlternativeTo, Product Hunt. Lemmy is done; see
+* **Further channels** are not connected yet — Hacker News and Lobsters, Stack Exchange,
+  AlternativeTo, Product Hunt. Lemmy and Discourse are done; see
   [the roadmap](docs/ROADMAP.md), stage 5, for the rest.
 * There is **no feedback loop**. The UTM tagging is in place, but nothing reports back
   which channel actually carried, so channels are still scored by keyword density rather
@@ -117,7 +119,7 @@ On first start the app creates a `config.json`. `config.example.json` shows what
 it. The real `config.json` and the `data/` folder are excluded by `.gitignore` — that is
 where credentials live.
 
-Tests run without any extra tooling (118 of them, under a second):
+Tests run without any extra tooling (141 of them, under a second):
 
 ```bash
 python -m unittest discover -s tests
@@ -211,6 +213,26 @@ rather than shipping a half-German post.
 
 ---
 
+## Discourse forums
+
+A forum running Discourse answers machine-readable questions about itself, so three
+guesses become facts: its real member count, its activity over the last seven days
+(rather than a lifetime average that flatters a forum busy in 2014), and its rules at
+`/guidelines` and `/tos` instead of whichever front-page link happens to contain the word
+"rules". Nothing has to be configured — a Discourse forum in the seed list is recognised
+during the scan.
+
+One thing it changes rather than sharpens. Many forums forbid self-promotion everywhere
+and then keep one category for exactly that. Read without the category list such a forum
+is red and drops out of every campaign, and the honest, invited post is the one that never
+gets written. With it, the verdict becomes amber and names the category.
+
+That is the only place in this app where a heuristic makes a verdict *more* permissive, so
+it is fenced in: the category's **name and its own description** must both invite sharing —
+"Projects" is where people discuss projects at least as often as where they announce their
+own — amber is the ceiling and never green, and the sentence the verdict rests on is shown
+with it.
+
 ## Lemmy
 
 The one channel that needs nobody's approval. The API is open — no registration, no key,
@@ -298,6 +320,7 @@ advertiser/rules.py        rule analysis and traffic light
 advertiser/drafts.py       drafts and angles
 advertiser/reddit_api.py   Reddit access, read-only
 advertiser/lemmy_api.py    Lemmy access, read-only - open, no approval needed
+advertiser/discourse_api.py Discourse forums, read-only - figures, rules, categories
 advertiser/publish.py      owned channels, posting assistant, safety catch
 advertiser/server.py       local server
 advertiser/ui.html         interface
