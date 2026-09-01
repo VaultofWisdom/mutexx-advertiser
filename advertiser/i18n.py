@@ -261,6 +261,7 @@ EN: dict[str, str] = {
     "rule.text_only": "Text posts only",
     "rule.karma": "Minimum karma or account age",
     "rule.no_monetisation": "No surveys or monetisation",
+    "rule.mods_only": "Only moderators may post here",
     "rule.explicitly_allowed": "Self-promotion explicitly allowed",
 
     "requirement.ratio": "Write at least 5-10 genuine comments in this community first.",
@@ -493,6 +494,11 @@ EN: dict[str, str] = {
     "seeds.subreddits_hint": "one per line, without r/",
     "seeds.forums": "Forums and communities",
     "seeds.forums_hint": "one per line: URL | name | note",
+    "seeds.lemmy": "Lemmy instances",
+    "seeds.lemmy_hint": "one per line, e.g. lemmy.world - leave empty for the default set",
+    "seeds.lemmy_note": "Instances, not communities. Lemmy federates: a search on a few large "
+                        "instances reaches most of the network, and the communities are found "
+                        "through them.",
     "seeds.save": "Save seed lists",
     "seeds.suggest": "Suggest some (AI)",
     "seeds.needs_key": "That needs an Anthropic key in Settings.",
@@ -512,6 +518,9 @@ EN: dict[str, str] = {
     "scan.busy": "Something is already running.",
     "scan.no_keywords": "No keywords available. Add some to the product profile or run the "
                         "analysis first - a scan without keywords is a walk through nothing.",
+    "platform.lemmy": "Lemmy",
+    "scan.lemmy_none": "Lemmy searched, nothing above the size floor found. That is a result "
+                       "too - the network is small, and not every subject has a community there yet.",
     "scan.no_forum_seeds": "No forum seed list for this product. Add some under Seed lists or ask "
                            "for suggestions.",
     "scan.nothing_yet": "Nothing has run yet.",
@@ -575,6 +584,11 @@ EN: dict[str, str] = {
                             "<i>underneath</i> the app name. Free, read-only.",
     "settings.client_id": "Client ID",
     "settings.client_secret": "Client secret",
+    "settings.lemmy": "Lemmy",
+    "settings.lemmy_note": "No key, no approval, no account - Lemmy reads openly. The test only says whether an instance answers and which API version it speaks.",
+    "settings.lemmy_instance": "Instance to test",
+    "settings.lemmy_ok": "{title} answers ({api}, {users} accounts).",
+    "settings.lemmy_fail": "{instance} does not answer.",
     "settings.bot_hint": "<b>Bot account</b> - only fill this in if the connection test above "
                          "fails with 401. Reddit now usually wants a <i>separate</i> account for "
                          "script apps, registered as the developer under prefs/apps. It stays "
@@ -624,6 +638,7 @@ EN: dict[str, str] = {
     "error.unknown_asset": "Unknown asset.",
     "error.subreddit_missing": "Subreddit name missing.",
     "error.url_missing": "URL missing.",
+    "error.lemmy_handle": "A Lemmy community needs the form community@instance, e.g. selfhosted@lemmy.world - the same name exists on dozens of instances.",
     "error.no_api_key": "No Anthropic API key on file.",
     "error.api_status": "The Anthropic API answered with {status}: {detail}",
     "error.no_json": "The API response contained no usable JSON.",
@@ -774,6 +789,7 @@ DE: dict[str, str] = {
     "rule.text_only": "Nur Text-Beiträge erlaubt",
     "rule.karma": "Mindest-Karma oder Kontoalter",
     "rule.no_monetisation": "Keine Umfragen oder Monetarisierung",
+    "rule.mods_only": "Hier dürfen nur Moderatoren posten",
     "rule.explicitly_allowed": "Eigenwerbung ausdrücklich erlaubt",
 
     "requirement.ratio": "Vorher mindestens 5-10 echte Kommentare in dieser Community schreiben.",
@@ -1014,6 +1030,11 @@ DE: dict[str, str] = {
     "seeds.subreddits_hint": "einer pro Zeile, ohne r/",
     "seeds.forums": "Foren und Communities",
     "seeds.forums_hint": "eine pro Zeile: URL | Name | Notiz",
+    "seeds.lemmy": "Lemmy-Instanzen",
+    "seeds.lemmy_hint": "eine pro Zeile, z. B. lemmy.world - leer lassen für den Standardsatz",
+    "seeds.lemmy_note": "Instanzen, keine Communities. Lemmy föderiert: Eine Suche auf wenigen "
+                        "großen Instanzen erreicht den größten Teil des Netzes, und die "
+                        "Communities werden darüber gefunden.",
     "seeds.save": "Startlisten speichern",
     "seeds.suggest": "Vorschlagen lassen (KI)",
     "seeds.needs_key": "Dafür braucht es einen Anthropic-Schlüssel in den Einstellungen.",
@@ -1035,6 +1056,10 @@ DE: dict[str, str] = {
     "scan.no_keywords": "Keine Stichwörter vorhanden. Trage im Produktprofil welche ein oder lass "
                         "zuerst die Analyse laufen - ein Scan ohne Stichwörter wäre ein Rundgang "
                         "durchs Nichts.",
+    "platform.lemmy": "Lemmy",
+    "scan.lemmy_none": "Lemmy durchsucht, nichts oberhalb der Größenschwelle gefunden. Auch das "
+                       "ist ein Ergebnis - das Netz ist klein, und nicht zu jedem Thema gibt es "
+                       "dort schon eine Community.",
     "scan.no_forum_seeds": "Keine Foren-Startliste für dieses Produkt. Unter Startlisten welche "
                            "eintragen oder vorschlagen lassen.",
     "scan.nothing_yet": "Noch nichts gelaufen.",
@@ -1100,6 +1125,11 @@ DE: dict[str, str] = {
                             "<i>unter</i> dem App-Namen. Kostenlos, nur Lesezugriff.",
     "settings.client_id": "Client-ID",
     "settings.client_secret": "Client-Secret",
+    "settings.lemmy": "Lemmy",
+    "settings.lemmy_note": "Kein Schlüssel, keine Freigabe, kein Konto - Lemmy liest sich offen. Der Test sagt nur, ob eine Instanz antwortet und welche API-Version sie spricht.",
+    "settings.lemmy_instance": "Instanz zum Testen",
+    "settings.lemmy_ok": "{title} antwortet ({api}, {users} Konten).",
+    "settings.lemmy_fail": "{instance} antwortet nicht.",
     "settings.bot_hint": "<b>Bot-Konto</b> - nur ausfüllen, wenn der Verbindungstest oben mit 401 "
                          "fehlschlägt. Reddit verlangt für Script-Apps inzwischen meist ein "
                          "<i>eigenes</i> Konto, das bei der App unter prefs/apps als Developer "
@@ -1152,6 +1182,7 @@ DE: dict[str, str] = {
     "error.unknown_asset": "Unbekanntes Werbemittel.",
     "error.subreddit_missing": "Subreddit-Name fehlt.",
     "error.url_missing": "URL fehlt.",
+    "error.lemmy_handle": "Eine Lemmy-Community braucht die Form community@instanz, z. B. selfhosted@lemmy.world - denselben Namen gibt es auf Dutzenden Instanzen.",
     "error.no_api_key": "Kein Anthropic-API-Schlüssel hinterlegt.",
     "error.api_status": "Die Anthropic-API antwortete mit {status}: {detail}",
     "error.no_json": "Die Antwort der API enthielt kein verwertbares JSON.",

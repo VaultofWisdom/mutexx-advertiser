@@ -62,6 +62,10 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "max_communities": 140,
         "deep_scan_top_n": 70,
         "min_subscribers": 400,
+        # Lemmy is a far smaller network. The same floor would filter out
+        # practically everything there - including the specialist communities
+        # that are the whole point of going.
+        "lemmy_min_subscribers": 40,
     },
     # Channels the app may post to FULLY AUTOMATICALLY.
     # Only channels you own or where it is explicitly allowed - see the README.

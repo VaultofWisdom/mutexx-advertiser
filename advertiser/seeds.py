@@ -23,13 +23,14 @@ import re
 import urllib.parse
 from typing import Any
 
-from . import core, i18n
+from . import core, i18n, lemmy_api
 
 # ---------------------------------------------------------------------------
 # Per-product seed lists
 # ---------------------------------------------------------------------------
 
-EMPTY_SEEDS: dict[str, Any] = {"subreddits": [], "forums": [], "source": "empty"}
+EMPTY_SEEDS: dict[str, Any] = {"subreddits": [], "forums": [], "lemmy_instances": [],
+                               "source": "empty"}
 
 
 def load_seeds(slug: str) -> dict:
@@ -41,6 +42,12 @@ def load_seeds(slug: str) -> dict:
                        for name in stored.get("subreddits", []) if str(name).strip()],
         "forums": [entry for entry in stored.get("forums", [])
                    if isinstance(entry, dict) and entry.get("url")],
+        # Instances, not communities: Lemmy federates, so the entry point is the
+        # instance and the communities are found through it.
+        "lemmy_instances": [host for host in
+                            (lemmy_api.normalise_instance(value)
+                             for value in stored.get("lemmy_instances", []))
+                            if host],
         "source": stored.get("source", "manual"),
     }
 
@@ -49,8 +56,13 @@ def save_seeds(slug: str, data: dict) -> dict:
     cleaned = {
         "subreddits": [],
         "forums": [],
+        "lemmy_instances": [],
         "source": data.get("source", "manual"),
     }
+    for value in data.get("lemmy_instances", []) or []:
+        host = lemmy_api.normalise_instance(str(value))
+        if host and host not in cleaned["lemmy_instances"]:
+            cleaned["lemmy_instances"].append(host)
     for name in data.get("subreddits", []) or []:
         handle = str(name).strip().lstrip("/").removeprefix("r/")
         if handle and handle not in cleaned["subreddits"]:

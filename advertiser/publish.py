@@ -101,6 +101,14 @@ def reddit_submit_url(subreddit: str, draft: dict) -> str:
 # Safety catch: stops a campaign from turning back into spam
 # ---------------------------------------------------------------------------
 
+# Platforms where a human submits the post into someone else's community. The
+# daily limit covers all of them together, not each one separately: the damage
+# the limit exists to prevent - the same link appearing everywhere within a day -
+# does not care which network it happened on. The config key still says "reddit"
+# because renaming it would silently reset the number an existing user chose.
+MANUAL_PLATFORMS = ("reddit", "lemmy")
+
+
 def check_guard(entry: dict, config: dict, history: list[dict]) -> dict:
     """Checks the daily limit and the repeat lock per community."""
     safety = config["safety"]
@@ -108,8 +116,8 @@ def check_guard(entry: dict, config: dict, history: list[dict]) -> dict:
     reasons: list[dict] = []
 
     today = [h for h in history
-             if h.get("platform") == "reddit" and now - h.get("ts", 0) < 86400]
-    if entry.get("platform") == "reddit" and len(today) >= safety["max_reddit_posts_per_day"]:
+             if h.get("platform") in MANUAL_PLATFORMS and now - h.get("ts", 0) < 86400]
+    if entry.get("platform") in MANUAL_PLATFORMS and len(today) >= safety["max_reddit_posts_per_day"]:
         reasons.append(i18n.message("guard.daily_limit", count=len(today),
                                     limit=safety["max_reddit_posts_per_day"]))
 

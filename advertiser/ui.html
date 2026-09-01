@@ -238,8 +238,9 @@
   <section id="tab-communities" hidden>
     <div class="row">
       <input id="filterText" style="min-width:250px" data-i18n-ph="communities.search">
-      <select id="filterPlatform"><option value="">reddit / forum</option>
-        <option value="reddit">reddit</option><option value="forum">forum</option></select>
+      <select id="filterPlatform"><option value="">reddit / lemmy / forum</option>
+        <option value="reddit">reddit</option><option value="lemmy">lemmy</option>
+        <option value="forum">forum</option></select>
       <select id="filterVerdict"><option value=""></option>
         <option value="gruen"></option><option value="gelb"></option>
         <option value="rot"></option><option value="grau"></option></select>
@@ -251,6 +252,7 @@
       <div class="kv">
         <div data-i18n="communities.platform"></div>
         <div><select id="addPlatform"><option value="reddit">reddit</option>
+          <option value="lemmy">lemmy</option>
           <option value="forum">forum</option></select></div>
         <div data-i18n="communities.handle"></div><div><input id="addHandle" style="width:100%" placeholder="techsupport"></div>
         <div>URL</div><div><input id="addUrl" style="width:100%" placeholder="https://..."></div>
@@ -292,6 +294,12 @@
           <div class="muted" data-i18n="seeds.forums_hint"></div>
           <textarea id="seedForums" style="min-height:210px"></textarea>
         </div>
+      </div>
+      <div style="margin-top:14px">
+        <b data-i18n="seeds.lemmy"></b>
+        <div class="muted" data-i18n="seeds.lemmy_hint"></div>
+        <textarea id="seedLemmy" style="min-height:110px"></textarea>
+        <p class="muted" style="margin-top:8px" data-i18n="seeds.lemmy_note"></p>
       </div>
       <div class="row" style="margin-top:14px">
         <button class="btn" id="seedSave" data-i18n="seeds.save"></button>
@@ -392,6 +400,18 @@
       <div class="row" style="margin-top:12px">
         <button class="btn ghost" id="testReddit" data-i18n="settings.test_connection"></button>
         <span class="muted" id="redditMsg"></span>
+      </div>
+    </div>
+    <div class="panel">
+      <h3 data-i18n="settings.lemmy"></h3>
+      <p class="muted" data-i18n="settings.lemmy_note"></p>
+      <div class="kv" style="margin-top:12px">
+        <div data-i18n="settings.lemmy_instance"></div>
+        <div><input id="cfgLemmyInstance" style="width:100%" placeholder="lemmy.world"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost" id="testLemmy" data-i18n="settings.test_connection"></button>
+        <span class="muted" id="lemmyMsg"></span>
       </div>
     </div>
     <div class="panel">
@@ -579,7 +599,7 @@ function renderLanguage(){
 
 /* ---------- Job progress ---------- */
 $('scanBtn').onclick = async () => {
-  const res = await api('/api/scan/start', {platforms:['reddit','forum']});
+  const res = await api('/api/scan/start', {platforms:['reddit','lemmy','forum']});
   if (res.error) { $('scanMsg').textContent = res.error; return; }
   $('scanBarWrap').style.display = '';
   pollJob();
@@ -927,6 +947,7 @@ function renderSeeds(){
   $('seedSubs').value = (sd.subreddits||[]).join('\n');
   $('seedForums').value = (sd.forums||[]).map(f =>
     [f.url, f.name||'', f.note||''].join(' | ').replace(/( \| )+$/,'')).join('\n');
+  $('seedLemmy').value = (sd.lemmy_instances||[]).join('\n');
   $('seedKeywords').innerHTML = (STATE.keywords||[]).length
     ? STATE.keywords.map(k => `<span class="tag">${esc(k)}</span>`).join('')
     : `<p class="muted">${esc(t('seeds.keywords_empty'))}</p>`;
@@ -939,6 +960,7 @@ function parseSeeds(){
       const bits = line.split('|').map(x=>x.trim());
       return {url: bits[0], name: bits[1]||'', note: bits[2]||''};
     }),
+    lemmy_instances: $('seedLemmy').value.split('\n').map(x=>x.trim()).filter(Boolean),
     source: 'manual',
   };
 }
@@ -1300,6 +1322,16 @@ $('testReddit').onclick = async () => {
   const res = await api('/api/reddit/check', {});
   $('redditMsg').textContent = res.detail;
   $('redditMsg').style.color = res.ok ? 'var(--green)' : '#ff8b92';
+};
+
+$('testLemmy').onclick = async () => {
+  $('lemmyMsg').textContent = t('status.running');
+  const instance = $('cfgLemmyInstance').value.trim() || 'lemmy.world';
+  const res = await api('/api/lemmy/check', {instance});
+  $('lemmyMsg').textContent = res.ok
+    ? t('settings.lemmy_ok', {title: res.title, api: res.api, users: res.users})
+    : t('settings.lemmy_fail', {instance: res.instance || instance});
+  $('lemmyMsg').style.color = res.ok ? 'var(--green)' : '#ff8b92';
 };
 
 $('saveCfg').onclick = async () => {

@@ -21,8 +21,8 @@ import webbrowser
 from typing import Any
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from . import (analysis, assets, core, discovery, drafts, i18n, manual, products,
-               publish, reddit_api, rules, seeds, strategy)
+from . import (analysis, assets, core, discovery, drafts, i18n, lemmy_api, manual,
+               products, publish, reddit_api, rules, seeds, strategy)
 
 UI_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui.html")
 
@@ -100,6 +100,12 @@ def _run_scan(platforms: list[str], slug: str) -> None:
                 # Scan the forums anyway - the rest of the app stays usable.
                 warning = str(error)
                 platforms = [p for p in platforms if p != "reddit"]
+        if "lemmy" in platforms:
+            # No key, no approval, no account - so no error path that could take
+            # the rest of the scan down with it. An instance that is unreachable
+            # is simply skipped inside scan_lemmy.
+            entries += discovery.scan_lemmy(config, keywords,
+                                            seed_data["lemmy_instances"], _progress)
         if "forum" in platforms:
             if seed_data["forums"]:
                 entries += discovery.scan_forums(config, keywords, seed_data["forums"], _progress)
@@ -154,6 +160,9 @@ def _run_seed_suggestion(slug: str) -> None:
         merged = {
             "subreddits": existing["subreddits"] + suggested["subreddits"],
             "forums": existing["forums"] + suggested["forums"],
+            # Carried through unchanged: save_seeds writes the whole list, so
+            # anything left out here would be silently deleted.
+            "lemmy_instances": existing["lemmy_instances"],
             "source": "vorschlag",
         }
         saved = seeds.save_seeds(slug, merged)
@@ -373,12 +382,18 @@ class Handler(BaseHTTPRequestHandler):
         if not _start_job("scan"):
             self._send(409, {"error_key": "scan.busy"})
             return
-        platforms = body.get("platforms") or ["reddit", "forum"]
+        platforms = body.get("platforms") or ["reddit", "lemmy", "forum"]
         threading.Thread(target=_run_scan, args=(platforms, slug), daemon=True).start()
         self._send(200, {"ok": True})
 
     def _post_reddit_check(self, _body: dict) -> None:
         self._send(200, reddit_api.check(core.load_config()))
+
+    def _post_lemmy_check(self, body: dict) -> None:
+        config = core.load_config()
+        core.set_delay(config["request_delay_seconds"])
+        instance = (body.get("instance") or "").strip()
+        self._send(200, lemmy_api.check(instance, config["user_agent"]))
 
     # -- Drafts ------------------------------------------------------------
     def _post_draft(self, body: dict) -> None:
@@ -421,9 +436,11 @@ class Handler(BaseHTTPRequestHandler):
         picked.sort(key=lambda entry: entry.get("score", 0), reverse=True)
         picked = picked[:limit]
 
-        # Spread the dates: Reddit strictly by daily limit, forums more loosely.
-        per_day_reddit = max(1, config["safety"]["max_reddit_posts_per_day"])
-        counters = {"reddit": 0, "other": 0}
+        # Spread the dates: communities you post into by hand strictly by the
+        # daily limit, forums more loosely. Reddit and Lemmy share one counter -
+        # otherwise the queue would hand out two "today" slots for a limit of one.
+        per_day_manual = max(1, config["safety"]["max_reddit_posts_per_day"])
+        counters = {"manual": 0, "other": 0}
         queue: list[dict] = []
         for entry in picked:
             if use_api:
@@ -434,10 +451,15 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 draft = drafts.build(entry, product, result)
 
-            if entry.get("platform") == "reddit":
-                day = counters["reddit"] // per_day_reddit
-                counters["reddit"] += 1
-                draft["target_url"] = publish.reddit_submit_url(entry["handle"], draft)
+            if entry.get("platform") in publish.MANUAL_PLATFORMS:
+                day = counters["manual"] // per_day_manual
+                counters["manual"] += 1
+                # Reddit can take title and body in the URL. Lemmy's create-post
+                # route needs the community's numeric id, which we do not carry -
+                # so it gets its own page, and the assistant fills the form there.
+                draft["target_url"] = (publish.reddit_submit_url(entry["handle"], draft)
+                                       if entry.get("platform") == "reddit"
+                                       else entry.get("url", ""))
             else:
                 day = counters["other"] // 3
                 counters["other"] += 1
@@ -540,6 +562,23 @@ class Handler(BaseHTTPRequestHandler):
             new["name"] = f"r/{handle}"
             new["url"] = f"https://www.reddit.com/r/{handle}/"
             new["id"] = f"reddit:{handle}"
+        elif platform == "lemmy":
+            # 'community@instance', the way Lemmy itself writes it. Without the
+            # instance there is nothing to point at - the same name exists on
+            # dozens of them.
+            handle = (new.get("handle") or "").lstrip("!")
+            if "@" not in handle:
+                self._send(400, {"error_key": "error.lemmy_handle"})
+                return
+            name, _, home = handle.partition("@")
+            home = lemmy_api.normalise_instance(home)
+            if not name or not home:
+                self._send(400, {"error_key": "error.lemmy_handle"})
+                return
+            new["handle"] = f"{name}@{home}"
+            new["name"] = f"!{name}@{home}"
+            new["url"] = f"https://{home}/c/{name}"
+            new["id"] = f"lemmy:{name}@{home}"
         elif not new.get("url"):
             self._send(400, {"error_key": "error.url_missing"})
             return

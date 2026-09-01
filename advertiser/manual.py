@@ -269,6 +269,36 @@ and has no write access whatsoever.</p>
 """,
     },
     {
+        "id": "lemmy",
+        "title": "Lemmy - the channel that needs nobody's approval",
+        "html": """
+<p>Lemmy is the answer to the gap Reddit left. The API is open: no registration, no key,
+no approval, no account. The scan reaches it out of the box.</p>
+<p>Lemmy federates. An instance knows not only its own communities but every one it has
+ever exchanged posts with - which is why a search on a few large instances reaches most
+of the network, and why the seed list under <i>Seed lists</i> holds <b>instances</b>
+rather than communities. Left empty it uses a default set, including two German-speaking
+instances. Adding your own only matters for a corner of the network the big ones do not
+federate with.</p>
+<p>Two differences from Reddit are worth knowing, because they change what the traffic
+light means:</p>
+<ul>
+<li><b>There is no structured rule list.</b> A community's rules are in its description,
+or nowhere. So a community that wrote nothing gets grey, not green - silence is not
+permission, and the instance's welcome text is not the community's answer. Read the
+rules on the page yourself.</li>
+<li><b>Some communities only moderators may post in.</b> That is red, not amber. No
+draft gets past it, however good the text is.</li>
+</ul>
+<p>Size is measured against Lemmy's own ceiling. A community with 8,000 subscribers is a
+large one here and a small one on Reddit; against a shared scale the ranking would always
+say "go to Reddit", whatever the rules there said.</p>
+<p>The daily limit in the safety catch covers Reddit and Lemmy together, not each
+separately. The damage it exists to prevent - the same link turning up everywhere within
+a day - does not care which network it happened on.</p>
+""",
+    },
+    {
         "id": "guard",
         "title": "The safety catch",
         "html": """
@@ -575,6 +605,37 @@ Werkzeug verhindern soll.</p>
 <p>Mit Freigabe: App vom Typ <i>script</i> unter reddit.com/prefs/apps anlegen, Client-ID
 und Secret in den Einstellungen eintragen, <i>Verbindung testen</i>. Die App liest
 ausschließlich und hat keinerlei Schreibzugriff.</p>
+""",
+    },
+    {
+        "id": "lemmy",
+        "title": "Lemmy - der Kanal, der niemandes Freigabe braucht",
+        "html": """
+<p>Lemmy ist die Antwort auf die Lücke, die Reddit hinterlassen hat. Die API ist offen:
+keine Registrierung, kein Schlüssel, keine Freigabe, kein Konto. Der Scan erreicht sie
+ohne jede Vorbereitung.</p>
+<p>Lemmy föderiert. Eine Instanz kennt nicht nur ihre eigenen Communities, sondern jede,
+mit der sie je Beiträge ausgetauscht hat - deshalb erreicht eine Suche auf wenigen großen
+Instanzen den größten Teil des Netzes, und deshalb stehen unter <i>Startlisten</i>
+<b>Instanzen</b> statt Communities. Bleibt das Feld leer, wird ein Standardsatz benutzt,
+zwei deutschsprachige Instanzen eingeschlossen. Eigene einzutragen lohnt nur für eine
+Ecke des Netzes, mit der die großen nicht föderieren.</p>
+<p>Zwei Unterschiede zu Reddit sind wichtig, weil sie die Bedeutung der Ampel
+verändern:</p>
+<ul>
+<li><b>Es gibt keine strukturierte Regelliste.</b> Die Regeln einer Community stehen in
+ihrer Beschreibung - oder nirgends. Eine Community, die nichts geschrieben hat, bekommt
+deshalb Grau statt Grün: Schweigen ist keine Erlaubnis, und der Begrüßungstext der
+Instanz ist nicht die Antwort der Community. Regeln auf der Seite selbst lesen.</li>
+<li><b>In manche Communities dürfen nur Moderatoren posten.</b> Das ist Rot, nicht Gelb.
+Da kommt kein Entwurf durch, so gut der Text auch ist.</li>
+</ul>
+<p>Die Größe wird an Lemmys eigener Obergrenze gemessen. Eine Community mit 8.000
+Abonnenten ist hier eine große und auf Reddit eine kleine; an einem gemeinsamen Maßstab
+würde die Rangfolge immer "geh zu Reddit" sagen, egal was dort in den Regeln steht.</p>
+<p>Das Tageslimit des Schutzschalters gilt für Reddit und Lemmy zusammen, nicht je
+Netzwerk. Der Schaden, den es verhindern soll - derselbe Link taucht binnen eines Tages
+überall auf - fragt nicht danach, wo er entstanden ist.</p>
 """,
     },
     {

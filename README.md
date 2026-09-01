@@ -73,8 +73,8 @@ read the interface in English.
   Google and Microsoft, Meta and Reddit ads, directory listings, store listing, press kit,
   SEO fields, announcement for owned channels. Plus negative keywords and the destination
   URL with UTM tagging
-* **Community discovery** — forums and wikis including link harvesting, subreddits through
-  the Reddit API
+* **Community discovery** — Lemmy through its open API, forums and wikis including link
+  harvesting, subreddits through the Reddit API
 * **Rule analysis** with a traffic light and original quotes, for rules fetched
   automatically **and** for rules you paste in yourself
 * **Drafts** in five angles, English and German, filled from profile and analysis — from
@@ -82,13 +82,13 @@ read the interface in English.
 * **Batch preparation** of whole campaigns with scheduling and a posting mode
 * **Fully automatic publishing** to your own Discord and Mastodon channels
 * **Safety catch** against exceeding the daily limit and against repeats
-* Full manual inside the interface, 18 chapters, in both languages
+* Full manual inside the interface, 19 chapters, in both languages
 
 Stated honestly, what is missing:
 
-* **Channels beyond Reddit and forums** are not connected yet — Lemmy, Hacker News,
-  Discourse instances, AlternativeTo, Product Hunt. See [the roadmap](docs/ROADMAP.md),
-  stage 5.
+* **Further channels** are not connected yet — Hacker News and Lobsters, Discourse
+  instances, Stack Exchange, AlternativeTo, Product Hunt. Lemmy is done; see
+  [the roadmap](docs/ROADMAP.md), stage 5, for the rest.
 * There is **no feedback loop**. The UTM tagging is in place, but nothing reports back
   which channel actually carried, so channels are still scored by keyword density rather
   than by results.
@@ -117,7 +117,7 @@ On first start the app creates a `config.json`. `config.example.json` shows what
 it. The real `config.json` and the `data/` folder are excluded by `.gitignore` — that is
 where credentials live.
 
-Tests run without any extra tooling (94 of them, under a second):
+Tests run without any extra tooling (118 of them, under a second):
 
 ```bash
 python -m unittest discover -s tests
@@ -211,6 +211,34 @@ rather than shipping a half-German post.
 
 ---
 
+## Lemmy
+
+The one channel that needs nobody's approval. The API is open — no registration, no key,
+no account — so the scan reaches it out of the box.
+
+Lemmy federates: an instance knows every community it has ever exchanged posts with. A
+search on a few large instances therefore reaches most of the network, which is why the
+seed list holds **instances** rather than communities. Left empty it uses a default set,
+two German-speaking instances included.
+
+Two differences from Reddit change what the traffic light means there:
+
+**There is no structured rule list.** A community's rules are in its description or
+nowhere. A community that wrote nothing therefore gets grey, not green — silence is not
+permission, and the instance's welcome text is not the community's answer. A ban still
+counts: grey is a downgrade from green, never an upgrade from red.
+
+**Some communities only moderators may post in.** That is red rather than amber. No
+draft gets past it, however good the text is.
+
+Size is measured against Lemmy's own ceiling. A community with 8,000 subscribers is a
+large one here and a small one on Reddit; against a shared scale the ranking would always
+say "go to Reddit", whatever the rules there said.
+
+The safety catch counts Reddit and Lemmy against one daily limit rather than one each.
+The damage it exists to prevent — the same link everywhere within a day — does not care
+which network it happened on.
+
 ## Reddit
 
 Reddit's *Responsible Builder Policy* has allowed no self-service access since late 2025:
@@ -269,6 +297,7 @@ advertiser/discovery.py    community discovery and scoring
 advertiser/rules.py        rule analysis and traffic light
 advertiser/drafts.py       drafts and angles
 advertiser/reddit_api.py   Reddit access, read-only
+advertiser/lemmy_api.py    Lemmy access, read-only - open, no approval needed
 advertiser/publish.py      owned channels, posting assistant, safety catch
 advertiser/server.py       local server
 advertiser/ui.html         interface

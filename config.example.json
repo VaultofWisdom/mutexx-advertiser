@@ -50,7 +50,8 @@
   "discovery": {
     "max_communities": 140,
     "deep_scan_top_n": 70,
-    "min_subscribers": 400
+    "min_subscribers": 400,
+    "lemmy_min_subscribers": 40
   },
   "auto_channels": {
     "discord_webhooks": [

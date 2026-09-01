@@ -1,12 +1,15 @@
 """
 Discovery: finds suitable communities and scores them.
 
-Reddit goes through the official API (read-only, see reddit_api.py). Forums are
-checked for reachability and yield further candidates through link harvesting.
+Reddit goes through the official API (read-only, see reddit_api.py). Lemmy needs no
+approval at all and federates, so a few instances reach most of the network.
+Forums are checked for reachability and yield further candidates through link
+harvesting.
 """
 
 from __future__ import annotations
 
+import datetime
 import html
 import math
 import re
@@ -14,7 +17,7 @@ import time
 import urllib.parse
 from typing import Callable
 
-from . import core, reddit_api, rules, seeds
+from . import core, lemmy_api, reddit_api, rules, seeds
 
 Progress = Callable[[str, int, int], None]
 
@@ -308,8 +311,207 @@ def _probe_forum(url: str, name: str, note: str, ua: str, keywords: list[str]) -
 
 
 # ---------------------------------------------------------------------------
+# Lemmy
+# ---------------------------------------------------------------------------
+
+# Below this many characters a community description is a headline, not a rule
+# set - see the note in scan_lemmy on why that turns a green light grey.
+MIN_RULE_TEXT = 120
+
+
+def lemmy_fit_score(data: dict, keywords: list[str]) -> float:
+    haystack = " ".join(str(data.get(field) or "") for field in
+                        ("name", "title", "description", "sidebar")).lower()
+    if not haystack.strip():
+        return 0.0
+    hits = 0.0
+    for keyword in keywords:
+        occurrences = haystack.count(keyword.lower())
+        if occurrences:
+            hits += min(occurrences, 4) * (1.6 if " " in keyword else 1.0)
+    return hits
+
+
+def _lemmy_entry(view: dict, keywords: list[str]) -> dict | None:
+    data = view.get("community") or {}
+    counts = view.get("counts") or {}
+    handle, url = lemmy_api.handle_of(view)
+    if not handle:
+        return None
+    if data.get("removed") or data.get("deleted"):
+        return None
+    description = str(data.get("description") or "")
+    merged = {
+        "name": data.get("name") or "",
+        "title": data.get("title") or "",
+        "description": description,
+        "sidebar": str(data.get("sidebar") or ""),
+    }
+    return {
+        "platform": "lemmy",
+        "id": f"lemmy:{handle}",
+        "name": f"!{handle}",
+        "handle": handle,
+        "url": url,
+        "title": merged["title"],
+        # On Lemmy the description IS the sidebar - the rules are in there and
+        # nowhere else. So it is kept in full for rules.analyse, not cut down to
+        # a teaser the way Reddit's public_description is.
+        "description": description[:600],
+        "sidebar": (description + "\n" + merged["sidebar"])[:6000],
+        "subscribers": int(counts.get("subscribers") or 0),
+        "over18": bool(data.get("nsfw")),
+        # A community only moderators may post in is a red light, not a hurdle -
+        # no draft in the world gets past it.
+        "mods_only": bool(data.get("posting_restricted_to_mods")),
+        "active_week": int(counts.get("users_active_week") or 0),
+        "fit_raw": lemmy_fit_score(merged, keywords),
+    }
+
+
+def _timestamp(value: object) -> float:
+    """Lemmy sends ISO 8601, in several shapes across versions."""
+    if isinstance(value, (int, float)):
+        return float(value)
+    if not isinstance(value, str) or not value.strip():
+        return 0.0
+    text = value.strip().replace("Z", "+00:00")
+    if "." in text:
+        # Fractional seconds vary in length between versions; datetime wants six.
+        head, _, tail = text.partition(".")
+        digits = "".join(ch for ch in tail if ch.isdigit())[:6]
+        rest = tail[len(digits):]
+        rest = rest if rest.startswith(("+", "-")) else ""
+        text = f"{head}.{digits.ljust(6, '0')}{rest}"
+    try:
+        parsed = datetime.datetime.fromisoformat(text)
+    except ValueError:
+        return 0.0
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=datetime.timezone.utc)
+    return parsed.timestamp()
+
+
+def _lemmy_activity(instance: str, handle: str, ua: str) -> dict:
+    """Posts per day across the most recent submissions - the same measure as on Reddit."""
+    items = lemmy_api.posts(instance, handle, ua, limit=50)
+    stamps = []
+    for item in items:
+        published = ((item.get("post") or {}).get("published")) or item.get("published")
+        parsed = _timestamp(published)
+        if parsed:
+            stamps.append(parsed)
+    if len(stamps) < 2:
+        return {"posts_per_day": 0.0, "sample": len(stamps)}
+    span_days = max((max(stamps) - min(stamps)) / 86400.0, 0.05)
+    return {"posts_per_day": round(len(stamps) / span_days, 1), "sample": len(stamps)}
+
+
+def scan_lemmy(config: dict, keywords: list[str], instances: list[str] | None = None,
+               progress: Progress = _noop) -> list[dict]:
+    """
+    Unlike Reddit this needs no approval and no key. Because Lemmy federates, a
+    search on a few large instances reaches most of the network - which is why
+    the seed list here holds instances, not communities.
+    """
+    settings = config["discovery"]
+    ua = config["user_agent"]
+    min_subscribers = int(settings.get("lemmy_min_subscribers", 40))
+
+    hosts: list[str] = []
+    for value in (instances or lemmy_api.DEFAULT_INSTANCES):
+        host = lemmy_api.normalise_instance(value)
+        if host and host not in hosts:
+            hosts.append(host)
+
+    # Which instance an entry was reached through - needed for the deep scan,
+    # because a community is only readable through an instance that federates
+    # with it.
+    found: dict[str, dict] = {}
+    via: dict[str, str] = {}
+    steps = max(len(hosts) * len(keywords), 1)
+    step = 0
+
+    for host in hosts:
+        for keyword in keywords:
+            step += 1
+            progress(f"Lemmy-Suche auf {host}: {keyword}", step, steps)
+            for view in lemmy_api.search_communities(host, keyword, ua):
+                entry = _lemmy_entry(view, keywords)
+                if not entry or entry["subscribers"] < min_subscribers:
+                    continue
+                known = found.get(entry["id"])
+                if known and entry["fit_raw"] <= known["fit_raw"]:
+                    continue
+                # The same community seen through a second instance: keep the
+                # richer record, since federated copies can lag behind.
+                found[entry["id"]] = entry
+                via[entry["id"]] = host
+
+    entries = sorted(found.values(), key=lambda e: e["fit_raw"], reverse=True)
+    entries = entries[: settings["max_communities"]]
+
+    # Instance rules are fetched once per instance, not once per community.
+    instance_rules: dict[str, dict[str, str]] = {}
+
+    deep = entries[: settings["deep_scan_top_n"]]
+    for index, entry in enumerate(deep):
+        progress(f"Regeln & Aktivitaet {entry['name']}", index, len(deep))
+        home = entry["handle"].split("@", 1)[1]
+        source = via.get(entry["id"], home)
+        if home not in instance_rules:
+            instance_rules[home] = lemmy_api.site_rules(home, ua)
+
+        texts = {"Community-Beschreibung": entry["sidebar"]}
+        texts.update(instance_rules[home])
+        entry["rules"] = [{"name": "Community", "text": entry["sidebar"][:1200]}]
+        entry["rules"] += [{"name": name, "text": text[:1200]}
+                           for name, text in instance_rules[home].items()]
+        entry["analysis"] = rules.analyse(texts)
+
+        # A Lemmy community has no structured rule list the way a subreddit does;
+        # whatever rules it has are in the description, or nowhere. So a community
+        # that wrote nothing has not told us it permits anything - and the
+        # instance's welcome text must not be read as its answer. Green here would
+        # be the one mistake this whole app exists to prevent, so it becomes grey:
+        # read the rules yourself. A ban is left standing, because an instance ban
+        # applies to the community whether the community mentions it or not.
+        if len(entry["sidebar"].strip()) < MIN_RULE_TEXT and \
+                entry["analysis"]["verdict"] != rules.FORBIDDEN:
+            entry["analysis"]["verdict"] = rules.UNKNOWN
+            entry["analysis"]["explicitly_allowed"] = False
+
+        # A community only moderators may post in is a wall, not a condition -
+        # and it outranks anything the description says.
+        if entry["mods_only"]:
+            verdict = entry["analysis"]
+            verdict["verdict"] = rules.FORBIDDEN
+            if "rule.mods_only" not in verdict["labels"]:
+                verdict["labels"].insert(0, "rule.mods_only")
+            verdict["explicitly_allowed"] = False
+
+        entry.update(_lemmy_activity(source, entry["handle"], ua))
+
+    for entry in entries[settings["deep_scan_top_n"]:]:
+        entry["rules"] = []
+        entry["analysis"] = {"verdict": rules.UNKNOWN, "labels": [], "evidence": [],
+                             "explicitly_allowed": False}
+        entry["posts_per_day"] = 0.0
+        entry["sample"] = 0
+
+    return entries
+
+
+# ---------------------------------------------------------------------------
 # Scoring and merging
 # ---------------------------------------------------------------------------
+
+# Size is measured against the platform's own ceiling, not a shared one. A
+# Lemmy community with 8,000 subscribers is a large one; a subreddit with 8,000
+# is small. Against one common scale every Lemmy entry would score as tiny and
+# the ranking would say "go to Reddit" no matter what the rules there said.
+_SIZE_SCALE = {"reddit": 7.0, "lemmy": 4.9, "forum": 7.0}
+
 
 def score_all(entries: list[dict]) -> list[dict]:
     max_fit = max((e.get("fit_raw", 0) for e in entries), default=1) or 1
@@ -317,7 +519,8 @@ def score_all(entries: list[dict]) -> list[dict]:
 
     for entry in entries:
         fit = entry.get("fit_raw", 0) / max_fit
-        size = math.log10(max(entry.get("subscribers", 0), 1) + 1) / 7.0
+        scale = _SIZE_SCALE.get(entry.get("platform", ""), 7.0)
+        size = math.log10(max(entry.get("subscribers", 0), 1) + 1) / scale
         activity = min(entry.get("posts_per_day", 0) / max_act, 1.0)
         score = fit * 0.58 + min(size, 1.0) * 0.24 + activity * 0.18
 

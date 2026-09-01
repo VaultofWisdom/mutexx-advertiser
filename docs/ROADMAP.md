@@ -79,16 +79,37 @@ The five angles stay; their text is filled from the profile instead of from demo
 system prompt of the API variant became product-neutral. Templates are available in English
 and German.
 
-### Stage 5 — Channels that work without Reddit approval — open
+### Stage 5 — Channels that work without Reddit approval — partial
 
 Reddit's Responsible Builder Policy stays closed. Replacements and additions, all with an
 open or readably accessible interface: Lemmy, Hacker News and Lobsters, Discourse instances
 (`/faq` is machine-readable), Stack Exchange, and for software additionally AlternativeTo,
 Product Hunt and download portals. A new channel only has to supply a discovery entry and
-rule texts for `rules.analyse` — the architecture already carries that.
+rule texts for `rules.analyse` — the architecture already carries that, and Lemmy
+confirmed it: the whole channel is one API module plus one `scan_*` function.
 
-**This is the largest remaining gap.** Without it, most users' scans find only what they
-enter as forums themselves.
+**Lemmy is done** (`lemmy_api.py`, `discovery.scan_lemmy`). It needs no approval, no key
+and no account. Because it federates, the seed list holds instances rather than
+communities, and a search on a few large ones reaches most of the network.
+
+Three things did not carry over from Reddit and are worth knowing before adding the next
+channel, because every one of them is a decision about the traffic light rather than about
+plumbing:
+
+* **No structured rule list.** Lemmy keeps a community's rules in its description or
+  nowhere. A community that wrote nothing therefore gets grey, not green — otherwise the
+  app would report a green light off an instance's welcome text, which is precisely the
+  false green that costs the domain.
+* **Communities only moderators may post in.** Red, not amber: no draft gets past it.
+* **Size does not compare across networks.** Against one shared scale every Lemmy entry
+  ranks as tiny and the list always says "go to Reddit". Each platform is now measured
+  against its own ceiling (`discovery._SIZE_SCALE`).
+
+The safety catch's daily limit was widened to cover Reddit and Lemmy together, not each
+separately — a second network that escaped the limit would have made it worthless.
+
+**What remains is still the largest gap.** Without the rest, a scan for a product whose
+audience is not on Reddit or Lemmy finds only the forums the user entered themselves.
 
 ### Stage 6 — Assets — **done**
 
@@ -117,13 +138,15 @@ real numbers instead of keyword density.
 
 ### Stage 8 — Hardening — partial
 
-94 tests cover the traffic light, the strategy promises, the draft templates, the character
-limits of the assets and the completeness of the translation catalogue. The three original
+118 tests cover the traffic light, the strategy promises, the draft templates, the character
+limits of the assets, the completeness of the translation catalogue, and the Lemmy channel
+(its verdicts, the deduplication across federated instances, the size scale and the daily
+limit) against a stubbed API rather than the live network. The three original
 defects are fixed: `one_liner` is editable, `/api/draft` no longer throws a 500 on an
 unknown angle, the old branding is gone.
 
-Open: no test for `discovery.py` and `server.py` — there is no coverage of the scan flow
-against broken HTML responses and timeouts.
+Open: `scan_reddit` and `scan_forums` are still untested, and `server.py` entirely so —
+there is no coverage of the scan flow against broken HTML responses and timeouts.
 
 ### Stage 9 — House style and two languages — **done**
 
