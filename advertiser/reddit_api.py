@@ -1,19 +1,18 @@
 """
-Offizieller Reddit-API-Zugang (nur lesend).
+Official Reddit API access, read-only.
 
-Reddit hat die alten oeffentlichen .json-Endpunkte 2023 dichtgemacht - sie
-antworten fuer Programme mit 403. Der vorgesehene Weg ist eine eigene, kostenlos
-registrierte App. Wir nutzen das "application-only"-Verfahren: die App weist sich
-mit ihren eigenen Zugangsdaten aus, ohne dass du dich mit deinem Konto anmeldest.
-Es wird ausschliesslich gelesen - dieses Modul kann nichts posten.
+Reddit closed the old public .json endpoints in 2023 - they answer programs with 403.
+The intended route is your own, freely registered app. This module uses the
+"application-only" flow: the app identifies itself with its own credentials, without
+you signing in with your account. It reads and nothing else - this module cannot post.
 
-Registrierung (einmalig, ca. 2 Minuten):
-  1. https://www.reddit.com/prefs/apps  ->  ganz unten "create another app..."
-  2. Typ: "script"
+Registration (once, about two minutes):
+  1. https://www.reddit.com/prefs/apps  ->  at the very bottom, "create another app..."
+  2. Type: "script"
   3. name: MutexxAdvertiser
      redirect uri: http://localhost:8777
-  4. "create app" -> die ID steht klein UNTER dem App-Namen, das "secret" daneben
-  5. Beides in der App unter Einstellungen -> Reddit-API eintragen
+  4. "create app" -> the ID is printed small UNDER the app name, the secret beside it
+  5. Enter both in the app under Settings -> Reddit API
 """
 
 from __future__ import annotations
@@ -36,10 +35,10 @@ class RedditAuthError(Exception):
 
 
 NO_CREDENTIALS = (
-    "Kein Reddit-API-Zugang hinterlegt. Reddit beantwortet Anfragen ohne "
-    "registrierte App seit 2023 mit 403. Lege unter https://www.reddit.com/prefs/apps "
-    "eine kostenlose App vom Typ 'script' an und trage Client-ID und Secret in den "
-    "Einstellungen ein. Dauert zwei Minuten und ist der von Reddit vorgesehene Weg."
+    "No Reddit API access on file. Since 2023 Reddit answers requests without a "
+    "registered app with 403. Create a free app of type 'script' at "
+    "https://www.reddit.com/prefs/apps and put the client ID and secret into Settings. "
+    "It takes two minutes and it is the route Reddit intends."
 )
 
 
@@ -132,7 +131,7 @@ def get_token(config: dict) -> str:
 
 
 def get(config: dict, path: str, params: dict | None = None) -> dict | None:
-    """Ein GET gegen die Reddit-API. Gibt None zurueck, wenn es die Quelle nicht gibt."""
+    """One GET against the Reddit API. Returns None when the source does not exist."""
     token = get_token(config)
     url = API + path
     if params:
@@ -163,7 +162,7 @@ def get(config: dict, path: str, params: dict | None = None) -> dict | None:
 
 
 def check(config: dict) -> dict:
-    """Verbindungstest fuer die Einstellungen-Seite."""
+    """Connection test for the Settings page."""
     try:
         get_token(config)
     except RedditAuthError as error:

@@ -1,40 +1,79 @@
 {
-  "_hinweis": "Diese Datei ist nur ein Beispiel. Die App legt beim ersten Start ihre eigene config.json an; dort eingetragene Zugangsdaten bleiben lokal und werden nie ins Repository aufgenommen.",
-
-  "site": {
-    "name": "Mein Produkt",
-    "url": "https://example.com",
-    "version": "1.0",
-    "one_liner": "Kurzbeschreibung deines Produkts in einem Satz.",
-    "reddit_username": ""
-  },
-
-  "user_agent": "MutexxAdvertiser/1.0 (Recherche-Tool; Kontakt: deine@adresse.tld)",
+  "_note": "This file is only an example. The app creates its own config.json on first start; credentials entered there stay local and are never committed. Products are created in the interface under the Product tab - the block below only shows what a saved profile looks like.",
+  "schema_version": 2,
+  "ui_language": "en",
+  "active_product": "my-product",
+  "products": [
+    {
+      "slug": "my-product",
+      "name": "My Product",
+      "url": "https://example.com",
+      "version": "1.0",
+      "one_liner": "What it does, in one sentence - no superlatives.",
+      "description": "What it does, who for, and what it deliberately does not do.",
+      "category": "software_desktop",
+      "price_model": "freemium",
+      "price_point": "19.90 EUR",
+      "audience": "Who exactly - 'everyone' is not an audience.",
+      "regions": [
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "languages": [
+        "en"
+      ],
+      "budget_monthly_eur": 0,
+      "tone": "sachlich",
+      "keywords": [
+        "keyword one",
+        "keyword two"
+      ],
+      "links": {
+        "repo": "",
+        "download": "",
+        "docs": "",
+        "press_kit": "",
+        "screenshots": []
+      },
+      "accounts": {
+        "reddit_username": "",
+        "mastodon": "",
+        "x": "",
+        "youtube": ""
+      },
+      "utm_source_base": "my-product"
+    }
+  ],
+  "user_agent": "MutexxAdvertiser/0.3 (research tool; contact: your@address.tld)",
   "request_delay_seconds": 1.3,
-
   "discovery": {
     "max_communities": 140,
     "deep_scan_top_n": 70,
-    "min_subscribers": 400,
-    "keywords": ["stichwort eins", "stichwort zwei", "stichwort drei"]
+    "min_subscribers": 400
   },
-
   "auto_channels": {
     "discord_webhooks": [
-      { "name": "Eigener Server / #ankuendigungen", "url": "https://discord.com/api/webhooks/..." }
+      {
+        "name": "Own server / #announcements",
+        "url": "https://discord.com/api/webhooks/..."
+      }
     ],
-    "mastodon": { "instance": "", "access_token": "" }
+    "mastodon": {
+      "instance": "",
+      "access_token": ""
+    }
   },
-
   "reddit": {
     "client_id": "",
     "client_secret": "",
     "bot_username": "",
     "bot_password": ""
   },
-
-  "anthropic": { "api_key": "", "model": "claude-opus-5" },
-
+  "anthropic": {
+    "api_key": "",
+    "model": "claude-opus-5"
+  },
   "safety": {
     "max_reddit_posts_per_day": 1,
     "min_days_between_same_subreddit": 45

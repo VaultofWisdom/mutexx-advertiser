@@ -1,9 +1,8 @@
 """
-Discovery: findet passende Communities und bewertet sie.
+Discovery: finds suitable communities and scores them.
 
-Reddit laeuft ueber die offizielle API (nur lesend, siehe reddit_api.py).
-Foren werden auf Erreichbarkeit geprueft und liefern per Link-Ernte weitere
-Kandidaten.
+Reddit goes through the official API (read-only, see reddit_api.py). Forums are
+checked for reachability and yield further candidates through link harvesting.
 """
 
 from __future__ import annotations
@@ -51,7 +50,7 @@ def _about(name: str, config: dict) -> dict | None:
     data = payload.get("data") or {}
     if not data.get("display_name"):
         return None
-    # Private/gesperrte Subs liefern zwar Daten, taugen aber nicht.
+    # Private or locked subs still return data but are no use.
     if data.get("subreddit_type") in ("private", "employees_only"):
         return None
     return data
@@ -65,7 +64,7 @@ def _rules(name: str, config: dict) -> list[dict]:
 
 
 def _activity(name: str, config: dict) -> dict:
-    """Posts pro Tag ueber die letzten 100 Beitraege - misst echtes Leben."""
+    """Posts per day across the last 100 submissions - a measure of real life."""
     payload = reddit_api.get(config, f"/r/{urllib.parse.quote(name)}/new", {"limit": 100})
     if not payload:
         return {"posts_per_day": 0.0, "sample": 0}
@@ -84,7 +83,7 @@ def _mentioned_subs(text: str) -> set[str]:
     return {m.group(1) for m in _SUB_MENTION.finditer(text or "")}
 
 
-def _fit_score(data: dict, keywords: list[str]) -> float:
+def fit_score(data: dict, keywords: list[str]) -> float:
     haystack = " ".join(str(data.get(field) or "") for field in
                         ("display_name", "title", "public_description", "description")).lower()
     if not haystack.strip():
@@ -93,7 +92,7 @@ def _fit_score(data: dict, keywords: list[str]) -> float:
     for keyword in keywords:
         occurrences = haystack.count(keyword.lower())
         if occurrences:
-            # Mehrfachnennungen zaehlen, aber gedaempft.
+            # Repeated mentions count, but with diminishing returns.
             hits += min(occurrences, 4) * (1.6 if " " in keyword else 1.0)
     return hits
 
@@ -111,21 +110,21 @@ def _entry_from(data: dict, keywords: list[str]) -> dict:
         "submit_text": (data.get("submit_text") or "")[:3000],
         "subscribers": int(data.get("subscribers") or 0),
         "over18": bool(data.get("over18")),
-        "fit_raw": _fit_score(data, keywords),
+        "fit_raw": fit_score(data, keywords),
         "low_value": data["display_name"] in seeds.LOW_VALUE_SUBS,
     }
 
 
-def scan_reddit(config: dict, progress: Progress = _noop) -> list[dict]:
+def scan_reddit(config: dict, keywords: list[str], seed_list: list[str] | None = None,
+                progress: Progress = _noop) -> list[dict]:
     settings = config["discovery"]
-    keywords: list[str] = settings["keywords"]
 
-    # Ohne registrierte App geht bei Reddit gar nichts - klare Ansage statt leerer Liste.
+    # Nothing works on Reddit without a registered app - say so, do not return empty.
     reddit_api.get_token(config)
 
-    candidates: dict[str, None] = {name: None for name in seeds.SUBREDDIT_SEEDS}
+    candidates: dict[str, None] = {name: None for name in (seed_list or [])}
 
-    # 1) Stichwortsuche
+    # 1) Keyword search
     for index, keyword in enumerate(keywords):
         progress(f"Reddit-Suche: {keyword}", index, len(keywords))
         for name in _search_subreddits(keyword, config):
@@ -134,7 +133,7 @@ def scan_reddit(config: dict, progress: Progress = _noop) -> list[dict]:
     names = list(candidates)
     progress(f"{len(names)} Subreddit-Kandidaten gefunden - lade Stammdaten", 0, len(names))
 
-    # 2) Stammdaten fuer alle Kandidaten
+    # 2) Basic data for every candidate
     shallow: list[dict] = []
     limit = min(len(names), settings["max_communities"] * 2)
     for index, name in enumerate(names[:limit]):
@@ -144,8 +143,8 @@ def scan_reddit(config: dict, progress: Progress = _noop) -> list[dict]:
             continue
         shallow.append(_entry_from(data, keywords))
 
-    # 3) Ein Hop ueber Sidebar-Erwaehnungen - so findet man die kleinen,
-    #    thematisch dichten Subs, die die Suche nicht ausspuckt.
+    # 3) One hop over sidebar mentions - that is how you find the small, tightly
+    #    focused subs the search never surfaces.
     extra: set[str] = set()
     for entry in shallow:
         if entry["fit_raw"] >= 4:
@@ -159,7 +158,7 @@ def scan_reddit(config: dict, progress: Progress = _noop) -> list[dict]:
             continue
         shallow.append(_entry_from(data, keywords))
 
-    # 4) Tiefenscan nur fuer die aussichtsreichsten - spart Requests und Zeit.
+    # 4) Deep scan for the most promising only - saves requests and time.
     shallow.sort(key=lambda e: e["fit_raw"], reverse=True)
     deep = shallow[: settings["deep_scan_top_n"]]
     for index, entry in enumerate(deep):
@@ -186,7 +185,7 @@ def scan_reddit(config: dict, progress: Progress = _noop) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Foren & Wikis
+# Forums and wikis
 # ---------------------------------------------------------------------------
 
 _TITLE = re.compile(r"<title[^>]*>(.*?)</title>", re.I | re.S)
@@ -200,23 +199,28 @@ def _text_of(raw: bytes) -> str:
     return html.unescape(_TAG.sub(" ", text))
 
 
-def scan_forums(config: dict, progress: Progress = _noop) -> list[dict]:
+def scan_forums(config: dict, keywords: list[str], seed_list: list[dict] | None = None,
+                progress: Progress = _noop) -> list[dict]:
     ua = config["user_agent"]
-    keywords = config["discovery"]["keywords"]
+    seed_list = seed_list or []
     found: dict[str, dict] = {}
     harvested: dict[str, str] = {}
 
-    for index, seed in enumerate(seeds.FORUM_SEEDS):
-        progress(f"Forum pruefen: {seed['name']}", index, len(seeds.FORUM_SEEDS))
-        entry = _probe_forum(seed["url"], seed["name"], seed.get("note", ""), ua, keywords)
+    for index, seed in enumerate(seed_list):
+        progress(f"Forum pruefen: {seed.get('name') or seed['url']}", index, len(seed_list))
+        entry = _probe_forum(seed["url"], seed.get("name") or seed["url"],
+                             seed.get("note", ""), ua, keywords)
+        # _harvest is a working field and has no business in the stored entry -
+        # not even when the page turned out to be unreachable.
+        harvest = entry.pop("_harvest", {})
         found[entry["id"]] = entry
         if entry["reachable"]:
-            for url, label in entry.pop("_harvest", {}).items():
+            for url, label in harvest.items():
                 harvested.setdefault(url, label)
 
-    # Ein Hop: von den erreichbaren Seiten weg auf andere Foren.
+    # One hop: from the reachable pages out to other forums.
     candidates = [(u, l) for u, l in harvested.items()
-                  if not any(u.startswith(f["url"]) for f in seeds.FORUM_SEEDS)][:25]
+                  if not any(u.startswith(f["url"]) for f in seed_list)][:25]
     for index, (url, label) in enumerate(candidates):
         progress(f"Neues Forum pruefen: {label[:40]}", index, len(candidates))
         entry = _probe_forum(url, label, "Automatisch gefunden ueber Linkanalyse", ua, keywords)
@@ -272,7 +276,7 @@ def _probe_forum(url: str, name: str, note: str, ua: str, keywords: list[str]) -
     lowered = text.lower()
     entry["fit_raw"] = sum(min(lowered.count(k.lower()), 4) for k in keywords)
 
-    # Regeln/Nutzungsbedingungen mitlesen, wenn sie verlinkt sind.
+    # Read the rules or terms as well, if they are linked.
     texts = {"Startseite": text[:20000]}
     for link in _LINK.findall(body)[:400]:
         low = link.lower()
@@ -288,7 +292,7 @@ def _probe_forum(url: str, name: str, note: str, ua: str, keywords: list[str]) -
 
     entry["analysis"] = rules.analyse(texts)
 
-    # Links auf andere Foren ernten.
+    # Harvest links to other forums.
     for link in _LINK.findall(body)[:400]:
         link_host = urllib.parse.urlparse(link).netloc.lower()
         if not link_host or link_host.endswith(host):
@@ -304,7 +308,7 @@ def _probe_forum(url: str, name: str, note: str, ua: str, keywords: list[str]) -
 
 
 # ---------------------------------------------------------------------------
-# Bewertung & Zusammenfuehrung
+# Scoring and merging
 # ---------------------------------------------------------------------------
 
 def score_all(entries: list[dict]) -> list[dict]:
@@ -319,7 +323,7 @@ def score_all(entries: list[dict]) -> list[dict]:
 
         verdict = entry.get("analysis", {}).get("verdict", rules.UNKNOWN)
         if verdict == rules.FORBIDDEN:
-            score *= 0.05           # bleibt sichtbar, aber ganz unten
+            score *= 0.05           # stays visible, but right at the bottom
         elif verdict == rules.CONDITIONAL:
             score *= 0.82
         elif verdict == rules.UNKNOWN:
@@ -329,7 +333,7 @@ def score_all(entries: list[dict]) -> list[dict]:
         if entry.get("explicitly_allowed") or entry.get("analysis", {}).get("explicitly_allowed"):
             score *= 1.25
 
-        # Nicht erreichbare Seiten ganz nach unten - sie sind (derzeit) wertlos.
+        # Unreachable pages go to the bottom - they are worthless for now.
         if entry.get("platform") == "forum" and not entry.get("reachable", True):
             score = 0.0
 

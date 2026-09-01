@@ -1,670 +1,1046 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mutexx Advertiser</title>
 <style>
+  /* ---------------------------------------------------------------------
+     Mutexx Production house style, measured off mutexxproduction.de:
+     near-black ground with a blue cast, white type, and an indigo-to-violet
+     gradient used for headings and primary actions. The traffic-light colours
+     come from the same palette, so nothing clashes.
+     --------------------------------------------------------------------- */
   :root{
-    --bg:#0b0809; --panel:#141011; --panel-2:#1c1617; --line:#2e2325;
-    --text:#e8dedd; --muted:#9a8b8c; --accent:#c1272d; --accent-soft:#7d1a1e;
-    --green:#3f7d54; --yellow:#a8842c; --red:#a33036; --grey:#5b5052;
+    --bg:#0a0a0f; --panel:#121218; --panel-2:#17171f; --line:#262630;
+    --text:#ffffff; --muted:#a1a1ab; --muted-2:#8b8b96;
+    --indigo:#4f39f6; --indigo-soft:#7c86ff; --violet:#9810fa; --violet-soft:#c27aff;
+    --grad:linear-gradient(90deg,#9810fa 0%,#4f39f6 100%);
+    --grad-head:linear-gradient(90deg,#7c86ff 0%,#c27aff 50%,#615fff 100%);
+    --green:#00bc7d; --yellow:#fe9a00; --red:#e7000b; --grey:#6b6b78;
+    --r-s:10px; --r-m:14px; --r-l:16px;
   }
   *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
   body{margin:0;background:var(--bg);color:var(--text);
-    font:15px/1.55 "Segoe UI",system-ui,sans-serif}
-  a{color:#e0a3a5}
-  header{padding:18px 24px;border-bottom:1px solid var(--line);
-    background:linear-gradient(180deg,#1a1213,#0b0809);display:flex;
-    align-items:center;gap:18px;flex-wrap:wrap}
-  h1{margin:0;font-size:20px;letter-spacing:.14em;text-transform:uppercase;
-    color:var(--accent);font-weight:600}
-  h1 small{display:block;font-size:11px;letter-spacing:.18em;color:var(--muted);
-    text-transform:none;margin-top:3px}
-  nav{display:flex;gap:4px;padding:0 24px;border-bottom:1px solid var(--line);
-    background:var(--panel);flex-wrap:wrap}
-  nav button{background:none;border:none;color:var(--muted);padding:12px 16px;
-    cursor:pointer;font-size:14px;border-bottom:2px solid transparent}
-  nav button.active{color:var(--text);border-bottom-color:var(--accent)}
-  main{padding:22px 24px 60px}
-  .row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-  button.btn{background:var(--accent-soft);color:#fff;border:1px solid var(--accent);
-    padding:9px 16px;border-radius:3px;cursor:pointer;font-size:14px}
-  button.btn:hover{background:var(--accent)}
-  button.btn.ghost{background:transparent;border-color:var(--line);color:var(--text)}
-  button.btn.ghost:hover{border-color:var(--accent)}
-  button.btn:disabled{opacity:.45;cursor:not-allowed}
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",
+      "Noto Sans",Arial,sans-serif}
+  a{color:var(--indigo-soft);text-decoration:none}
+  a:hover{color:var(--violet-soft)}
+
+  header{padding:16px 26px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#12121a,#0a0a0f);display:flex;
+    align-items:center;gap:18px;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+  .brand{display:flex;flex-direction:column;gap:2px}
+  h1{margin:0;font-size:19px;font-weight:700;letter-spacing:-.01em;
+    background:var(--grad-head);-webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;color:transparent}
+  .brand small{font-size:11.5px;color:var(--muted-2);letter-spacing:.01em}
+
+  nav{display:flex;gap:2px;padding:0 22px;border-bottom:1px solid var(--line);
+    background:var(--panel);flex-wrap:wrap;position:sticky;top:69px;z-index:19}
+  nav button{background:none;border:none;color:var(--muted);padding:13px 14px;
+    cursor:pointer;font:inherit;font-size:14px;border-bottom:2px solid transparent;
+    transition:color .15s}
+  nav button:hover{color:var(--text)}
+  nav button.active{color:var(--text);border-image:var(--grad) 1;border-bottom-width:2px;
+    border-bottom-style:solid}
+
+  main{padding:24px 26px 80px;max-width:1500px}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+
+  button.btn{background:var(--grad);color:#fff;border:none;padding:9px 18px;
+    border-radius:999px;cursor:pointer;font:inherit;font-size:14px;font-weight:500;
+    transition:opacity .15s}
+  button.btn:hover{opacity:.88}
+  button.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+  button.btn.ghost:hover{border-color:var(--indigo-soft);opacity:1}
+  button.btn:disabled{opacity:.4;cursor:not-allowed}
+
   input,select,textarea{background:var(--panel-2);color:var(--text);
-    border:1px solid var(--line);border-radius:3px;padding:8px 10px;font:inherit}
-  textarea{width:100%;min-height:230px;font-family:Consolas,monospace;font-size:13px}
-  .bar{height:6px;background:var(--panel-2);border-radius:3px;overflow:hidden;flex:1;min-width:220px}
-  .bar span{display:block;height:100%;background:var(--accent);transition:width .3s}
-  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px}
-  th{text-align:left;color:var(--muted);font-weight:500;padding:8px 10px;
-    border-bottom:1px solid var(--line);font-size:12px;letter-spacing:.06em;
+    border:1px solid var(--line);border-radius:var(--r-s);padding:9px 11px;font:inherit;
+    font-size:14px;outline:none;transition:border-color .15s}
+  input:focus,select:focus,textarea:focus{border-color:var(--indigo)}
+  input::placeholder,textarea::placeholder{color:var(--muted-2)}
+  textarea{width:100%;min-height:230px;font-family:ui-monospace,Consolas,monospace;
+    font-size:13px;line-height:1.55}
+  label.check{color:var(--muted);font-size:13.5px;display:inline-flex;align-items:center;
+    gap:6px;cursor:pointer}
+
+  .bar{height:5px;background:var(--panel-2);border-radius:999px;overflow:hidden;flex:1;
+    min-width:220px}
+  .bar span{display:block;height:100%;background:var(--grad);transition:width .3s}
+
+  table{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px}
+  th{text-align:left;color:var(--muted-2);font-weight:500;padding:8px 10px;
+    border-bottom:1px solid var(--line);font-size:11.5px;letter-spacing:.06em;
     text-transform:uppercase}
-  td{padding:9px 10px;border-bottom:1px solid #1e1718;vertical-align:top}
-  tr.sel{background:#1a1213}
-  tr:hover td{background:#161011;cursor:pointer}
-  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;
-    letter-spacing:.04em;white-space:nowrap}
-  .gruen{background:#1c2f24;color:#8ed9a8;border:1px solid var(--green)}
-  .gelb{background:#2f2716;color:#e3c477;border:1px solid var(--yellow)}
-  .rot{background:#301619;color:#e8969b;border:1px solid var(--red)}
-  .grau{background:#221d1e;color:#a99c9d;border:1px solid var(--grey)}
-  .score{font-variant-numeric:tabular-nums;color:var(--accent);font-weight:600}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:4px;
-    padding:18px;margin-top:18px}
-  .panel h3{margin:0 0 10px;font-size:15px;letter-spacing:.06em;color:#e0a3a5}
-  .muted{color:var(--muted);font-size:13px}
+  td{padding:10px;border-bottom:1px solid #1b1b23;vertical-align:top}
+  tr.sel td{background:#16161f}
+  tbody tr:hover td{background:#15151d;cursor:pointer}
+
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11.5px;
+    white-space:nowrap;font-weight:500}
+  .gruen{background:rgba(0,188,125,.13);color:#5ce0b0;border:1px solid rgba(0,188,125,.4)}
+  .gelb{background:rgba(254,154,0,.13);color:#ffc46b;border:1px solid rgba(254,154,0,.4)}
+  .rot{background:rgba(231,0,11,.13);color:#ff8b92;border:1px solid rgba(231,0,11,.4)}
+  .grau{background:rgba(107,107,120,.15);color:#a9a9b5;border:1px solid var(--line)}
+  .lila{background:rgba(152,16,250,.13);color:var(--violet-soft);
+    border:1px solid rgba(152,16,250,.4)}
+
+  .score{font-variant-numeric:tabular-nums;font-weight:600;
+    background:var(--grad-head);-webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-l);
+    padding:20px 22px;margin-top:16px}
+  .panel h3{margin:0 0 10px;font-size:15.5px;font-weight:600;letter-spacing:-.005em}
+  .muted{color:var(--muted);font-size:13.5px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
   @media(max-width:1000px){.grid2{grid-template-columns:1fr}}
-  ul.checklist{margin:8px 0 0;padding-left:18px}
-  ul.checklist li{margin-bottom:5px}
-  .evidence{border-left:2px solid var(--accent-soft);padding:6px 0 6px 12px;
-    margin:8px 0;font-size:13px;color:var(--muted)}
-  .evidence b{color:#e0a3a5;font-weight:500}
-  .kv{display:grid;grid-template-columns:180px 1fr;gap:8px 14px;font-size:14px}
-  .kv div:nth-child(odd){color:var(--muted)}
-  .warn{background:#2b1416;border:1px solid var(--red);padding:12px 14px;
-    border-radius:3px;margin:12px 0;font-size:14px}
-  .ok{background:#15251b;border:1px solid var(--green);padding:10px 14px;
-    border-radius:3px;margin:10px 0;font-size:14px}
-  .tag{display:inline-block;background:#241b1c;border:1px solid var(--line);
-    padding:2px 8px;border-radius:3px;font-size:12px;margin:2px 4px 2px 0}
-  .scroll{max-height:520px;overflow:auto}
-  /* Anleitung */
-  .doc{max-width:900px;line-height:1.7}
-  .doc h2{font-size:18px;color:#e0a3a5;margin:34px 0 10px;padding-bottom:6px;
-    border-bottom:1px solid var(--line);scroll-margin-top:20px}
-  .doc h2:first-of-type{margin-top:10px}
-  .doc p{margin:10px 0}
-  .doc ul,.doc ol{margin:10px 0;padding-left:22px}
+
+  ul.checklist{margin:8px 0 0;padding-left:20px}
+  ul.checklist li{margin-bottom:6px}
+
+  .evidence{border-left:2px solid var(--violet);padding:7px 0 7px 13px;margin:9px 0;
+    font-size:13.5px;color:var(--muted);border-radius:0 var(--r-s) var(--r-s) 0}
+  .evidence b{color:var(--violet-soft);font-weight:500}
+
+  .kv{display:grid;grid-template-columns:190px 1fr;gap:9px 14px;font-size:14px;
+    align-items:center}
+  .kv>div:nth-child(odd){color:var(--muted)}
+
+  .warn{background:rgba(231,0,11,.09);border:1px solid rgba(231,0,11,.35);
+    padding:12px 15px;border-radius:var(--r-m);margin:12px 0;font-size:14px}
+  .ok{background:rgba(0,188,125,.09);border:1px solid rgba(0,188,125,.35);
+    padding:11px 15px;border-radius:var(--r-m);margin:10px 0;font-size:14px}
+  .tag{display:inline-block;background:var(--panel-2);border:1px solid var(--line);
+    padding:3px 10px;border-radius:999px;font-size:12.5px;margin:3px 5px 3px 0;
+    color:var(--muted)}
+  a.tag:hover{border-color:var(--indigo-soft);color:var(--text)}
+
+  /* Manual */
+  .doc{max-width:940px;line-height:1.75}
+  .doc h2{font-size:19px;font-weight:600;margin:36px 0 10px;padding-bottom:8px;
+    border-bottom:1px solid var(--line);scroll-margin-top:130px;
+    background:var(--grad-head);-webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent}
+  .doc h2:first-of-type{margin-top:8px}
+  .doc p{margin:11px 0}
+  .doc ul,.doc ol{margin:11px 0;padding-left:24px}
   .doc li{margin-bottom:7px}
-  .doc code{background:var(--panel-2);border:1px solid var(--line);border-radius:3px;
-    padding:1px 6px;font-family:Consolas,monospace;font-size:13px}
-  .doc i{color:#e0a3a5;font-style:normal}
+  .doc code{background:var(--panel-2);border:1px solid var(--line);border-radius:6px;
+    padding:1px 6px;font-family:ui-monospace,Consolas,monospace;font-size:13px}
+  .doc i{color:var(--violet-soft);font-style:normal}
   .doc table{margin:14px 0}
-  .doc td{font-size:14px}
-  .doc td:first-child{white-space:nowrap;color:var(--muted)}
-  .toc{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;margin-bottom:8px}
-  .toc b{width:100%;color:var(--muted);font-weight:500;font-size:12px;
-    letter-spacing:.08em;text-transform:uppercase}
-  .toc a{font-size:13px;text-decoration:none;border-bottom:1px solid transparent}
-  .toc a:hover{border-bottom-color:var(--accent)}
+  .doc td:first-child{white-space:nowrap;color:var(--muted);width:210px}
+  .doc tbody tr:hover td{background:none;cursor:auto}
+  .toc{display:flex;flex-wrap:wrap;gap:7px 16px;align-items:center}
+  .toc b{width:100%;color:var(--muted-2);font-weight:500;font-size:11.5px;
+    letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+  .toc a{font-size:13.5px}
 </style>
 </head>
 <body>
+
 <header>
-  <h1>Mutexx Advertiser<small>Community-Recherche, Regelpruefung und Kampagnensteuerung</small></h1>
+  <div class="brand">
+    <h1>Mutexx Advertiser</h1>
+    <small data-i18n="app.tagline"></small>
+  </div>
   <div class="row" style="margin-left:auto">
-    <button class="btn" id="scanBtn">Scan starten</button>
-    <span class="muted" id="scanMsg">bereit</span>
+    <select id="productSel" style="min-width:200px"></select>
+    <button class="btn" id="scanBtn" data-i18n="action.scan"></button>
+    <span class="muted" id="scanMsg"></span>
   </div>
   <div class="bar" id="scanBarWrap" style="display:none"><span id="scanBar" style="width:0"></span></div>
 </header>
 
-<nav>
-  <button data-tab="communities" class="active">Communities</button>
-  <button data-tab="kampagne">Kampagne</button>
-  <button data-tab="kanaele">Auto-Kanaele</button>
-  <button data-tab="verlauf">Verlauf</button>
-  <button data-tab="einstellungen">Einstellungen</button>
-  <button data-tab="anleitung">Anleitung</button>
-</nav>
+<nav id="nav"></nav>
 
 <main>
-  <!-- ================= COMMUNITIES ================= -->
-  <section id="tab-communities">
-    <div class="row">
-      <input id="filterText" placeholder="Suchen ..." style="min-width:240px">
-      <select id="filterPlatform">
-        <option value="">Alle Plattformen</option>
-        <option value="reddit">Reddit</option>
-        <option value="forum">Foren &amp; Wikis</option>
-      </select>
-      <select id="filterVerdict">
-        <option value="">Alle Bewertungen</option>
-        <option value="gruen">Gruen - kein Promo-Verbot</option>
-        <option value="gelb">Gelb - mit Auflagen</option>
-        <option value="rot">Rot - Werbung verboten</option>
-        <option value="grau">Grau - unklar</option>
-      </select>
-      <span class="muted" id="countInfo"></span>
-      <button class="btn ghost" id="toggleAdd" style="margin-left:auto">Community von Hand aufnehmen</button>
+  <!-- ============ PRODUCT ============ -->
+  <section id="tab-product">
+    <div class="panel">
+      <h3 data-i18n="product.title"></h3>
+      <p class="muted" data-i18n="product.intro"></p>
+      <div class="grid2" style="margin-top:16px">
+        <div class="kv">
+          <div data-i18n="product.name"></div><div><input id="pName" style="width:100%"></div>
+          <div data-i18n="product.url"></div><div><input id="pUrl" style="width:100%" placeholder="https://..."></div>
+          <div data-i18n="product.version"></div><div><input id="pVersion" style="width:130px"></div>
+          <div data-i18n="product.one_liner"></div><div><input id="pOneLiner" style="width:100%" data-i18n-ph="product.one_liner_hint"></div>
+          <div data-i18n="product.category"></div><div><select id="pCategory" style="width:100%"></select></div>
+          <div data-i18n="product.price_model"></div><div><select id="pPriceModel" style="width:100%"></select></div>
+          <div data-i18n="product.price_point"></div><div><input id="pPricePoint" style="width:170px" placeholder="19.90 EUR"></div>
+        </div>
+        <div class="kv">
+          <div data-i18n="product.audience"></div><div><input id="pAudience" style="width:100%" data-i18n-ph="product.audience_hint"></div>
+          <div data-i18n="product.regions"></div><div><input id="pRegions" style="width:100%" placeholder="DE, AT, CH"></div>
+          <div data-i18n="product.languages"></div><div><input id="pLanguages" style="width:100%" placeholder="en, de"></div>
+          <div data-i18n="product.budget"></div><div><input id="pBudget" type="number" style="width:150px"> <span class="muted">EUR</span></div>
+          <div data-i18n="product.tone"></div><div><select id="pTone" style="width:100%"></select></div>
+          <div data-i18n="product.repo"></div><div><input id="pRepo" style="width:100%" placeholder="https://github.com/..."></div>
+          <div data-i18n="product.download"></div><div><input id="pDownload" style="width:100%"></div>
+        </div>
+      </div>
+      <div class="kv" style="margin-top:16px">
+        <div data-i18n="product.description"></div>
+        <div><textarea id="pDescription" style="min-height:120px" data-i18n-ph="product.description_hint"></textarea></div>
+        <div data-i18n="product.keywords"></div>
+        <div><textarea id="pKeywords" style="min-height:72px" data-i18n-ph="product.keywords_hint"></textarea></div>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn" id="pSave" data-i18n="product.save"></button>
+        <button class="btn ghost" id="pNew" data-i18n="product.new"></button>
+        <button class="btn ghost" id="pDelete" data-i18n="product.delete"></button>
+        <span class="muted" id="pMsg"></span>
+      </div>
     </div>
+  </section>
 
+  <!-- ============ ANALYSIS ============ -->
+  <section id="tab-analysis" hidden>
+    <div class="row">
+      <button class="btn" id="anaBtn" data-i18n="analysis.run"></button>
+      <label class="check"><input type="checkbox" id="anaApi"> <span data-i18n="analysis.use_api"></span></label>
+      <span class="muted" id="anaMsg"></span>
+    </div>
+    <p class="muted" style="margin-top:12px" data-i18n="analysis.intro"></p>
+    <div id="anaBox"></div>
+  </section>
+
+  <!-- ============ STRATEGY ============ -->
+  <section id="tab-strategy" hidden>
+    <div class="row">
+      <button class="btn" id="strBtn" data-i18n="strategy.build"></button>
+      <label class="check"><input type="checkbox" id="strApi"> <span data-i18n="strategy.use_api"></span></label>
+      <span class="muted" id="strMsg"></span>
+    </div>
+    <div class="warn" style="margin-top:14px">
+      <b data-i18n="strategy.no_money"></b> <span data-i18n="strategy.no_money_body"></span>
+    </div>
+    <div id="strBox"></div>
+  </section>
+
+  <!-- ============ ASSETS ============ -->
+  <section id="tab-assets" hidden>
+    <div class="row">
+      <label class="check"><input type="checkbox" id="assetApi"> <span data-i18n="assets.use_api"></span></label>
+      <span class="muted" id="assetMsg"></span>
+    </div>
+    <p class="muted" style="margin-top:12px" data-i18n-html="assets.intro"></p>
+    <p class="muted" data-i18n="assets.intro2"></p>
+    <div id="assetBox"></div>
+  </section>
+
+  <!-- ============ COMMUNITIES ============ -->
+  <section id="tab-communities" hidden>
+    <div class="row">
+      <input id="filterText" style="min-width:250px" data-i18n-ph="communities.search">
+      <select id="filterPlatform"><option value="">reddit / forum</option>
+        <option value="reddit">reddit</option><option value="forum">forum</option></select>
+      <select id="filterVerdict"><option value=""></option>
+        <option value="gruen"></option><option value="gelb"></option>
+        <option value="rot"></option><option value="grau"></option></select>
+      <button class="btn ghost" id="toggleAdd" data-i18n="communities.add"></button>
+      <span class="muted" id="countInfo"></span>
+    </div>
     <div class="panel" id="addPanel" hidden>
-      <h3>Community von Hand aufnehmen</h3>
-      <p class="muted">Fuer Subreddits reicht der Name. Oeffne die Sidebar-Regeln im Browser,
-        markiere sie, kopiere sie hierher &mdash; die Ampel-Analyse laeuft genauso wie bei
-        automatisch geholten Regeln, samt Originalzitaten.</p>
+      <h3 data-i18n="communities.add"></h3>
       <div class="kv">
-        <div>Plattform</div><div><select id="addPlatform">
-          <option value="reddit">Reddit (Subreddit)</option>
-          <option value="forum">Forum / Wiki</option>
-          <option value="discord">Discord-Server</option></select></div>
-        <div>Name bzw. Subreddit</div><div><input id="addHandle" style="width:100%" placeholder="z.B. Demonolatry (ohne r/)"></div>
-        <div>URL <span class="muted">(bei Reddit optional)</span></div><div><input id="addUrl" style="width:100%"></div>
-        <div>Mitglieder <span class="muted">(optional)</span></div><div><input id="addSubs" type="number" style="width:140px"></div>
-        <div>Regeltext einfuegen</div><div><textarea id="addRules" style="min-height:150px"
-          placeholder="Regeln der Community hier einfuegen ..."></textarea></div>
+        <div data-i18n="communities.platform"></div>
+        <div><select id="addPlatform"><option value="reddit">reddit</option>
+          <option value="forum">forum</option></select></div>
+        <div data-i18n="communities.handle"></div><div><input id="addHandle" style="width:100%" placeholder="techsupport"></div>
+        <div>URL</div><div><input id="addUrl" style="width:100%" placeholder="https://..."></div>
+        <div data-i18n="communities.members"></div><div><input id="addSubs" type="number" style="width:150px"></div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="muted" data-i18n="communities.rules_text"></div>
+        <textarea id="addRules" style="min-height:150px"></textarea>
       </div>
       <div class="row" style="margin-top:12px">
-        <button class="btn" id="addCommunity">Aufnehmen und pruefen</button>
+        <button class="btn" id="addCommunity" data-i18n="action.save"></button>
         <span class="muted" id="addMsg"></span>
       </div>
     </div>
-
-    <div class="grid2">
-      <div class="scroll">
-        <table>
-          <thead><tr><th>Score</th><th>Community</th><th>Groesse</th><th>Aktiv</th><th>Bewertung</th></tr></thead>
-          <tbody id="commRows"></tbody>
-        </table>
+    <div class="grid2" style="margin-top:6px">
+      <div>
+        <table><thead><tr>
+          <th>#</th><th data-i18n="communities.handle"></th>
+          <th data-i18n="communities.members"></th><th>&#8721;</th><th></th>
+        </tr></thead><tbody id="commRows"></tbody></table>
       </div>
-      <div id="detail"><div class="panel muted">Links eine Community auswaehlen.</div></div>
+      <div id="detail" class="scroll"></div>
     </div>
   </section>
 
-  <!-- ================= KAMPAGNE ================= -->
-  <section id="tab-kampagne" hidden>
+  <!-- ============ SEED LISTS ============ -->
+  <section id="tab-seeds" hidden>
     <div class="panel">
-      <h3>Alles auf einmal vorbereiten</h3>
-      <p class="muted">Erzeugt fuer jede geeignete Community einen eigenen Entwurf, verteilt
-        Termine und legt alles fertig in die Queue. Rote Communities werden uebersprungen,
-        bereits bespielte ebenfalls.</p>
-      <div class="row">
-        <label class="muted">Anzahl <input id="prepLimit" type="number" value="25" style="width:80px"></label>
-        <label class="muted"><input type="checkbox" id="prepGreenOnly"> nur gruene</label>
-        <label class="muted"><input type="checkbox" id="prepApi"> per KI schreiben lassen</label>
-        <button class="btn" id="prepBtn">Kampagne vorbereiten</button>
-        <span class="muted" id="prepMsg"></span>
+      <h3 data-i18n="seeds.title"></h3>
+      <p class="muted" data-i18n="seeds.intro"></p>
+      <div class="grid2" style="margin-top:14px">
+        <div>
+          <b data-i18n="seeds.subreddits"></b>
+          <div class="muted" data-i18n="seeds.subreddits_hint"></div>
+          <textarea id="seedSubs" style="min-height:210px"></textarea>
+        </div>
+        <div>
+          <b data-i18n="seeds.forums"></b>
+          <div class="muted" data-i18n="seeds.forums_hint"></div>
+          <textarea id="seedForums" style="min-height:210px"></textarea>
+        </div>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn" id="seedSave" data-i18n="seeds.save"></button>
+        <button class="btn ghost" id="seedSuggest" data-i18n="seeds.suggest"></button>
+        <span class="muted" id="seedMsg"></span>
       </div>
     </div>
+    <div class="panel">
+      <h3 data-i18n="seeds.keywords"></h3>
+      <div id="seedKeywords"></div>
+      <p class="muted" style="margin-top:10px" data-i18n="seeds.keywords_note"></p>
+    </div>
+  </section>
 
+  <!-- ============ CAMPAIGN ============ -->
+  <section id="tab-campaign" hidden>
+    <div class="row">
+      <button class="btn" id="prepBtn" data-i18n="campaign.prepare"></button>
+      <span class="muted" data-i18n="campaign.limit"></span>
+      <input id="prepLimit" type="number" value="25" style="width:90px">
+      <label class="check"><input type="checkbox" id="prepGreenOnly"> <span data-i18n="campaign.green_only"></span></label>
+      <label class="check"><input type="checkbox" id="prepApi"> <span data-i18n="assets.use_api"></span></label>
+      <button class="btn ghost" id="runStart" data-i18n="campaign.start_mode"></button>
+      <span class="muted" id="prepMsg"></span>
+    </div>
     <div class="panel" id="runPanel" hidden>
-      <div class="row">
-        <h3 style="margin:0" id="runHead"></h3>
-        <button class="btn ghost" id="runExit" style="margin-left:auto">Modus verlassen</button>
-      </div>
-      <div class="bar" style="margin:12px 0"><span id="runBar" style="width:0"></span></div>
+      <div class="row"><h3 id="runHead" style="margin:0"></h3>
+        <button class="btn ghost" id="runExit" style="margin-left:auto" data-i18n="campaign.exit"></button></div>
+      <div class="bar" style="margin:10px 0"><span id="runBar" style="width:0"></span></div>
       <div id="runBody"></div>
     </div>
-
-    <div class="panel">
-      <div class="row">
-        <h3 style="margin:0">Posting-Queue</h3>
-        <button class="btn" id="runStart" style="margin-left:auto">Posting-Modus starten</button>
-      </div>
-      <p class="muted">Jeder Eintrag hat ein Datum. Der Reddit-Teil ist auf das Tageslimit aus
-        den Einstellungen verteilt &mdash; das ist die wirksamste einzelne Massnahme gegen eine
-        Domain-Sperre.</p>
-      <div id="queueList"></div>
-    </div>
+    <div id="queueList"></div>
   </section>
 
-  <!-- ================= AUTO-KANAELE ================= -->
-  <section id="tab-kanaele" hidden>
+  <!-- ============ AUTO CHANNELS ============ -->
+  <section id="tab-channels" hidden>
     <div class="panel">
-      <h3>Vollautomatisches Posten</h3>
-      <p class="muted">Hier eingetragene Kanaele werden ohne Rueckfrage bespielt. Trage nur
-        Kanaele ein, die dir selbst gehoeren oder in denen Bot-Posts ausdruecklich erlaubt sind.</p>
-
-      <h3 style="margin-top:18px">Discord-Webhooks (eigene Server)</h3>
-      <div id="hookList"></div>
-      <div class="row" style="margin-top:10px">
-        <input id="hookName" placeholder="Name, z.B. Vault Server / #announcements" style="min-width:260px">
-        <input id="hookUrl" placeholder="https://discord.com/api/webhooks/..." style="min-width:340px">
-        <button class="btn ghost" id="addHook">Hinzufuegen</button>
+      <h3 data-i18n="channels.title"></h3>
+      <p class="muted" data-i18n="channels.intro"></p>
+      <div class="row" style="margin-top:12px">
+        <input id="hookName" data-i18n-ph="channels.webhook_name" style="width:220px">
+        <input id="hookUrl" data-i18n-ph="channels.webhook_url" style="flex:1;min-width:320px">
+        <button class="btn ghost" id="addHook" data-i18n="channels.add_hook"></button>
       </div>
-      <p class="muted" style="margin-top:8px">Discord &rarr; Servereinstellungen &rarr; Integrationen &rarr;
-        Webhooks &rarr; Neuer Webhook &rarr; URL kopieren.</p>
-
-      <h3 style="margin-top:22px">Mastodon (eigener Account)</h3>
-      <div class="row">
-        <input id="mastoInstance" placeholder="z.B. mastodon.social" style="min-width:240px">
-        <input id="mastoToken" placeholder="Access Token" type="password" style="min-width:300px">
-        <button class="btn ghost" id="saveMasto">Speichern</button>
+      <div id="hookList" style="margin-top:12px"></div>
+      <h3 style="margin-top:20px" data-i18n="channels.mastodon"></h3>
+      <div class="kv">
+        <div data-i18n="channels.instance"></div><div><input id="mastoInstance" style="width:100%" placeholder="https://mastodon.social"></div>
+        <div data-i18n="channels.token"></div><div><input id="mastoToken" type="password" style="width:100%"></div>
       </div>
-
-      <div class="row" style="margin-top:22px">
-        <button class="btn" id="autoBlast">Ankuendigung an alle eigenen Kanaele senden</button>
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost" id="saveMasto" data-i18n="action.save"></button>
+        <button class="btn" id="autoBlast" data-i18n="channels.test_post"></button>
       </div>
       <div id="autoResult"></div>
     </div>
-
     <div class="panel">
-      <h3>Discord-Server finden</h3>
-      <p class="muted">Fremde Discord-Server werden bewusst nicht automatisch bespielt. Diese
-        Suchen oeffnen die Verzeichnisse; passende Server traegst du unten als Community ein
-        und arbeitest sie ueber die Queue ab.</p>
+      <h3 data-i18n="channels.discord_search"></h3>
       <div id="discordSearches"></div>
-      <div class="row" style="margin-top:14px">
-        <input id="manName" placeholder="Name" style="min-width:200px">
-        <input id="manUrl" placeholder="URL (Einladung / Forum)" style="min-width:320px">
-        <select id="manPlatform">
-          <option value="discord">Discord</option>
-          <option value="forum">Forum / Wiki</option>
-        </select>
-        <button class="btn ghost" id="addManual">Als Community aufnehmen</button>
-      </div>
     </div>
   </section>
 
-  <!-- ================= VERLAUF ================= -->
-  <section id="tab-verlauf" hidden>
-    <div class="panel"><h3>Was wurde wann wo gepostet</h3><div id="historyList"></div></div>
+  <!-- ============ HISTORY ============ -->
+  <section id="tab-history" hidden>
+    <div id="historyList"></div>
   </section>
 
-  <!-- ================= EINSTELLUNGEN ================= -->
-  <section id="tab-einstellungen" hidden>
+  <!-- ============ MANUAL ============ -->
+  <section id="tab-manual" hidden>
+    <div class="doc">
+      <div class="toc panel" id="manualToc"></div>
+      <div id="manualBody"></div>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section id="tab-settings" hidden>
     <div class="panel">
-      <h3>Website</h3>
-      <div class="kv">
-        <div>Name</div><div><input id="cfgName" style="width:100%"></div>
-        <div>URL</div><div><input id="cfgUrl" style="width:100%"></div>
-        <div>Version</div><div><input id="cfgVersion" style="width:120px"></div>
-        <div>Reddit-Nutzername</div><div><input id="cfgRedditUser" style="width:220px" placeholder="ohne u/"></div>
+      <h3 data-i18n="settings.language"></h3>
+      <div class="row">
+        <select id="langSel" style="min-width:190px"></select>
+        <span class="muted" id="langMsg"></span>
       </div>
+      <p class="muted" style="margin-top:10px" data-i18n="settings.language_hint"></p>
     </div>
     <div class="panel">
-      <h3>Reddit-API (Pflicht fuer den Reddit-Teil)</h3>
-      <p class="muted">Reddit beantwortet Programmanfragen ohne registrierte App mit 403.
-        Auf <a href="https://www.reddit.com/prefs/apps" target="_blank" rel="noopener">reddit.com/prefs/apps</a>
-        ganz unten &bdquo;create another app&ldquo; &rarr; Typ <b>script</b> &rarr; Name
-        <b>VaultOutreachNavigator</b>, redirect uri <b>http://localhost:8777</b>.
-        Die Client-ID steht danach klein <i>unter</i> dem App-Namen. Kostenlos, nur Lesezugriff.</p>
-      <div class="kv">
-        <div>Client-ID</div><div><input id="cfgRedditId" style="width:100%"></div>
-        <div>Client-Secret</div><div><input id="cfgRedditSecret" type="password" style="width:100%"></div>
+      <h3 data-i18n="settings.reddit"></h3>
+      <p class="muted" data-i18n-html="settings.reddit_hint"></p>
+      <div class="kv" style="margin-top:12px">
+        <div data-i18n="settings.client_id"></div><div><input id="cfgRedditId" style="width:100%"></div>
+        <div data-i18n="settings.client_secret"></div><div><input id="cfgRedditSecret" type="password" style="width:100%"></div>
       </div>
-      <p class="muted" style="margin-top:14px"><b>Bot-Konto</b> &mdash; nur ausfuellen, wenn der
-        Verbindungstest oben mit 401 fehlschlaegt. Reddit verlangt fuer Script-Apps inzwischen
-        meist ein <i>eigenes</i> Konto (nicht dein Hauptkonto), das bei der App unter
-        prefs/apps als Developer eingetragen ist. Die Daten bleiben lokal in
-        <code>config.json</code> auf diesem Rechner.</p>
+      <p class="muted" style="margin-top:14px" data-i18n-html="settings.bot_hint"></p>
       <div class="kv">
-        <div>Bot-Benutzername</div><div><input id="cfgBotUser" style="width:100%" placeholder="ohne u/"></div>
-        <div>Bot-Passwort</div><div><input id="cfgBotPass" type="password" style="width:100%"></div>
+        <div data-i18n="settings.bot_user"></div><div><input id="cfgBotUser" style="width:100%"></div>
+        <div data-i18n="settings.bot_pass"></div><div><input id="cfgBotPass" type="password" style="width:100%"></div>
       </div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn ghost" id="testReddit">Verbindung testen</button>
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost" id="testReddit" data-i18n="settings.test_connection"></button>
         <span class="muted" id="redditMsg"></span>
       </div>
     </div>
     <div class="panel">
-      <h3>Suche</h3>
-      <div class="kv">
-        <div>Stichwoerter (Komma)</div><div><textarea id="cfgKeywords" style="min-height:90px"></textarea></div>
-        <div>Max. Communities</div><div><input id="cfgMax" type="number" style="width:120px"></div>
-        <div>Tiefenscan Top-N</div><div><input id="cfgDeep" type="number" style="width:120px"></div>
-        <div>Mindest-Mitglieder</div><div><input id="cfgMinSubs" type="number" style="width:120px"></div>
-        <div>Pause zwischen Requests (s)</div><div><input id="cfgDelay" type="number" step="0.1" style="width:120px"></div>
+      <h3 data-i18n="settings.scan_limits"></h3>
+      <p class="muted" data-i18n-html="settings.scan_limits_hint"></p>
+      <div class="kv" style="margin-top:12px">
+        <div data-i18n="settings.max_communities"></div><div><input id="cfgMax" type="number" style="width:130px"></div>
+        <div data-i18n="settings.deep_scan"></div><div><input id="cfgDeep" type="number" style="width:130px"></div>
+        <div data-i18n="settings.min_members"></div><div><input id="cfgMinSubs" type="number" style="width:130px"></div>
+        <div data-i18n="settings.delay"></div><div><input id="cfgDelay" type="number" step="0.1" style="width:130px"></div>
       </div>
     </div>
     <div class="panel">
-      <h3>Schutzschalter</h3>
+      <h3 data-i18n="settings.safety"></h3>
       <div class="kv">
-        <div>Max. Reddit-Posts pro Tag</div><div><input id="cfgMaxDay" type="number" style="width:120px"></div>
-        <div>Mindestabstand je Community (Tage)</div><div><input id="cfgMinDays" type="number" style="width:120px"></div>
+        <div data-i18n="settings.max_per_day"></div><div><input id="cfgMaxDay" type="number" style="width:130px"></div>
+        <div data-i18n="settings.min_days"></div><div><input id="cfgMinDays" type="number" style="width:130px"></div>
       </div>
     </div>
     <div class="panel">
-      <h3>Anthropic-API (optional)</h3>
-      <p class="muted">Ohne Schluessel arbeitet die App mit Vorlagen. Mit Schluessel werden die
-        Entwuerfe frei auf die jeweilige Community geschrieben.</p>
-      <div class="kv">
-        <div>API-Key</div><div><input id="cfgApiKey" type="password" style="width:100%" placeholder="sk-ant-..."></div>
-        <div>Modell</div><div><input id="cfgModel" style="width:260px"></div>
+      <h3 data-i18n="settings.anthropic"></h3>
+      <p class="muted" data-i18n="settings.anthropic_hint"></p>
+      <div class="kv" style="margin-top:12px">
+        <div data-i18n="settings.api_key"></div><div><input id="cfgApiKey" type="password" style="width:100%" placeholder="sk-ant-..."></div>
+        <div data-i18n="settings.model"></div><div><input id="cfgModel" style="width:280px"></div>
       </div>
     </div>
-    <button class="btn" id="saveCfg">Einstellungen speichern</button>
-    <span class="muted" id="cfgMsg"></span>
-  </section>
-
-  <!-- ================= ANLEITUNG ================= -->
-  <section id="tab-anleitung" hidden>
-    <div class="doc">
-      <div class="toc panel">
-        <b>Inhalt</b>
-        <a href="#a-idee">1. Was die App macht</a>
-        <a href="#a-schnellstart">2. Schnellstart</a>
-        <a href="#a-scan">3. Scan</a>
-        <a href="#a-manuell">4. Communities von Hand aufnehmen</a>
-        <a href="#a-ampel">5. Die Ampel lesen</a>
-        <a href="#a-entwurf">6. Entwürfe und Blickwinkel</a>
-        <a href="#a-kampagne">7. Kampagne und Posting-Modus</a>
-        <a href="#a-auto">8. Vollautomatische Kanäle</a>
-        <a href="#a-reddit">9. Reddit-API und die Freigabe</a>
-        <a href="#a-schutz">10. Der Schutzschalter</a>
-        <a href="#a-technik">11. Dateien und Technik</a>
-        <a href="#a-grenzen">12. Grenzen, ehrlich benannt</a>
-      </div>
-
-      <h2 id="a-idee">1. Was die App macht</h2>
-      <p>Der Navigator sucht Communities, in denen <b>Vault of Demons</b> thematisch passt,
-        liest deren Regeln, bewertet jede einzeln, schreibt für jede einen eigenen Beitrag und
-        legt alles terminiert zum Abschicken bereit. Alles außer dem Abschicken selbst läuft
-        automatisch.</p>
-      <p>Der Grundsatz hinter allen Texten lautet <b>erst Nutzen, dann Link</b>. Ein Beitrag,
-        der auch ohne den Link lesenswert wäre, wird nicht als Werbung gelesen — und genau das
-        ist in Fachcommunities der Unterschied zwischen Zuspruch und Löschung.</p>
-
-      <h2 id="a-schnellstart">2. Schnellstart</h2>
-      <ol>
-        <li><b>Einstellungen</b> öffnen, Website-Angaben prüfen (Name, URL, Version),
-          <i>Einstellungen speichern</i>.</li>
-        <li><b>Scan starten</b> oben rechts. Ohne Reddit-Freigabe werden Foren und Wikis
-          durchsucht.</li>
-        <li>Im Tab <b>Communities</b> deine Wunsch-Subreddits von Hand aufnehmen und je die
-          Regeln einfügen (Abschnitt 4).</li>
-        <li>Tab <b>Kampagne</b> → <i>Kampagne vorbereiten</i>. Danach steht alles fertig.</li>
-        <li><i>Posting-Modus starten</i> und die Queue abarbeiten.</li>
-      </ol>
-
-      <h2 id="a-scan">3. Scan</h2>
-      <p>Der Scan prüft die hinterlegten Foren und Wikis auf Erreichbarkeit, sucht ihre
-        Regelseiten und erntet aus den Startseiten Links auf weitere Foren, die er ebenfalls
-        prüft. Nicht erreichbare Seiten rutschen automatisch ans Ende der Liste.</p>
-      <p>Liegt eine Reddit-Freigabe vor, kommt die Subreddit-Suche dazu: Stichwortsuche über
-        alle Schlagwörter aus den Einstellungen, ein zusätzlicher Sprung über Verweise in den
-        Sidebars — so tauchen die kleinen, thematisch dichten Subs auf, die keine Suche
-        ausspuckt — und für die aussichtsreichsten Kandidaten Regeln und Posting-Frequenz.</p>
-      <p>Zwischen zwei Anfragen liegt immer eine Pause (Voreinstellung 1,3 Sekunden). Das ist
-        Absicht: höfliches Tempo verhindert, dass die App als Last auffällt.</p>
-
-      <h2 id="a-manuell">4. Communities von Hand aufnehmen</h2>
-      <p>Der Weg, der immer funktioniert — auch ohne jede API. Im Tab <b>Communities</b> oben
-        rechts auf <i>Community von Hand aufnehmen</i>:</p>
-      <ol>
-        <li>Plattform wählen: Subreddit, Forum oder Discord.</li>
-        <li>Bei Reddit reicht der Name <b>ohne</b> <code>r/</code>, also z.&nbsp;B.
-          <code>Demonolatry</code>. URL und Anzeigename baut die App selbst.</li>
-        <li>Die Regeln der Community im Browser markieren, kopieren und in das große Feld
-          einfügen.</li>
-        <li><i>Aufnehmen und prüfen</i>.</li>
-      </ol>
-      <p>Die Analyse läuft dabei exakt wie bei automatisch geholten Regeln: dieselbe Ampel,
-        dieselben Originalzitate, dieselbe Auflagen-Checkliste, derselbe Entwurf. Der einzige
-        Unterschied ist, dass du die Kandidatenliste selbst zusammenstellst.</p>
-
-      <h2 id="a-ampel">5. Die Ampel lesen</h2>
-      <table>
-        <thead><tr><th>Stufe</th><th>Bedeutung</th><th>Was zu tun ist</th></tr></thead>
-        <tbody>
-          <tr><td><span class="badge gruen">grün</span></td>
-              <td>kein Werbeverbot in den Regeln gefunden</td>
-              <td>posten, aber wertig</td></tr>
-          <tr><td><span class="badge gelb">gelb</span></td>
-              <td>erlaubt mit Auflagen: Ratio, Flair, Sammelthread, Mod-Freigabe</td>
-              <td>Checkliste im Entwurf abarbeiten</td></tr>
-          <tr><td><span class="badge rot">rot</span></td>
-              <td>Eigenwerbung ausdrücklich verboten</td>
-              <td>nicht posten — kostet Account und Domain</td></tr>
-          <tr><td><span class="badge grau">grau</span></td>
-              <td>Regeln nicht abrufbar</td>
-              <td>selbst nachlesen und von Hand eintragen</td></tr>
-        </tbody>
-      </table>
-      <p>Rechts neben jeder Community stehen immer die <b>Originalzitate</b>, aus denen die
-        Einstufung stammt. Die Ampel ist eine Textanalyse, kein Ersatz fürs Lesen — bei
-        ungewöhnlich formulierten Regeln entscheidest du.</p>
-
-      <h2 id="a-entwurf">6. Entwürfe und Blickwinkel</h2>
-      <p>Für jede Community wählt die App automatisch den passenden Blickwinkel. Über
-        <i>Variante</i> bekommst du eine andere Formulierung, über das Auswahlfeld einen
-        anderen Ansatz.</p>
-      <table>
-        <thead><tr><th>Blickwinkel</th><th>wofür</th></tr></thead>
-        <tbody>
-          <tr><td>Ressource teilen</td><td>grüne Communities, direkter Nutzen</td></tr>
-          <tr><td>Um Korrekturen bitten</td><td>Fach-Communities — wirkt dort am besten</td></tr>
-          <tr><td>Projekt vorstellen</td><td>Entwickler- und Projekt-Subs</td></tr>
-          <tr><td>Fachfrage mit Kontext</td><td>Communities mit Ratio-Regel</td></tr>
-          <tr><td>Forum-Vorstellung</td><td>klassische Foren</td></tr>
-        </tbody>
-      </table>
-      <p>Der stärkste ist <b>Um Korrekturen bitten</b>. Fachleute reagieren auf die Bitte, einen
-        Eintrag zu korrigieren, deutlich besser als auf eine Ankündigung — und die Antworten
-        verbessern nebenbei deine Inhalte.</p>
-      <p>Trägst du unter <i>Einstellungen → Anthropic-API</i> einen Schlüssel ein, werden die
-        Entwürfe frei auf die jeweilige Community und deren Regeln geschrieben statt aus
-        Vorlagen erzeugt.</p>
-
-      <h2 id="a-kampagne">7. Kampagne und Posting-Modus</h2>
-      <p><b>Kampagne vorbereiten</b> erzeugt in einem Rutsch für jede geeignete Community einen
-        eigenen Entwurf. Rote Communities und bereits bespielte werden übersprungen, die
-        Reihenfolge richtet sich nach der Bewertung, und jeder Beitrag bekommt ein Datum —
-        Reddit streng nach Tageslimit, Foren zu dritt pro Tag.</p>
-      <p><b>Posting-Modus starten</b> führt dich Station für Station durch die Queue. Pro
-        Station siehst du Einstufung, Auflagen-Checkliste und den fertigen Text, den du direkt
-        bearbeiten kannst.</p>
-      <ul>
-        <li><i>Text kopieren und Formular öffnen</i> — legt den Beitrag in die Zwischenablage
-          und öffnet das vorausgefüllte Formular. Bei Reddit stehen Titel und Text schon drin,
-          bei Foren einmal Strg+V.</li>
-        <li><i>Gepostet – weiter</i> — schreibt den Verlauf, setzt die Wiederholungssperre und
-          springt zur nächsten Station.</li>
-        <li><i>Überspringen</i> — lässt den Eintrag in der Queue.</li>
-      </ul>
-
-      <h2 id="a-auto">8. Vollautomatische Kanäle</h2>
-      <p>Im Tab <b>Auto-Kanäle</b> hinterlegte Kanäle werden <b>ohne Rückfrage</b> bespielt.
-        Dorthin gehört nur, was dir selbst gehört:</p>
-      <ul>
-        <li><b>Discord-Webhook</b> deines eigenen Servers: Servereinstellungen → Integrationen
-          → Webhooks → Neuer Webhook → URL kopieren.</li>
-        <li><b>Mastodon</b>: Instanz und Zugangstoken deines eigenen Kontos.</li>
-      </ul>
-      <p>Fremde Discord-Server werden bewusst nicht automatisch bespielt. Die Suchlinks im
-        selben Tab öffnen die Server-Verzeichnisse; passende Server nimmst du als Community auf
-        und arbeitest sie über die Queue ab.</p>
-
-      <h2 id="a-reddit">9. Reddit-API und die Freigabe</h2>
-      <p>Reddits <i>Responsible Builder Policy</i> lässt seit Ende 2025 keinen
-        Selbstbedienungs-Zugang mehr zu: <i>„Approval is required: You must request access and
-        get explicit approval before accessing any Reddit data through our API."</i></p>
-      <p>Ohne Freigabe bleibt die automatische Subreddit-Suche leer. Das ist kein Fehler der
-        App, und es gibt dafür keinen legitimen Umweg — wer ohne Freigabe scrapt, riskiert genau
-        das, was diese App verhindern soll: gesperrte Konten und eine gesperrte Domain.
-        <b>Alles andere funktioniert ohne Freigabe</b>, siehe Abschnitt 4.</p>
-      <p>Liegt eine Freigabe vor: unter <a href="https://www.reddit.com/prefs/apps"
-        target="_blank" rel="noopener">reddit.com/prefs/apps</a> eine App vom Typ
-        <b>script</b> anlegen, Client-ID (steht klein <i>unter</i> dem App-Namen) und Secret in
-        die Einstellungen eintragen, <i>Verbindung testen</i>. Verlangt Reddit zusätzlich ein
-        eigenes Bot-Konto, kommen dessen Zugangsdaten in die Felder darunter. Die App liest
-        ausschließlich — über diesen Zugang kann sie nichts posten.</p>
-
-      <h2 id="a-schutz">10. Der Schutzschalter</h2>
-      <p>Voreinstellung: <b>ein Reddit-Beitrag pro Tag</b> und <b>45 Tage Mindestabstand</b> pro
-        Community. Beides in den Einstellungen änderbar.</p>
-      <p>Diese Zahlen sind nicht willkürlich. Derselbe Link, in kurzer Zeit über viele
-        Subreddits verteilt, ist nach Reddits Regeln Spam — wörtlich: <i>„Apps must not engage
-        in spamming activity through automated posts, comments, or direct messages. This
-        includes posting identical or substantially similar content across subreddits."</i>
-        Die Folge ist üblicherweise kein einzelner Account-Ban, sondern eine Sperre der Domain
-        vaultofdemons.com. Dann verschwinden auch die Links, die andere freiwillig setzen, und
-        das bekommt man praktisch nicht zurück.</p>
-
-      <h2 id="a-technik">11. Dateien und Technik</h2>
-      <p>Reines Python ohne Fremdbibliotheken. Der Server hört nur auf <code>127.0.0.1</code>,
-        ist also aus dem Netzwerk nicht erreichbar. Alle Daten liegen als lesbares JSON neben
-        der App.</p>
-      <table>
-        <tbody>
-          <tr><td><code>Start.bat</code></td><td>Starter für Windows</td></tr>
-          <tr><td><code>config.json</code></td><td>Einstellungen und Zugangsdaten</td></tr>
-          <tr><td><code>data/communities.json</code></td><td>gefundene Communities</td></tr>
-          <tr><td><code>data/queue.json</code></td><td>vorbereitete Kampagne</td></tr>
-          <tr><td><code>data/history.json</code></td><td>Verlauf und Wiederholungssperre</td></tr>
-          <tr><td><code>vod/rules.py</code></td><td>Regel-Analyse und Ampel</td></tr>
-          <tr><td><code>vod/drafts.py</code></td><td>Entwürfe und Blickwinkel</td></tr>
-          <tr><td><code>vod/discovery.py</code></td><td>Suche und Bewertung</td></tr>
-        </tbody>
-      </table>
-      <p><code>config.json</code> enthält nach der Einrichtung Zugangsdaten — nicht in ein
-        öffentliches Repository legen.</p>
-
-      <h2 id="a-grenzen">12. Grenzen, ehrlich benannt</h2>
-      <ul>
-        <li>Die Ampel erkennt die üblichen Formulierungen zuverlässig, aber eine ungewöhnlich
-          formulierte Regel kann durchrutschen. Deshalb stehen die Originalzitate daneben.</li>
-        <li>Die Foren-Startliste ist ein Ausgangspunkt, keine geprüfte Wahrheit. Einige Seiten
-          blocken automatisierte Zugriffe und müssen von Hand angesehen werden.</li>
-        <li>Discord-Verzeichnisse lassen sich nicht automatisiert durchsuchen — die Suchen
-          öffnest du selbst, gefundene Server trägst du einmalig ein.</li>
-        <li>Das Abschicken eines Beitrags in fremde Communities bleibt dein Klick. Dafür wäre
-          Schreibzugriff nötig, den Reddit nicht vergibt — und ein Bot, der ihn hätte, wäre
-          genau das Spam-Werkzeug, das die Domain kostet.</li>
-      </ul>
+    <div class="row" style="margin-top:16px">
+      <button class="btn" id="saveCfg" data-i18n="settings.save"></button>
+      <span class="muted" id="cfgMsg"></span>
     </div>
   </section>
 </main>
 
 <script>
-let STATE = {config:{}, communities:[], queue:[], history:[], discord_searches:[], angles:{}, verdict_text:{}};
-let SELECTED = null, DRAFT = null;
+/* =====================================================================
+   State and translation
+   ===================================================================== */
+let STATE = {config:{}, product:{}, products:[], communities:[], queue:[], history:[],
+             analysis:{}, strategy:{}, assets:{}, asset_specs:[], seeds:{}, keywords:[],
+             discord_searches:[], catalog:{en:{},de:{}}, manual:{en:[],de:[]},
+             languages:{}, ui_language:'en', categories:{}, price_models:{}, tones:{},
+             angles:{}, verdict_text:{}};
+let LANG = 'en';
+let SELECTED = null, DRAFT = null, RUN = -1;
+
+const TABS = ['product','analysis','strategy','assets','communities','seeds','campaign',
+              'channels','history','manual','settings'];
+const TAB_KEY = {product:'tab.product', analysis:'tab.analysis', strategy:'tab.strategy',
+  assets:'tab.assets', communities:'tab.communities', seeds:'tab.seeds',
+  campaign:'tab.campaign', channels:'tab.channels', history:'tab.history',
+  manual:'tab.manual', settings:'tab.settings'};
 
 const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const api = async (path, body) => {
-  const opts = body ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)} : {};
-  const res = await fetch(path, opts);
-  return res.json();
-};
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-// ---------- Tabs ----------
-document.querySelectorAll('nav button').forEach(btn => btn.onclick = () => {
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  ['communities','kampagne','kanaele','verlauf','einstellungen','anleitung'].forEach(t =>
-    $('tab-' + t).hidden = (t !== btn.dataset.tab));
-  window.scrollTo(0,0);
-});
-
-function openTab(name){
-  document.querySelectorAll('nav button').forEach(b =>
-    b.classList.toggle('active', b.dataset.tab === name));
-  ['communities','kampagne','kanaele','verlauf','einstellungen','anleitung'].forEach(t =>
-    $('tab-' + t).hidden = (t !== name));
-  window.scrollTo(0,0);
+/* One string out of the catalogue. Missing keys show as the key itself - a gap
+   should be conspicuous, not blank. */
+function t(key, params){
+  const table = (STATE.catalog||{})[LANG] || {};
+  let text = table[key];
+  if (text === undefined) text = ((STATE.catalog||{}).en || {})[key];
+  if (text === undefined) return key;
+  if (params) for (const [name, value] of Object.entries(params))
+    text = text.split('{'+name+'}').join(String(value));
+  return text;
 }
 
-// ---------- Laden ----------
+/* A stored message - {key, params} - back into a sentence. Parameters may be
+   messages themselves, or lists of them. Plain strings pass straight through, so
+   anything written before this existed still shows up. */
+function tr(entry){
+  if (entry === null || entry === undefined) return '';
+  if (typeof entry !== 'object') return String(entry);
+  if (!('key' in entry)) return String(entry);
+  const params = {};
+  for (const [name, value] of Object.entries(entry.params || {})){
+    if (Array.isArray(value)) params[name] = value.map(tr).join(t('list.separator'));
+    else if (value && typeof value === 'object') params[name] = tr(value);
+    else params[name] = value;
+  }
+  return t(entry.key, params);
+}
+const trAll = (list) => (list||[]).map(tr);
+
+/* Fills everything marked up in the static HTML. Runs on every language change. */
+function applyStatic(){
+  document.querySelectorAll('[data-i18n]').forEach(el =>
+    el.textContent = t(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-html]').forEach(el =>
+    el.innerHTML = t(el.dataset.i18nHtml));
+  document.querySelectorAll('[data-i18n-ph]').forEach(el =>
+    el.placeholder = t(el.dataset.i18nPh));
+  document.documentElement.lang = LANG;
+
+  // Verdict filter options carry their labels from the catalogue.
+  const vf = $('filterVerdict');
+  if (vf) [...vf.options].forEach(o =>
+    o.textContent = o.value ? t('verdict.short.' + o.value) : t('verdict.grau').split(' -')[0]);
+}
+
+function renderNav(){
+  $('nav').innerHTML = TABS.map(name =>
+    `<button data-tab="${name}">${esc(t(TAB_KEY[name]))}</button>`).join('');
+  document.querySelectorAll('nav button').forEach(b =>
+    b.onclick = () => openTab(b.dataset.tab));
+  const current = document.querySelector('nav button.active');
+  openTab(current ? current.dataset.tab : (window._tab || 'product'));
+}
+
+function openTab(name){
+  window._tab = name;
+  document.querySelectorAll('nav button').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === name));
+  TABS.forEach(x => $('tab-' + x).hidden = (x !== name));
+  window.scrollTo(0, 0);
+}
+
+const api = async (path, body) => {
+  const opts = body ? {method:'POST', headers:{'Content-Type':'application/json'},
+                       body:JSON.stringify(body)} : {};
+  const res = await fetch(path, opts);
+  const data = await res.json();
+  if (data && data.error_key) data.error = t(data.error_key);
+  return data;
+};
+
+/* =====================================================================
+   Loading and rendering
+   ===================================================================== */
 async function refresh(){
   STATE = await api('/api/state');
+  LANG = STATE.ui_language || 'en';
+  applyStatic();
+  renderNav();
+  renderLanguage();
+  renderProductSwitcher();
+  fillProduct();
   fillSettings();
+  renderAnalysis();
+  renderStrategy();
+  renderAssets();
+  renderSeeds();
   renderCommunities();
+  renderDetail();
   renderQueue();
   renderChannels();
   renderHistory();
+  renderManual();
 }
 
-// ---------- Scan ----------
+/* Redraws everything from the state already in memory - no round trip, so the
+   language switch is instant. */
+function rerender(){
+  applyStatic();
+  renderNav();
+  renderLanguage();
+  fillProduct();
+  renderAnalysis();
+  renderStrategy();
+  renderAssets();
+  renderSeeds();
+  renderCommunities();
+  renderDetail();
+  renderQueue();
+  renderChannels();
+  renderHistory();
+  renderManual();
+}
+
+/* ---------- Language ---------- */
+function renderLanguage(){
+  const sel = $('langSel');
+  sel.innerHTML = Object.entries(STATE.languages || {en:'English'}).map(([code, label]) =>
+    `<option value="${esc(code)}"${code===LANG?' selected':''}>${esc(label)}</option>`).join('');
+  sel.onchange = async () => {
+    LANG = sel.value;
+    rerender();                                   // instant, from memory
+    await api('/api/language/set', {language: LANG});   // remembered for next start
+    $('langMsg').textContent = t('status.saved');
+    setTimeout(()=>$('langMsg').textContent='', 1800);
+  };
+}
+
+/* ---------- Job progress ---------- */
 $('scanBtn').onclick = async () => {
   const res = await api('/api/scan/start', {platforms:['reddit','forum']});
-  if (res.error) { alert(res.error); return; }
+  if (res.error) { $('scanMsg').textContent = res.error; return; }
   $('scanBarWrap').style.display = '';
-  pollScan();
+  pollJob();
 };
 
-async function pollScan(){
-  const s = await api('/api/scan/status');
-  $('scanMsg').textContent = s.error ? ('Fehler: ' + s.error) : s.message;
+async function pollJob(){
+  const s = await api('/api/job/status');
+  $('scanMsg').textContent = s.error ? tr(s.error) : tr(s.message);
   $('scanBtn').disabled = s.running;
+  $('anaBtn').disabled = s.running;
   const pct = s.total ? Math.round(100 * s.done / s.total) : 0;
   $('scanBar').style.width = pct + '%';
-  if (s.running) { setTimeout(pollScan, 1200); }
+  if (s.running) { $('scanBarWrap').style.display=''; setTimeout(pollJob, 1200); }
   else { $('scanBarWrap').style.display='none'; refresh(); }
 }
 
-// ---------- Communities ----------
+/* ---------- Product ---------- */
+function options(map, selected){
+  return Object.entries(map||{}).map(([key, i18nKey]) =>
+    `<option value="${esc(key)}"${key===selected?' selected':''}>${esc(t(i18nKey))}</option>`
+  ).join('');
+}
+
+function renderProductSwitcher(){
+  const sel = $('productSel');
+  sel.title = t('product.switcher');
+  sel.innerHTML = (STATE.products||[]).map(p =>
+    `<option value="${esc(p.slug)}"${p.slug===STATE.active_product?' selected':''}>${esc(p.name)}</option>`
+  ).join('') || `<option value="">${esc(t('product.none'))}</option>`;
+  sel.onchange = async () => {
+    if (!sel.value) return;
+    await api('/api/product/select', {slug: sel.value});
+    SELECTED = null; DRAFT = null;
+    await refresh();
+  };
+}
+
+function fillProduct(){
+  const p = STATE.product || {};
+  $('pCategory').innerHTML = options(STATE.categories, p.category);
+  $('pPriceModel').innerHTML = options(STATE.price_models, p.price_model);
+  $('pTone').innerHTML = options(STATE.tones, p.tone);
+  $('pName').value = p.name || '';
+  $('pUrl').value = p.url || '';
+  $('pVersion').value = p.version || '';
+  $('pOneLiner').value = p.one_liner || '';
+  $('pPricePoint').value = p.price_point || '';
+  $('pAudience').value = p.audience || '';
+  $('pRegions').value = (p.regions||[]).join(', ');
+  $('pLanguages').value = (p.languages||[]).join(', ');
+  $('pBudget').value = p.budget_monthly_eur || 0;
+  $('pRepo').value = (p.links||{}).repo || '';
+  $('pDownload').value = (p.links||{}).download || '';
+  $('pDescription').value = p.description || '';
+  $('pKeywords').value = (p.keywords||[]).join(', ');
+  $('pDelete').disabled = !STATE.active_product;
+}
+
+function collectProduct(){
+  return {
+    slug: STATE.active_product,
+    name: $('pName').value, url: $('pUrl').value, version: $('pVersion').value,
+    one_liner: $('pOneLiner').value, description: $('pDescription').value,
+    category: $('pCategory').value, price_model: $('pPriceModel').value,
+    price_point: $('pPricePoint').value, audience: $('pAudience').value,
+    regions: $('pRegions').value, languages: $('pLanguages').value,
+    budget_monthly_eur: $('pBudget').value, tone: $('pTone').value,
+    keywords: $('pKeywords').value,
+    links: {repo: $('pRepo').value, download: $('pDownload').value},
+  };
+}
+
+$('pSave').onclick = async () => {
+  if (!$('pName').value.trim()) { $('pMsg').textContent = t('product.needs_name'); return; }
+  const res = await api('/api/product/save', {product: collectProduct()});
+  if (res.error) { $('pMsg').textContent = res.error; return; }
+  await api('/api/product/select', {slug: res.product.slug});
+  await refresh();
+  $('pMsg').textContent = t('status.saved');
+  setTimeout(()=>$('pMsg').textContent='', 2000);
+};
+
+$('pNew').onclick = async () => {
+  const name = prompt(t('product.new_prompt'));
+  if (!name) return;
+  const res = await api('/api/product/save', {product: {name}});
+  await api('/api/product/select', {slug: res.product.slug});
+  SELECTED = null; DRAFT = null;
+  await refresh();
+  $('pMsg').textContent = t('product.created');
+};
+
+$('pDelete').onclick = async () => {
+  if (!confirm(t('product.delete_confirm', {name: (STATE.product||{}).name || ''}))) return;
+  await api('/api/product/delete', {slug: STATE.active_product});
+  SELECTED = null; DRAFT = null;
+  await refresh();
+};
+
+/* ---------- Analysis ---------- */
+$('anaBtn').onclick = async () => {
+  const res = await api('/api/analysis/run', {use_api: $('anaApi').checked});
+  if (res.error) { $('anaMsg').textContent = res.error; return; }
+  $('anaMsg').textContent = t('status.running');
+  $('scanBarWrap').style.display = '';
+  pollJob();
+};
+
+function listPanel(titleKey, items, mapper){
+  if (!items || !items.length) return '';
+  return `<div class="panel"><h3>${esc(t(titleKey))}</h3><ul class="checklist">`
+    + items.map(mapper).join('') + '</ul></div>';
+}
+
+function renderAnalysis(){
+  const a = STATE.analysis || {};
+  if (!a.generated_at){
+    $('anaBox').innerHTML = `<div class="panel muted">${esc(t('analysis.empty'))}</div>`;
+    return;
+  }
+  const site = a.site || {};
+  const cat = a.category_guess || {}, price = a.price_guess || {};
+  const evidence = (g, emptyKey) => (g.reasons||[]).map(r =>
+    `<div class="evidence">${esc(r.quote)}</div>`).join('')
+    || `<p class="muted">${esc(t(g.note_key || emptyKey))}</p>`;
+
+  $('anaBox').innerHTML = `
+    ${trAll(a.warnings).map(w => `<div class="warn">${esc(w)}</div>`).join('')}
+    <div class="panel">
+      <h3>${esc(t('analysis.page'))}</h3>
+      <div class="kv">
+        <div>${esc(t('analysis.fetched'))}</div>
+        <div>${site.reachable ? esc(t('analysis.yes_http', {status: site.status}))
+              : '<b>&mdash;</b> ' + esc(tr(site.error))}</div>
+        <div>${esc(t('analysis.title_tag'))}</div><div>${esc(site.title||'-')}</div>
+        <div>${esc(t('analysis.meta'))}</div><div>${esc(site.description||'-')}</div>
+        <div>${esc(t('analysis.extent'))}</div>
+        <div>${esc(t('analysis.words', {count: site.word_count||0}))}</div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>${esc(t('analysis.category_guess', {value: t(STATE.categories[cat.key] || 'category.other')}))}</h3>
+        <p class="muted">${esc(t('analysis.confidence', {
+            percent: Math.round((cat.confidence||0)*100),
+            profile: t(STATE.categories[(STATE.product||{}).category] || 'category.other')}))}</p>
+        ${evidence(cat, 'analysis.no_evidence')}
+      </div>
+      <div class="panel">
+        <h3>${esc(t('analysis.price_guess', {value: t(STATE.price_models[price.key] || 'price.free')}))}</h3>
+        <p class="muted">${esc(t('analysis.confidence', {
+            percent: Math.round((price.confidence||0)*100),
+            profile: t(STATE.price_models[(STATE.product||{}).price_model] || 'price.free')}))}</p>
+        ${evidence(price, 'analysis.no_evidence')}
+      </div>
+    </div>
+    <div class="panel">
+      <h3>${esc(t('analysis.positioning'))}</h3>
+      <p>${esc(a.positioning || t('analysis.positioning_empty'))}</p>
+      ${a.tone_hint ? `<p class="muted">${esc(t('analysis.tone_hint', {value: a.tone_hint}))}</p>` : ''}
+    </div>
+    ${listPanel('analysis.value_props', a.value_props, v => `<li>${esc(v)}</li>`)}
+    ${listPanel('analysis.segments', a.audience_segments, s =>
+      `<li><b>${esc(s.name)}</b>${s.why?' &mdash; '+esc(s.why):''}
+       ${s.where?`<div class="muted">${esc(t('analysis.segment_where',{value:s.where}))}</div>`:''}</li>`)}
+    ${listPanel('analysis.objections', a.objections, o => `<li>${esc(o)}</li>`)}
+    <div class="panel">
+      <h3>${esc(t('analysis.keywords'))}</h3>
+      <div>${(a.search_terms||[]).map(x => `<span class="tag">${esc(x)}</span>`).join('')}</div>
+      <p class="muted" style="margin-top:12px">${esc(t('analysis.keywords_statistical'))}</p>
+      <div>${(a.keywords||[]).slice(0,30).map(k =>
+        `<span class="tag" title="${k.score}">${esc(k.term)}</span>`).join('')}</div>
+    </div>`;
+}
+
+/* ---------- Strategy ---------- */
+$('strBtn').onclick = async () => {
+  $('strMsg').textContent = t('status.running');
+  const res = await api('/api/strategy/build', {use_api: $('strApi').checked});
+  if (res.error) { $('strMsg').textContent = res.error; return; }
+  await refresh();
+  openTab('strategy');
+  $('strMsg').textContent = '';
+};
+
+function channelCard(c){
+  const cls = c.kind === 'bezahlt' ? 'gelb' : (c.kind === 'eigen' ? 'gruen' : 'grau');
+  return `<div class="panel">
+    <h3>${esc(t(c.name_key))}
+      <span class="badge ${cls}">${esc(t(c.kind_key))}</span>
+      <span class="score" style="float:right">${Math.round((c.score||0)*100)}</span></h3>
+    <p style="font-size:14px">${esc(t(c.what_key))}</p>
+    <ul class="checklist">${trAll(c.why).map(w=>`<li>${esc(w)}</li>`).join('')}</ul>
+    <div style="margin:10px 0">
+      <span class="tag">${esc(t(c.effort_key))}</span>
+      <span class="tag">${esc(t('strategy.effect', {value: t(c.lead_time_key)}))}</span>
+      <span class="tag">${esc(t(c.automation_key))}</span>
+      ${c.budget_eur ? `<span class="tag lila">${c.budget_eur} ${esc(t('common.eur_month'))}</span>` : ''}
+    </div>
+    <div class="kv" style="grid-template-columns:140px 1fr">
+      <div>${esc(t('strategy.first_step'))}</div><div>${esc(t(c.first_step_key))}</div>
+      <div>${esc(t('strategy.risk'))}</div><div>${esc(t(c.risk_key))}</div>
+    </div>
+  </div>`;
+}
+
+function renderStrategy(){
+  const p = STATE.strategy || {};
+  if (!p.generated_at){
+    $('strBox').innerHTML = `<div class="panel muted">${esc(t('strategy.empty'))}</div>`;
+    return;
+  }
+  const byId = {}; (p.channels||[]).forEach(c => byId[c.id] = c);
+
+  $('strBox').innerHTML = `
+    ${trAll(p.warnings).map(w => `<div class="warn">${esc(w)}</div>`).join('')}
+    <div class="panel"><h3>${esc(t('strategy.summary'))}</h3><p>${esc(tr(p.summary))}</p></div>
+    ${listPanel('strategy.first_week', trAll(p.first_week), x => `<li>${esc(x)}</li>`)}
+    ${listPanel('strategy.watch_out', trAll(p.watch_out), x => `<li>${esc(x)}</li>`)}
+    ${(p.budget_plan||[]).length ? `<div class="panel">
+      <h3>${esc(t('strategy.budget', {amount: p.budget_monthly_eur}))}</h3>
+      <table><thead><tr><th>${esc(t('strategy.col_channel'))}</th>
+        <th>${esc(t('strategy.col_month'))}</th><th>${esc(t('strategy.col_share'))}</th>
+        <th></th></tr></thead><tbody>
+      ${p.budget_plan.map(b => `<tr><td>${esc(t(b.name_key))}</td><td>${b.eur} EUR</td>
+        <td>${Math.round((b.share||0)*100)}%</td>
+        <td class="muted">${b.note_key ? esc(t(b.note_key)) : ''}</td></tr>`).join('')}
+      </tbody></table></div>` : ''}
+    ${(p.phases||[]).map(ph => `<div class="panel">
+      <h3>${esc(t(ph.name_key))}</h3><p class="muted">${esc(t(ph.note_key))}</p>
+      <div>${ph.channels.map(id =>
+        `<span class="tag">${esc(t((byId[id]||{}).name_key || id))}</span>`).join('')}</div>
+    </div>`).join('')}
+    <h3 style="margin:28px 0 0">${esc(t('strategy.channels_detail'))}</h3>
+    ${(p.channels||[]).map(channelCard).join('')}
+    ${(p.rejected||[]).length ? `<div class="panel">
+      <h3>${esc(t('strategy.rejected'))}</h3>
+      <p class="muted">${esc(t('strategy.rejected_intro'))}</p>
+      ${p.rejected.map(r => `<div class="evidence"><b>${esc(t(r.name_key))}</b><br>
+        ${esc(tr(r.blocked))}</div>`).join('')}
+    </div>` : ''}`;
+}
+
+/* ---------- Assets ---------- */
+function assetField(asset, spec){
+  const entries = (asset.fields||{})[spec.key] || [];
+  if (!entries.length){
+    return `<div style="margin:14px 0"><b>${esc(t(spec.label_key))}</b>
+      <div class="muted">${esc(t('assets.nothing'))}</div></div>`;
+  }
+  const rows = entries.map((e,i) => {
+    const over = e.length > spec.limit;
+    const colour = over ? 'var(--red)' : (e.truncated ? 'var(--yellow)' : 'var(--muted-2)');
+    return `<tr>
+      <td style="width:66px;color:${colour};font-variant-numeric:tabular-nums">${e.length}/${spec.limit}</td>
+      <td><span style="white-space:pre-wrap">${esc(e.text)}</span>
+        ${e.truncated ? `<span class="tag">${esc(t('assets.truncated'))}</span>` : ''}
+        ${over ? `<span class="badge rot">${esc(t('assets.too_long'))}</span>` : ''}</td>
+      <td style="width:96px"><button class="btn ghost" data-acopy="${esc(asset.asset_id)}"
+        data-afield="${esc(spec.key)}" data-ai="${i}">${esc(t('action.copy'))}</button></td>
+    </tr>`;
+  }).join('');
+  return `<div style="margin:18px 0">
+    <b>${esc(t(spec.label_key))}</b>
+    <span class="muted">&mdash; ${esc(t('assets.limit_hint',{limit:spec.limit}))}
+      ${esc(t(spec.hint_key))}</span>
+    <table style="margin-top:6px"><tbody>${rows}</tbody></table></div>`;
+}
+
+function renderAssets(){
+  const specs = STATE.asset_specs || [];
+  const made = STATE.assets || {};
+  const recommended = {};
+  ((STATE.strategy||{}).channels||[]).forEach(c => recommended[c.id] = c);
+
+  if (!specs.length){
+    $('assetBox').innerHTML = `<div class="panel muted">${esc(t('common.no_product'))}</div>`;
+    return;
+  }
+  const sorted = specs.slice().sort((a,b) =>
+    (recommended[b.channel] ? (recommended[b.channel].score||0) : -1) -
+    (recommended[a.channel] ? (recommended[a.channel].score||0) : -1));
+
+  $('assetBox').innerHTML = sorted.map(spec => {
+    const a = made[spec.id];
+    const known = !!recommended[spec.channel];
+    return `<div class="panel">
+      <h3>${esc(t(spec.name_key))}
+        <span class="badge ${known?'gruen':'grau'}">${esc(t(known
+          ? 'assets.channel_recommended' : 'assets.channel_not_planned'))}</span></h3>
+      <p style="font-size:14px">${esc(t(spec.what_key))}</p>
+      ${spec.note_key ? `<div class="warn">${esc(t(spec.note_key))}</div>` : ''}
+      <div class="row">
+        <button class="btn" data-abuild="${esc(spec.id)}">${esc(t(a
+          ? 'assets.rebuild' : 'assets.build'))}</button>
+        ${a ? `<span class="muted">${esc(t('assets.generated', {
+            source: t('assets.source.' + a.generated_by),
+            date: new Date(a.generated_at*1000).toLocaleString()}))}</span>` : ''}
+      </div>
+      ${a ? `
+        ${trAll(a.warnings).map(w=>`<div class="warn">${esc(w)}</div>`).join('')}
+        ${(a.spec||[]).map(f => assetField(a, f)).join('')}
+        ${(a.negative_keywords||[]).length ? `<div style="margin-top:10px">
+          <b>${esc(t('assets.negative_keywords'))}</b>
+          <div class="muted">${esc(t('assets.negative_intro'))}</div>
+          <div style="margin-top:6px">${a.negative_keywords.map(k=>
+            `<span class="tag">${esc(k)}</span>`).join('')}</div></div>` : ''}
+        ${a.utm_url ? `<div style="margin-top:16px"><b>${esc(t('assets.utm'))}</b>
+          <div class="row" style="margin-top:6px">
+            <input readonly style="flex:1;min-width:340px" value="${esc(a.utm_url)}">
+            <button class="btn ghost" data-autm="${esc(spec.id)}">${esc(t('action.copy'))}</button>
+          </div></div>` : ''}` : ''}
+    </div>`;
+  }).join('');
+
+  document.querySelectorAll('[data-abuild]').forEach(b => b.onclick = async () => {
+    b.disabled = true;
+    $('assetMsg').textContent = t('status.running');
+    const res = await api('/api/asset/build', {asset_id: b.dataset.abuild,
+                                               use_api: $('assetApi').checked});
+    if (res.error) { $('assetMsg').textContent = res.error; b.disabled = false; return; }
+    await refresh(); openTab('assets');
+    $('assetMsg').textContent = '';
+  });
+  document.querySelectorAll('[data-acopy]').forEach(b => b.onclick = () => {
+    const a = (STATE.assets||{})[b.dataset.acopy];
+    const item = ((a.fields||{})[b.dataset.afield]||[])[+b.dataset.ai];
+    if (!item) return;
+    navigator.clipboard.writeText(item.text);
+    b.textContent = t('action.copied');
+    setTimeout(()=>b.textContent=t('action.copy'), 1500);
+  });
+  document.querySelectorAll('[data-autm]').forEach(b => b.onclick = () => {
+    const a = (STATE.assets||{})[b.dataset.autm];
+    if (!a) return;
+    navigator.clipboard.writeText(a.utm_url);
+    b.textContent = t('action.copied');
+    setTimeout(()=>b.textContent=t('action.copy'), 1500);
+  });
+}
+
+/* ---------- Seed lists ---------- */
+function renderSeeds(){
+  const sd = STATE.seeds || {subreddits:[], forums:[]};
+  $('seedSubs').value = (sd.subreddits||[]).join('\n');
+  $('seedForums').value = (sd.forums||[]).map(f =>
+    [f.url, f.name||'', f.note||''].join(' | ').replace(/( \| )+$/,'')).join('\n');
+  $('seedKeywords').innerHTML = (STATE.keywords||[]).length
+    ? STATE.keywords.map(k => `<span class="tag">${esc(k)}</span>`).join('')
+    : `<p class="muted">${esc(t('seeds.keywords_empty'))}</p>`;
+}
+
+function parseSeeds(){
+  return {
+    subreddits: $('seedSubs').value.split('\n').map(x=>x.trim()).filter(Boolean),
+    forums: $('seedForums').value.split('\n').map(x=>x.trim()).filter(Boolean).map(line => {
+      const bits = line.split('|').map(x=>x.trim());
+      return {url: bits[0], name: bits[1]||'', note: bits[2]||''};
+    }),
+    source: 'manual',
+  };
+}
+
+$('seedSave').onclick = async () => {
+  const res = await api('/api/seeds/save', {seeds: parseSeeds()});
+  if (res.error) { $('seedMsg').textContent = res.error; return; }
+  await refresh(); openTab('seeds');
+  $('seedMsg').textContent = t('status.saved');
+  setTimeout(()=>$('seedMsg').textContent='', 2000);
+};
+
+$('seedSuggest').onclick = async () => {
+  if (!STATE.has_api_key){ $('seedMsg').textContent = t('seeds.needs_key'); return; }
+  await api('/api/seeds/save', {seeds: parseSeeds()});
+  const res = await api('/api/seeds/suggest', {});
+  if (res.error) { $('seedMsg').textContent = res.error; return; }
+  $('seedMsg').textContent = t('status.running');
+  $('scanBarWrap').style.display = '';
+  pollJob();
+};
+
+/* ---------- Communities ---------- */
 function filtered(){
   const q = $('filterText').value.toLowerCase();
-  const p = $('filterPlatform').value, v = $('filterVerdict').value;
-  return STATE.communities.filter(c =>
-    (!p || c.platform === p) &&
+  const pf = $('filterPlatform').value, v = $('filterVerdict').value;
+  return (STATE.communities||[]).filter(c =>
+    (!pf || c.platform === pf) &&
     (!v || (c.analysis||{}).verdict === v) &&
     (!q || (c.name + ' ' + (c.title||'') + ' ' + (c.description||'')).toLowerCase().includes(q)));
 }
 
 function renderCommunities(){
   const list = filtered();
-  $('countInfo').textContent = list.length + ' von ' + STATE.communities.length + ' angezeigt';
+  $('countInfo').textContent = t('communities.shown',
+    {shown: list.length, total: (STATE.communities||[]).length});
   $('commRows').innerHTML = list.map(c => {
     const v = (c.analysis||{}).verdict || 'grau';
-    const size = c.subscribers ? (c.subscribers >= 1000 ? Math.round(c.subscribers/1000)+'k' : c.subscribers) : '-';
+    const size = c.subscribers ? (c.subscribers >= 1000
+      ? Math.round(c.subscribers/1000)+'k' : c.subscribers) : '-';
     return `<tr data-id="${esc(c.id)}" class="${SELECTED===c.id?'sel':''}">
       <td class="score">${(c.score ?? 0).toFixed(0)}</td>
       <td>${esc(c.name)}<div class="muted">${esc((c.title||c.description||'').slice(0,70))}</div></td>
       <td>${size}</td>
-      <td>${c.posts_per_day ? c.posts_per_day + '/Tag' : '-'}</td>
-      <td><span class="badge ${v}">${esc(STATE.verdict_text[v]||v)}</span></td></tr>`;
-  }).join('') || `<tr><td colspan="5" class="muted">Noch keine Daten. Oben rechts
-    <b>Scan starten</b>, Communities von Hand aufnehmen &ndash; oder erst die
-    <a href="#" id="emptyHelp">Anleitung</a> lesen.</td></tr>`;
-  if ($('emptyHelp')) $('emptyHelp').onclick = (e) => { e.preventDefault(); openTab('anleitung'); };
-
-  document.querySelectorAll('#commRows tr[data-id]').forEach(tr =>
-    tr.onclick = () => { SELECTED = tr.dataset.id; DRAFT = null; renderCommunities(); renderDetail(); });
+      <td>${c.posts_per_day ? c.posts_per_day : '-'}</td>
+      <td><span class="badge ${v}">${esc(t('verdict.short.'+v))}</span></td></tr>`;
+  }).join('') || `<tr><td colspan="5" class="muted">${t('communities.empty')}</td></tr>`;
+  if ($('emptyHelp')) $('emptyHelp').onclick = (e) => { e.preventDefault(); openTab('manual'); };
+  document.querySelectorAll('#commRows tr[data-id]').forEach(tr_ =>
+    tr_.onclick = () => { SELECTED = tr_.dataset.id; DRAFT = null;
+                          renderCommunities(); renderDetail(); });
 }
-['filterText','filterPlatform','filterVerdict'].forEach(id => $(id).oninput = renderCommunities);
+['filterText','filterPlatform','filterVerdict'].forEach(id =>
+  $(id).oninput = renderCommunities);
 
 $('toggleAdd').onclick = () => { $('addPanel').hidden = !$('addPanel').hidden; };
 
 $('addCommunity').onclick = async () => {
-  const platform = $('addPlatform').value;
-  const handle = $('addHandle').value.trim();
-  const url = $('addUrl').value.trim();
-  if (!handle && !url) { $('addMsg').textContent = 'Name oder URL angeben.'; return; }
-  $('addMsg').textContent = 'wird geprueft ...';
+  const handle = $('addHandle').value.trim(), url = $('addUrl').value.trim();
+  if (!handle && !url) { $('addMsg').textContent = t('communities.need_handle'); return; }
+  $('addMsg').textContent = t('communities.checking');
   const res = await api('/api/community/add', {community:{
-    platform, handle: handle || url, url,
-    subscribers: +$('addSubs').value || 0,
-    rules_text: $('addRules').value}});
+    platform: $('addPlatform').value, handle: handle || url, url,
+    subscribers: +$('addSubs').value || 0, rules_text: $('addRules').value}});
   if (res.error) { $('addMsg').textContent = res.error; return; }
   const v = (res.community.analysis||{}).verdict;
-  $('addMsg').innerHTML = 'Aufgenommen &mdash; Einstufung: <span class="badge ' + v + '">' +
-    esc(STATE.verdict_text[v]||v) + '</span>';
+  $('addMsg').innerHTML = esc(t('communities.added')) +
+    ` <span class="badge ${v}">${esc(t('verdict.short.'+v))}</span>`;
   $('addHandle').value=''; $('addUrl').value=''; $('addSubs').value=''; $('addRules').value='';
-  await refresh();
+  await refresh(); openTab('communities');
 };
 
-function current(){ return STATE.communities.find(c => c.id === SELECTED); }
+const current = () => (STATE.communities||[]).find(c => c.id === SELECTED);
 
 function renderDetail(){
   const c = current();
-  if (!c) { $('detail').innerHTML = '<div class="panel muted">Keine Auswahl.</div>'; return; }
-  const a = c.analysis || {};
-  const v = a.verdict || 'grau';
-
+  if (!c) { $('detail').innerHTML = `<div class="panel muted">${esc(t('common.no_selection'))}</div>`; return; }
+  const a = c.analysis || {}, v = a.verdict || 'grau';
   const evidence = (a.evidence||[]).map(e =>
-    `<div class="evidence"><b>${esc(e.label)}</b> &mdash; ${esc(e.source)}<br>${esc(e.quote)}</div>`).join('')
-    || '<p class="muted">Keine einschlaegigen Regeltexte gefunden.</p>';
-
-  const angleOpts = Object.entries(STATE.angles||{}).map(([k,l]) =>
-    `<option value="${k}">${esc(l)}</option>`).join('');
+    `<div class="evidence"><b>${esc(t(e.label))}</b> &mdash; ${esc(e.source)}<br>${esc(e.quote)}</div>`)
+    .join('') || `<p class="muted">${esc(t('communities.no_evidence'))}</p>`;
+  const angleOpts = Object.entries(STATE.angles||{}).map(([k, key]) =>
+    `<option value="${esc(k)}">${esc(t(key))}</option>`).join('');
 
   $('detail').innerHTML = `
     <div class="panel">
-      <h3>${esc(c.name)} <span class="badge ${v}">${esc(STATE.verdict_text[v]||v)}</span></h3>
+      <h3>${esc(c.name)} <span class="badge ${v}">${esc(t('verdict.'+v))}</span></h3>
       <div class="muted">${esc(c.title||'')}</div>
       <p style="font-size:14px">${esc((c.description||'').slice(0,400))}</p>
-      <div>${(a.labels||[]).map(l => `<span class="tag">${esc(l)}</span>`).join('')}</div>
+      <div>${(a.labels||[]).map(l => `<span class="tag">${esc(t(l))}</span>`).join('')}</div>
       <p><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.url)}</a></p>
-      ${v==='rot' ? '<div class="warn"><b>Nicht posten.</b> Diese Community verbietet Eigenwerbung. Ein Beitrag hier kostet dich den Account und potenziell die Domain.</div>' : ''}
-      <h3 style="margin-top:16px">Ausschlaggebende Regeltexte</h3>
+      ${v==='rot' ? `<div class="warn">${t('communities.do_not_post')}</div>` : ''}
+      <h3 style="margin-top:18px">${esc(t('communities.evidence'))}</h3>
       ${evidence}
     </div>
-
     <div class="panel">
-      <h3>Beitragsentwurf</h3>
+      <h3>${esc(t('communities.draft'))}</h3>
       <div class="row">
         <select id="angleSel">${angleOpts}</select>
-        <label class="muted"><input type="checkbox" id="useApi"> per KI schreiben lassen</label>
-        <button class="btn ghost" id="genBtn">Entwurf erzeugen</button>
-        <button class="btn ghost" id="varBtn">Variante</button>
+        <label class="check"><input type="checkbox" id="useApi"> <span>${esc(t('assets.use_api'))}</span></label>
+        <button class="btn ghost" id="genBtn">${esc(t('communities.generate'))}</button>
+        <button class="btn ghost" id="varBtn">${esc(t('communities.variant'))}</button>
       </div>
       <div id="draftBox"></div>
     </div>`;
@@ -676,31 +1052,27 @@ function renderDetail(){
 
 async function generate(variant){
   const c = current(); if (!c) return;
-  $('draftBox').innerHTML = '<p class="muted">Wird erzeugt ...</p>';
-  DRAFT = await api('/api/draft', {
-    community_id: c.id,
-    angle: $('angleSel').value,
-    use_api: $('useApi').checked,
-    seed: variant ? Math.floor(Math.random()*99999) : null
-  });
+  $('draftBox').innerHTML = `<p class="muted">${esc(t('status.running'))}</p>`;
+  DRAFT = await api('/api/draft', {community_id: c.id, angle: $('angleSel').value,
+    use_api: $('useApi').checked, seed: variant ? Math.floor(Math.random()*99999) : null});
   renderDraft();
 }
 
 function renderDraft(){
   const c = current(); if (!c || !DRAFT) return;
-  const box = $('draftBox');
-  box.innerHTML = `
-    ${DRAFT.warning ? `<div class="warn">${esc(DRAFT.warning)}</div>` : ''}
-    <p class="muted">Blickwinkel: ${esc(DRAFT.angle_label)} &middot; erzeugt per ${esc(DRAFT.generated_by)}</p>
+  $('draftBox').innerHTML = `
+    ${DRAFT.warning ? `<div class="warn">${esc(tr(DRAFT.warning))}</div>` : ''}
+    <p class="muted">${esc(t('communities.angle', {angle: t(DRAFT.angle_label)}))}
+      &middot; ${esc(t('communities.via', {source: t('assets.source.'+DRAFT.generated_by)}))}</p>
     <input id="dTitle" style="width:100%;margin-bottom:8px" value="${esc(DRAFT.title)}">
     <textarea id="dBody">${esc(DRAFT.body)}</textarea>
-    <h3 style="margin-top:14px">Vor dem Posten erledigen</h3>
-    <ul class="checklist">${(DRAFT.requirements||[]).map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
+    <h3 style="margin-top:16px">${esc(t('communities.checklist'))}</h3>
+    <ul class="checklist">${(DRAFT.requirements||[]).map(r=>`<li>${esc(t(r))}</li>`).join('')}</ul>
     <div class="row" style="margin-top:14px">
-      <button class="btn ghost" id="copyBtn">Text kopieren</button>
-      <button class="btn ghost" id="queueBtn">In Kampagne uebernehmen</button>
-      <button class="btn" id="openBtn">Formular oeffnen</button>
-      <button class="btn ghost" id="doneBtn">Als gepostet markieren</button>
+      <button class="btn ghost" id="copyBtn">${esc(t('action.copy'))}</button>
+      <button class="btn ghost" id="queueBtn">${esc(t('communities.to_queue'))}</button>
+      <button class="btn" id="openBtn">${esc(t('communities.open_form'))}</button>
+      <button class="btn ghost" id="doneBtn">${esc(t('communities.mark_posted'))}</button>
     </div>
     <div id="guardBox"></div>`;
 
@@ -709,202 +1081,201 @@ function renderDraft(){
 
   $('copyBtn').onclick = () => { sync();
     navigator.clipboard.writeText(DRAFT.title + '\n\n' + DRAFT.body);
-    $('copyBtn').textContent = 'kopiert'; setTimeout(()=>$('copyBtn').textContent='Text kopieren',1500); };
+    $('copyBtn').textContent = t('action.copied');
+    setTimeout(()=>$('copyBtn').textContent=t('action.copy'),1500); };
 
   $('queueBtn').onclick = async () => { sync();
-    await api('/api/queue/add', {draft: DRAFT}); await refresh();
-    $('guardBox').innerHTML = '<div class="ok">In die Kampagne uebernommen.</div>'; };
+    await api('/api/queue/add', {draft: DRAFT}); await refresh(); openTab('communities');
+    $('guardBox').innerHTML = `<div class="ok">${esc(t('communities.queued'))}</div>`; };
 
-  $('openBtn').onclick = async () => {
-    sync();
+  $('openBtn').onclick = async () => { sync();
     const res = await api('/api/assist', {community_id: c.id, draft: DRAFT});
     if (!res.guard.allowed){
-      $('guardBox').innerHTML = `<div class="warn"><b>Schutzschalter:</b><ul class="checklist">
-        ${res.guard.reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
-        <button class="btn ghost" id="forceBtn">Trotzdem oeffnen</button></div>`;
+      $('guardBox').innerHTML = `<div class="warn">${t('communities.guard')}<ul class="checklist">
+        ${trAll(res.guard.reasons).map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
+        <button class="btn ghost" id="forceBtn">${esc(t('communities.force'))}</button></div>`;
       $('forceBtn').onclick = () => window.open(res.url, '_blank', 'noopener');
       return;
     }
-    $('guardBox').innerHTML = '<div class="ok">Formular geoeffnet. Abschicken machst du selbst.</div>';
-    window.open(res.url, '_blank', 'noopener');
-  };
+    $('guardBox').innerHTML = `<div class="ok">${esc(t('communities.form_opened'))}</div>`;
+    window.open(res.url, '_blank', 'noopener'); };
 
   $('doneBtn').onclick = async () => { sync();
-    await api('/api/log', {community_id: c.id, draft: DRAFT, channel: c.name, result: 'gepostet'});
-    await refresh();
-    $('guardBox').innerHTML = '<div class="ok">Im Verlauf vermerkt.</div>'; };
+    await api('/api/log', {community_id: c.id, draft: DRAFT, channel: c.name, result: 'posted'});
+    await refresh(); openTab('communities');
+    $('guardBox').innerHTML = `<div class="ok">${esc(t('communities.logged'))}</div>`; };
 }
 
-// ---------- Kampagne ----------
+/* ---------- Campaign ---------- */
 $('prepBtn').onclick = async () => {
-  $('prepMsg').textContent = 'Entwuerfe werden geschrieben ...';
+  $('prepMsg').textContent = t('campaign.writing');
   const res = await api('/api/queue/prepare', {
     limit: +$('prepLimit').value || 25,
     verdicts: $('prepGreenOnly').checked ? ['gruen'] : ['gruen','gelb'],
     use_api: $('prepApi').checked});
-  $('prepMsg').textContent = res.count + ' Beitraege fertig vorbereitet.';
-  await refresh();
+  $('prepMsg').textContent = t('campaign.ready', {count: res.count});
+  await refresh(); openTab('campaign');
 };
 
-// ---------- Posting-Modus ----------
-let RUN = -1;
-
-$('runStart').onclick = () => { if (STATE.queue.length){ RUN = 0; renderRun(); } };
+$('runStart').onclick = () => { if ((STATE.queue||[]).length){ RUN = 0; renderRun(); } };
 $('runExit').onclick = () => { RUN = -1; $('runPanel').hidden = true; };
 
 function renderRun(){
-  if (RUN < 0 || RUN >= STATE.queue.length){
+  const queue = STATE.queue || [];
+  if (RUN < 0 || RUN >= queue.length){
     $('runPanel').hidden = true;
-    if (RUN >= 0) alert('Queue abgearbeitet.');
+    if (RUN >= 0) alert(t('campaign.finished'));
     RUN = -1; return;
   }
-  const q = STATE.queue[RUN];
+  const q = queue[RUN];
   $('runPanel').hidden = false;
-  $('runHead').textContent = `Schritt ${RUN+1} von ${STATE.queue.length}: ${q.community}`;
-  $('runBar').style.width = Math.round(100*RUN/STATE.queue.length) + '%';
+  $('runHead').textContent = t('campaign.step',
+    {current: RUN+1, total: queue.length, community: q.community});
+  $('runBar').style.width = Math.round(100*RUN/queue.length) + '%';
   const today = new Date().toISOString().slice(0,10);
   const late = q.scheduled_for && q.scheduled_for > today;
 
   $('runBody').innerHTML = `
     <div class="row">
-      <span class="badge ${q.verdict||'grau'}">${esc(STATE.verdict_text[q.verdict]||'')}</span>
-      <span class="tag">${esc(q.angle_label||'')}</span>
-      <span class="tag">geplant: ${esc(q.scheduled_for||'-')}</span>
+      <span class="badge ${q.verdict||'grau'}">${esc(t('verdict.short.'+(q.verdict||'grau')))}</span>
+      <span class="tag">${esc(t(q.angle_label||'angle.resource'))}</span>
+      <span class="tag">${esc(t('campaign.scheduled', {date: q.scheduled_for||'-'}))}</span>
     </div>
-    ${late ? '<div class="warn">Dieser Beitrag ist erst fuer ein spaeteres Datum eingeplant. Mehrere an einem Tag ist das Muster, das als Spam erkannt wird.</div>' : ''}
-    <h3 style="margin-top:14px">Vor dem Posten erledigen</h3>
-    <ul class="checklist">${(q.requirements||[]).map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
+    ${late ? `<div class="warn">${esc(t('campaign.too_early'))}</div>` : ''}
+    <h3 style="margin-top:16px">${esc(t('communities.checklist'))}</h3>
+    <ul class="checklist">${(q.requirements||[]).map(r=>`<li>${esc(t(r))}</li>`).join('')}</ul>
     <input id="runTitle" style="width:100%;margin:10px 0 8px" value="${esc(q.title)}">
     <textarea id="runText">${esc(q.body)}</textarea>
     <div class="row" style="margin-top:12px">
-      <button class="btn" id="runOpen">Text kopieren und Formular oeffnen</button>
-      <button class="btn ghost" id="runDone">Gepostet &ndash; weiter</button>
-      <button class="btn ghost" id="runSkip">Ueberspringen</button>
+      <button class="btn" id="runOpen">${esc(t('campaign.copy_open'))}</button>
+      <button class="btn ghost" id="runDone">${esc(t('campaign.posted_next'))}</button>
+      <button class="btn ghost" id="runSkip">${esc(t('campaign.skip'))}</button>
     </div>
     <p class="muted" id="runHint"></p>`;
 
   const sync = () => { q.title = $('runTitle').value; q.body = $('runText').value; };
   $('runTitle').oninput = sync; $('runText').oninput = sync;
 
-  $('runOpen').onclick = async () => {
-    sync();
+  $('runOpen').onclick = async () => { sync();
     await navigator.clipboard.writeText(q.title + '\n\n' + q.body).catch(()=>{});
     const res = await api('/api/assist', {community_id: q.community_id, draft: q});
     window.open(res.url || q.target_url, '_blank', 'noopener');
-    $('runHint').textContent = res.guard.allowed
-      ? 'Text liegt in der Zwischenablage. Im Formular gegenlesen und abschicken.'
-      : 'Hinweis: ' + res.guard.reasons.join(' ');
-  };
-  $('runDone').onclick = async () => {
-    sync();
+    $('runHint').textContent = res.guard.allowed ? t('campaign.clipboard')
+      : t('campaign.note', {reasons: trAll(res.guard.reasons).join(' ')}); };
+
+  $('runDone').onclick = async () => { sync();
     await api('/api/log', {community_id: q.community_id, draft: q,
-      channel: q.community, result: 'gepostet'});
-    await refresh();
-    renderRun();   // Eintrag ist raus, derselbe Index zeigt auf den naechsten
-  };
+      channel: q.community, result: 'posted'});
+    await refresh(); openTab('campaign'); renderRun(); };
+
   $('runSkip').onclick = () => { RUN++; renderRun(); };
 }
 
 function renderQueue(){
-  if (!STATE.queue.length){
-    $('queueList').innerHTML = '<p class="muted">Queue ist leer &mdash; oben "Kampagne vorbereiten".</p>';
+  const queue = STATE.queue || [];
+  if (!queue.length){
+    $('queueList').innerHTML = `<p class="muted" style="margin-top:18px">${esc(t('campaign.queue_empty'))}</p>`;
     return;
   }
-  $('queueList').innerHTML = STATE.queue.map((q,i) => `
-    <div class="panel" style="margin-top:12px">
-      <h3>${i+1}. ${esc(q.community)} <span class="tag">${esc(q.angle_label||'')}</span>
+  $('queueList').innerHTML = queue.map((q,i) => `
+    <div class="panel">
+      <h3>${i+1}. ${esc(q.community)}
+        <span class="tag">${esc(t(q.angle_label||'angle.resource'))}</span>
         <span class="tag">${esc(q.scheduled_for||'')}</span>
-        <span class="badge ${q.verdict||'grau'}">${esc(STATE.verdict_text[q.verdict]||'')}</span></h3>
+        <span class="badge ${q.verdict||'grau'}">${esc(t('verdict.short.'+(q.verdict||'grau')))}</span></h3>
       <b>${esc(q.title)}</b>
       <pre style="white-space:pre-wrap;font-size:13px;color:var(--muted)">${esc((q.body||'').slice(0,600))}</pre>
-      <ul class="checklist">${(q.requirements||[]).map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
+      <ul class="checklist">${(q.requirements||[]).map(r=>`<li>${esc(t(r))}</li>`).join('')}</ul>
       <div class="row">
-        <button class="btn ghost" data-copy="${i}">Kopieren</button>
-        <button class="btn ghost" data-del="${esc(q.community_id)}">Entfernen</button>
+        <button class="btn ghost" data-qcopy="${i}">${esc(t('action.copy'))}</button>
+        <button class="btn ghost" data-qdel="${esc(q.community_id)}">${esc(t('action.remove'))}</button>
       </div>
     </div>`).join('');
-
-  document.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => {
-    const q = STATE.queue[+b.dataset.copy];
+  document.querySelectorAll('[data-qcopy]').forEach(b => b.onclick = () => {
+    const q = STATE.queue[+b.dataset.qcopy];
     navigator.clipboard.writeText(q.title + '\n\n' + q.body);
-    b.textContent = 'kopiert'; setTimeout(()=>b.textContent='Kopieren',1500);
+    b.textContent = t('action.copied'); setTimeout(()=>b.textContent=t('action.copy'),1500);
   });
-  document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
-    await api('/api/queue/remove', {community_id: b.dataset.del}); refresh();
+  document.querySelectorAll('[data-qdel]').forEach(b => b.onclick = async () => {
+    await api('/api/queue/remove', {community_id: b.dataset.qdel});
+    await refresh(); openTab('campaign');
   });
 }
 
-// ---------- Kanaele ----------
+/* ---------- Auto channels ---------- */
 function renderChannels(){
-  const hooks = (STATE.config.auto_channels||{}).discord_webhooks || [];
+  const hooks = ((STATE.config||{}).auto_channels||{}).discord_webhooks || [];
   $('hookList').innerHTML = hooks.length ? hooks.map((h,i) =>
     `<div class="row" style="margin:6px 0"><span class="tag">${esc(h.name||'Discord')}</span>
      <span class="muted">${esc((h.url||'').slice(0,60))}...</span>
-     <button class="btn ghost" data-hookdel="${i}">Entfernen</button></div>`).join('')
-    : '<p class="muted">Noch kein Webhook hinterlegt.</p>';
+     <button class="btn ghost" data-hookdel="${i}">${esc(t('action.remove'))}</button></div>`).join('')
+    : `<p class="muted">${esc(t('channels.no_hook'))}</p>`;
   document.querySelectorAll('[data-hookdel]').forEach(b => b.onclick = async () => {
     const list = hooks.slice(); list.splice(+b.dataset.hookdel,1);
-    await api('/api/config', {config:{auto_channels:{discord_webhooks:list}}}); refresh();
+    await api('/api/config', {config:{auto_channels:{discord_webhooks:list}}});
+    await refresh(); openTab('channels');
   });
-
-  const m = (STATE.config.auto_channels||{}).mastodon || {};
+  const m = ((STATE.config||{}).auto_channels||{}).mastodon || {};
   $('mastoInstance').value = m.instance || ''; $('mastoToken').value = m.access_token || '';
-
   $('discordSearches').innerHTML = (STATE.discord_searches||[]).map(d =>
     `<a class="tag" href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.name)}</a>`).join('');
 }
 
 $('addHook').onclick = async () => {
-  const hooks = ((STATE.config.auto_channels||{}).discord_webhooks || []).slice();
+  const hooks = (((STATE.config||{}).auto_channels||{}).discord_webhooks || []).slice();
   if (!$('hookUrl').value.trim()) return;
   hooks.push({name:$('hookName').value.trim()||'Discord', url:$('hookUrl').value.trim()});
   await api('/api/config', {config:{auto_channels:{discord_webhooks:hooks}}});
-  $('hookName').value=''; $('hookUrl').value=''; refresh();
+  $('hookName').value=''; $('hookUrl').value=''; await refresh(); openTab('channels');
 };
 
 $('saveMasto').onclick = async () => {
   await api('/api/config', {config:{auto_channels:{mastodon:{
     instance:$('mastoInstance').value.trim(), access_token:$('mastoToken').value.trim()}}}});
-  refresh();
+  await refresh(); openTab('channels');
 };
 
 $('autoBlast').onclick = async () => {
-  const c = current();
-  const draft = DRAFT || {title:`${STATE.config.site.name} ${STATE.config.site.version}`,
-    body: STATE.config.site.one_liner + '\n\n' + STATE.config.site.url};
+  const p = STATE.product || {};
+  const draft = DRAFT || {title: [p.name, p.version].filter(Boolean).join(' '),
+    body: (p.one_liner || '') + '\n\n' + (p.url || '')};
   const res = await api('/api/publish/auto', {draft});
   $('autoResult').innerHTML = (res.results||[]).map(r =>
-    `<div class="${r.ok?'ok':'warn'}">${esc(r.channel)}: ${r.ok?'gesendet':'Fehler '+r.status+' '+esc(r.detail)}</div>`
-  ).join('') || '<p class="muted">Keine eigenen Kanaele konfiguriert.</p>';
+    `<div class="${r.ok?'ok':'warn'}">${esc(r.channel)}: ${r.ok ? esc(t('channels.sent'))
+      : esc(t('channels.error', {status:r.status, detail:r.detail}))}</div>`).join('')
+    || `<p class="muted">${esc(t('channels.no_auto'))}</p>`;
 };
 
-$('addManual').onclick = async () => {
-  if (!$('manUrl').value.trim()) return;
-  await api('/api/community/add', {community:{
-    name: $('manName').value.trim() || $('manUrl').value.trim(),
-    url: $('manUrl').value.trim(),
-    platform: $('manPlatform').value,
-    id: $('manPlatform').value + ':' + $('manUrl').value.trim(),
-    description: 'Manuell aufgenommen'}});
-  $('manName').value=''; $('manUrl').value=''; refresh();
-};
-
-// ---------- Verlauf ----------
+/* ---------- History ---------- */
 function renderHistory(){
-  if (!STATE.history.length){ $('historyList').innerHTML='<p class="muted">Noch nichts gepostet.</p>'; return; }
-  $('historyList').innerHTML = '<table><thead><tr><th>Datum</th><th>Community</th><th>Kanal</th><th>Titel</th><th>Ergebnis</th></tr></thead><tbody>'
-    + STATE.history.slice().reverse().map(h => `<tr><td>${new Date(h.ts*1000).toLocaleString('de-DE')}</td>
-      <td>${esc(h.community)}</td><td>${esc(h.channel)}</td>
-      <td>${esc((h.title||'').slice(0,60))}</td><td>${esc(h.result)}</td></tr>`).join('')
+  const history = STATE.history || [];
+  if (!history.length){
+    $('historyList').innerHTML = `<p class="muted" style="margin-top:18px">${esc(t('history.empty'))}</p>`;
+    return;
+  }
+  $('historyList').innerHTML = `<table><thead><tr>
+      <th>${esc(t('history.date'))}</th><th>${esc(t('history.community'))}</th>
+      <th>${esc(t('history.channel'))}</th><th>${esc(t('history.post_title'))}</th>
+      <th>${esc(t('history.result'))}</th></tr></thead><tbody>`
+    + history.slice().reverse().map(h => `<tr>
+        <td>${new Date(h.ts*1000).toLocaleString()}</td>
+        <td>${esc(h.community)}</td><td>${esc(h.channel)}</td>
+        <td>${esc((h.title||'').slice(0,60))}</td><td>${esc(h.result)}</td></tr>`).join('')
     + '</tbody></table>';
 }
 
-// ---------- Einstellungen ----------
+/* ---------- Manual ---------- */
+function renderManual(){
+  const chapters = ((STATE.manual||{})[LANG]) || ((STATE.manual||{}).en) || [];
+  $('manualToc').innerHTML = `<b>${esc(t('tab.manual'))}</b>` + chapters.map((c,i) =>
+    `<a href="#m-${esc(c.id)}">${i+1}. ${esc(c.title)}</a>`).join('');
+  $('manualBody').innerHTML = chapters.map((c,i) =>
+    `<h2 id="m-${esc(c.id)}">${i+1}. ${esc(c.title)}</h2>${c.html}`).join('');
+}
+
+/* ---------- Settings ---------- */
 function fillSettings(){
-  const c = STATE.config; if (!c.site) return;
-  $('cfgName').value = c.site.name; $('cfgUrl').value = c.site.url;
-  $('cfgVersion').value = c.site.version; $('cfgRedditUser').value = c.site.reddit_username||'';
-  $('cfgKeywords').value = (c.discovery.keywords||[]).join(', ');
+  const c = STATE.config || {}; if (!c.discovery) return;
   $('cfgMax').value = c.discovery.max_communities;
   $('cfgDeep').value = c.discovery.deep_scan_top_n;
   $('cfgMinSubs').value = c.discovery.min_subscribers;
@@ -924,32 +1295,29 @@ const redditCfg = () => ({client_id:$('cfgRedditId').value.trim(),
   bot_username:$('cfgBotUser').value.trim(), bot_password:$('cfgBotPass').value});
 
 $('testReddit').onclick = async () => {
-  $('redditMsg').textContent = 'pruefe ...';
+  $('redditMsg').textContent = t('status.running');
   await api('/api/config', {config:{reddit: redditCfg()}});
   const res = await api('/api/reddit/check', {});
   $('redditMsg').textContent = res.detail;
-  $('redditMsg').style.color = res.ok ? '#8ed9a8' : '#e8969b';
+  $('redditMsg').style.color = res.ok ? 'var(--green)' : '#ff8b92';
 };
 
 $('saveCfg').onclick = async () => {
   await api('/api/config', {config:{
-    site:{name:$('cfgName').value, url:$('cfgUrl').value, version:$('cfgVersion').value,
-          reddit_username:$('cfgRedditUser').value},
-    discovery:{keywords: $('cfgKeywords').value.split(',').map(s=>s.trim()).filter(Boolean),
-      max_communities:+$('cfgMax').value, deep_scan_top_n:+$('cfgDeep').value,
+    discovery:{max_communities:+$('cfgMax').value, deep_scan_top_n:+$('cfgDeep').value,
       min_subscribers:+$('cfgMinSubs').value},
     request_delay_seconds: +$('cfgDelay').value,
     safety:{max_reddit_posts_per_day:+$('cfgMaxDay').value,
             min_days_between_same_subreddit:+$('cfgMinDays').value},
     anthropic:{api_key:$('cfgApiKey').value, model:$('cfgModel').value},
     reddit: redditCfg()}});
-  $('cfgMsg').textContent = 'gespeichert';
+  $('cfgMsg').textContent = t('status.saved');
   setTimeout(()=>$('cfgMsg').textContent='', 2000);
-  refresh();
+  await refresh(); openTab('settings');
 };
 
 refresh();
-pollScan();
+pollJob();
 </script>
 </body>
 </html>

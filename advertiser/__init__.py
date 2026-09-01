@@ -1,6 +1,6 @@
-"""Mutexx Advertiser - Community-Recherche, Regelpruefung und Kampagnensteuerung.
+"""Mutexx Advertiser - product analysis, marketing strategy and campaign control.
 
-Ein Produkt von Mutexx Production.
+A Mutexx Production tool.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"

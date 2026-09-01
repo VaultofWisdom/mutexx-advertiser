@@ -1,163 +1,280 @@
 # Mutexx Advertiser
 
-Ein Werkzeug, das für dein Produkt die passenden Communities findet, deren Regeln liest,
-jede einzeln bewertet, für jede einen eigenen Beitrag schreibt und die ganze Kampagne
-terminiert zum Abschicken bereitlegt.
+You describe your product. The tool reads the product page, works out what the product is
+and who it is for, picks the marketing channels that actually suit it — with a budget or
+without — and carries them as far as it responsibly can.
 
-Der Unterschied zu üblichen „Poste überall"-Tools ist bewusst gewählt: Der Advertiser liest
-vor jedem Beitrag die Regeln der Zielcommunity und **weigert sich, dort etwas vorzubereiten,
-wo Eigenwerbung verboten ist**. Automatisch veröffentlicht wird nur in Kanälen, die dir
-selbst gehören. Für fremde Communities bereitet er alles fertig vor — abschicken tut ein
-Mensch. Genau das ist der Unterschied zwischen einer Kampagne, die wächst, und einer
-gesperrten Domain.
+The difference from the usual "post everywhere" tools is deliberate: the Advertiser reads
+the target community's rules before every post and **refuses to prepare anything where
+self-promotion is forbidden**. It publishes automatically only in channels you own. For
+everything else it prepares the work in full — a human sends it. That is the difference
+between a campaign that grows and a banned domain.
 
-Ein Produkt von **Mutexx Production**.
+A **Mutexx Production** tool.
 
 ---
 
-## Stand
+## The sequence
 
-**Version 0.1.** Läuft und wird produktiv genutzt. Was bereits funktioniert:
+```
+Product profile  ->  Analysis  ->  Strategy  ->  Assets  ->  Campaign
+(what you enter)    (what it is,  (what is      (the copy   (communities,
+                     who for)      worth it,     for those    drafts, dates,
+                                   at what        channels)   posting mode)
+                                   budget)
+```
 
-* Foren- und Wiki-Suche inklusive Link-Ernte auf weitere Foren
-* Regel-Analyse mit Ampel und Originalzitaten, für automatisch geholte **und** selbst
-  eingefügte Regeltexte
-* Entwürfe in fünf Blickwinkeln, wahlweise aus Vorlagen oder per Anthropic-API frei
-  geschrieben
-* Stapel-Vorbereitung ganzer Kampagnen mit Terminverteilung
-* Posting-Modus, der Station für Station durch die Queue führt
-* Vollautomatisches Veröffentlichen in eigene Discord- und Mastodon-Kanäle
-* Schutzschalter gegen Tageslimit-Überschreitung und Wiederholungen
-* Vollständige Anleitung direkt in der Oberfläche
+Several products run side by side. The switcher at the top right moves between them;
+communities, queue and history are kept strictly apart per product.
 
-Ehrlich benannte Baustellen:
+---
 
-* Die **Entwurfsvorlagen** sind derzeit auf ein Nachschlagewerk zugeschnitten. Für beliebige
-  Produkte müssen sie noch konfigurierbar werden — bis dahin lohnt die Anthropic-Anbindung,
-  die frei auf dein Produkt schreibt.
-* Die **Startlisten** für Subreddits und Foren sind auf ein Nischenthema vorbelegt und
-  gehören in die Konfiguration.
-* Der **Reddit-Teil** braucht eine Freigabe durch Reddit, siehe unten.
+## The hard limit: no money
+
+The tool **does not spend money** and cannot. Paid campaigns are prepared in full — ad copy
+within each channel's character limits, audiences, keywords, budget split — and then handed
+over. You press *activate campaign* in your own ad account.
+
+This is the same decision that applies to posting in other people's communities, for the
+same reason: the last click is the point where a human notices the damage before it
+happens. With ads that click costs real money; with communities it costs the domain.
+
+---
+
+## Language
+
+English is the default. German is available, and the switch in **Settings** takes effect
+immediately, everywhere — including plans and assets generated weeks earlier.
+
+That works because no translated prose is ever stored. A saved strategy plan holds the key
+`channel.communities.what`, not the sentence; the interface resolves keys against a
+catalogue it receives once. The language was never baked in, so it can be changed after
+the fact.
+
+One thing deliberately does **not** switch: generated marketing content. Post drafts and ad
+copy follow the languages set on the *product*, because they are written for an audience,
+not for you. A German product advertised in a German forum keeps its German post while you
+read the interface in English.
+
+---
+
+## State
+
+**Version 0.3.** What works:
+
+* **Product profiles** — as many as you like, with separate data per product
+* **Product analysis** — reads the product page, derives keywords, guesses category and
+  pricing from signals in the text and shows the passage each guess rests on. With an
+  Anthropic key it adds audiences, value propositions, positioning and objections
+* **Strategy engine** — 16 channels in three kinds (owned, organic, paid), scored by
+  category, pricing and budget, with a phase plan, a budget split and a stated reason for
+  every rejected channel
+* **Assets** — nine of them, each within its channel's character limits: search ads for
+  Google and Microsoft, Meta and Reddit ads, directory listings, store listing, press kit,
+  SEO fields, announcement for owned channels. Plus negative keywords and the destination
+  URL with UTM tagging
+* **Community discovery** — forums and wikis including link harvesting, subreddits through
+  the Reddit API
+* **Rule analysis** with a traffic light and original quotes, for rules fetched
+  automatically **and** for rules you paste in yourself
+* **Drafts** in five angles, English and German, filled from profile and analysis — from
+  templates or written freely through the Anthropic API
+* **Batch preparation** of whole campaigns with scheduling and a posting mode
+* **Fully automatic publishing** to your own Discord and Mastodon channels
+* **Safety catch** against exceeding the daily limit and against repeats
+* Full manual inside the interface, 18 chapters, in both languages
+
+Stated honestly, what is missing:
+
+* **Channels beyond Reddit and forums** are not connected yet — Lemmy, Hacker News,
+  Discourse instances, AlternativeTo, Product Hunt. See [the roadmap](docs/ROADMAP.md),
+  stage 5.
+* There is **no feedback loop**. The UTM tagging is in place, but nothing reports back
+  which channel actually carried, so channels are still scored by keyword density rather
+  than by results.
+* **The templates are plain.** They assemble only what is in the profile and invent
+  nothing — deliberate, but dry without an API key.
+* The **Reddit part** needs approval from Reddit, see below.
+* It is not yet a **downloadable Windows app**. Today it runs from source.
 
 ---
 
 ## Installation
 
-Es gibt keine. Python 3.10 oder neuer genügt, Fremdbibliotheken werden nicht benötigt.
+There is none. Python 3.10 or newer is enough; no third-party libraries are used.
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/VaultofWisdom/mutexx-advertiser.git
 cd mutexx-advertiser
 python start.py
 ```
 
-Unter Windows reicht ein Doppelklick auf **`Start.bat`**. Die Oberfläche öffnet sich im
-Browser unter `http://127.0.0.1:8777`. Der Server hört ausschließlich auf `127.0.0.1` und ist
-aus dem Netzwerk nicht erreichbar.
+On Windows, double-clicking **`Start.bat`** is enough. The interface opens in your browser
+at `http://127.0.0.1:8777`. The server listens on `127.0.0.1` only and is not reachable
+from the network.
 
-Beim ersten Start legt die App eine `config.json` an. `config.example.json` zeigt, was
-hineingehört. Die echte `config.json` und der Ordner `data/` sind per `.gitignore`
-ausgeschlossen — dort liegen Zugangsdaten.
+On first start the app creates a `config.json`. `config.example.json` shows what belongs in
+it. The real `config.json` and the `data/` folder are excluded by `.gitignore` — that is
+where credentials live.
 
----
+Tests run without any extra tooling (94 of them, under a second):
 
-## Erste Schritte
-
-1. **Einstellungen** → Produktname, URL, Version und Kurzbeschreibung eintragen, dazu die
-   Stichwörter, nach denen gesucht werden soll.
-2. **Scan starten** — durchsucht Foren und Wikis.
-3. **Communities** → *Community von Hand aufnehmen*: Zielcommunity eintragen, deren Regeln
-   hineinkopieren. Die Ampel-Analyse läuft sofort.
-4. **Kampagne** → *Kampagne vorbereiten*: Entwürfe für alle geeigneten Communities,
-   rote werden übersprungen, Termine werden verteilt.
-5. **Posting-Modus starten** und die Queue abarbeiten.
-
-Die ausführliche Anleitung steckt im Tab **Anleitung** in der App selbst — zwölf Kapitel von
-der Ampel-Logik über die Blickwinkel bis zu den Grenzen des Werkzeugs.
+```bash
+python -m unittest discover -s tests
+```
 
 ---
 
-## Die Ampel
+## First steps
 
-| Stufe | Bedeutung | Was zu tun ist |
+1. **Product** — name, URL, one-liner, category, pricing, audience and monthly budget, then
+   *Save profile*.
+2. **Analysis** — *Run analysis*. It reads the product page and derives the keywords
+   everything later searches with.
+3. **Strategy** — read the channel plan. It also says what is not worth it, and why.
+4. **Assets** — generate the copy for the channels you intend to work.
+5. **Seed lists** — enter subreddits and forums, or ask for suggestions.
+6. **Start scan** at the top right.
+7. **Campaign** — *Prepare campaign*, then *Start posting mode*.
+
+The full manual is in the **Manual** tab inside the app.
+
+---
+
+## The traffic light
+
+| Level | Meaning | What to do |
 |---|---|---|
-| grün | kein Werbeverbot in den Regeln gefunden | posten, aber wertig |
-| gelb | erlaubt mit Auflagen: Ratio, Flair, Sammelthread, Mod-Freigabe | Checkliste abarbeiten |
-| rot | Eigenwerbung ausdrücklich verboten | nicht posten |
-| grau | Regeln nicht abrufbar | selbst nachlesen |
+| green | no promotion ban found in the rules | post, but post something worth reading |
+| amber | allowed with conditions: ratio, flair, collection thread, moderator approval | work the checklist |
+| red | self-promotion explicitly forbidden | do not post |
+| grey | rules could not be fetched | read them yourself |
 
-Zu jeder Einstufung zeigt die App die **Originalzitate**, aus denen sie stammt. Die Analyse
-ist eine Heuristik, kein Ersatz fürs Lesen.
+For every assessment the app shows the **original quotes** it rests on. The analysis is a
+heuristic, not a substitute for reading — and it is the most thoroughly tested part of the
+code, because a false green here costs the domain.
 
 ---
 
-## Blickwinkel
+## The channels
 
-| Blickwinkel | wofür |
+The strategy picks from three kinds. The column that matters is the last one: how far the
+app carries the channel.
+
+| Kind | Channels | Automation |
+|---|---|---|
+| owned | Owned channels, product page | the app publishes itself |
+| organic | Communities and forums, directories and portals, content and search, store listing, open-source visibility, trade press, mailing list, video | the app prepares, or supplies copy |
+| paid | Google search ads, Google Shopping, Meta, Reddit, Microsoft, YouTube/TikTok, sponsorship | the app prepares; you run it in your own ad account |
+
+Channels that do not fit are not dropped quietly — they are listed under *Rejected* with a
+reason. A recommendation without a counter-check is an opinion, not advice.
+
+---
+
+## Assets
+
+For every channel in the strategy there is finished copy — within that channel's character
+limits.
+
+Two promises separate this from a text generator:
+
+**The character limits are hard.** Google rejects an ad headline of 31 characters, not
+"roughly". Every field shows its length; anything that had to be cut is marked. AI copy runs
+through the same check — language models count characters notoriously badly.
+
+**Nothing is invented.** The templates assemble only what is in the profile and the
+analysis. Two cases turned up while building this and are now pinned down by tests: "Free
+trial" on a subscription promises a trial period that may not exist, and the category label
+"Desktop software (Windows, macOS, Linux)" becomes a platform promise nobody made once it
+is printed in a press kit. Sentences like those go unnoticed precisely because they sound so
+familiar — and they still end up published in the user's name.
+
+---
+
+## Angles
+
+| Angle | For |
 |---|---|
-| Ressource teilen | grüne Communities, direkter Nutzen |
-| Um Korrekturen bitten | Fach-Communities — wirkt dort am besten |
-| Projekt vorstellen | Entwickler- und Projekt-Communities |
-| Fachfrage mit Kontext | Communities mit Ratio-Regel |
-| Forum-Vorstellung | klassische Foren |
+| Share a resource | green communities, direct usefulness |
+| Ask for corrections | specialist communities — works best there |
+| Show the project | developer and project communities |
+| A question with context | communities with a ratio rule |
+| Forum introduction | classic forums |
 
-Alle Vorlagen folgen einer Regel: **erst Nutzen, dann Link.** Ein Beitrag, der auch ohne den
-Link lesenswert wäre, wird nicht als Werbung gelesen.
+All templates follow one rule: **value first, link second.** A post that would be worth
+reading without the link does not get read as advertising.
+
+Templates cannot translate. If the target community is English-speaking and the product
+copy in the profile is only German, the draft stays German — and the app says so explicitly
+rather than shipping a half-German post.
 
 ---
 
 ## Reddit
 
-Reddits *Responsible Builder Policy* lässt seit Ende 2025 keinen Selbstbedienungs-Zugang mehr
-zu:
+Reddit's *Responsible Builder Policy* has allowed no self-service access since late 2025:
 
-> „Approval is required: You must request access and get explicit approval before accessing
+> "Approval is required: You must request access and get explicit approval before accessing
 > any Reddit data through our API"
 
-Ohne Freigabe bleibt die automatische Subreddit-Suche leer. Alles andere funktioniert
-uneingeschränkt, und Subreddits lassen sich von Hand aufnehmen. Einen Umweg gibt es nicht und
-soll es nicht geben — wer ohne Freigabe scrapt, riskiert genau das, was dieses Werkzeug
-verhindern soll.
+Without approval the automatic subreddit search stays empty. Everything else works without
+restriction, and subreddits can be added by hand — paste the sidebar rules in and they go
+through exactly the same analysis. There is no workaround and there should not be one:
+scraping without approval risks precisely what this tool exists to prevent.
 
-Mit Freigabe: App vom Typ *script* unter <https://www.reddit.com/prefs/apps> anlegen,
-Client-ID und Secret in den Einstellungen eintragen, *Verbindung testen*. Die App liest
-ausschließlich und hat keinerlei Schreibzugriff.
+With approval: create an app of type *script* at <https://www.reddit.com/prefs/apps>, put
+the client ID and secret into Settings, and use *Test connection*. The app reads only and
+has no write access whatsoever.
 
 ---
 
-## Was dieses Werkzeug nicht tut
+## What this tool does not do
 
-Es postet nicht automatisch in fremde Communities. Das ist keine fehlende Funktion, sondern
-eine Entscheidung: Denselben Link automatisiert über viele Communities zu verteilen, ist nach
-den Regeln praktisch jeder Plattform Spam. Reddit formuliert es so:
+It does not post automatically into other people's communities. That is not a missing
+feature but a decision: distributing the same link across many communities is spam under
+practically every platform's rules. Reddit puts it this way:
 
-> „Apps must not engage in spamming activity through automated posts, comments, or direct
+> "Apps must not engage in spamming activity through automated posts, comments, or direct
 > messages. This includes posting identical or substantially similar content across
 > subreddits."
 
-Die Folge ist üblicherweise kein einzelner Account-Ban, sondern eine Sperre der beworbenen
-Domain — dann verschwinden auch die Links, die andere freiwillig setzen. Der Advertiser
-nimmt dir alles ab außer dem letzten Klick, und dieser letzte Klick ist der Grund, warum die
-Kampagne überlebt.
+The usual consequence is not a single account ban but a ban on the promoted domain — at
+which point the links other people set voluntarily disappear too. The Advertiser takes
+everything off your hands except the last click, and that last click is why the campaign
+survives.
+
+And it does not spend money. See above.
 
 ---
 
-## Aufbau
+## Layout
 
 ```
-Start.bat                  Starter für Windows
-start.py                   Startpunkt
-config.example.json        Beispielkonfiguration
-advertiser/core.py         HTTP, Rate-Limit, Konfiguration, Speicher
-advertiser/reddit_api.py   Reddit-Zugang, ausschließlich lesend
-advertiser/discovery.py    Community-Suche und Bewertung
-advertiser/rules.py        Regel-Analyse und Ampel
-advertiser/drafts.py       Entwürfe und Blickwinkel
-advertiser/publish.py      Eigene Kanäle, Posting-Assistent, Schutzschalter
-advertiser/seeds.py        Startlisten
-advertiser/server.py       Lokaler Server
-advertiser/ui.html         Oberfläche samt Anleitung
+Start.bat                  Windows launcher
+start.py                   entry point
+config.example.json        example configuration
+docs/ROADMAP.md            where the tool is going
+
+advertiser/core.py         HTTP, rate limiting, configuration, storage
+advertiser/i18n.py         translation catalogue and machinery
+advertiser/i18n_content.py translation catalogue, long form: channels and assets
+advertiser/manual.py       the in-app manual, both languages
+advertiser/products.py     product profiles and migration
+advertiser/analysis.py     product analysis: read the page, keywords, guess category
+advertiser/strategy.py     channel catalogue, scoring, budget split, phase plan
+advertiser/assets.py       assets within channel character limits, UTM
+advertiser/seeds.py        per-product seed lists
+advertiser/discovery.py    community discovery and scoring
+advertiser/rules.py        rule analysis and traffic light
+advertiser/drafts.py       drafts and angles
+advertiser/reddit_api.py   Reddit access, read-only
+advertiser/publish.py      owned channels, posting assistant, safety catch
+advertiser/server.py       local server
+advertiser/ui.html         interface
+
+tests/                     python -m unittest discover -s tests
 ```
 
-Alle Daten liegen als lesbares JSON neben der App. Es gibt keinen Cloud-Dienst, kein Konto
-und keine Telemetrie.
+Everything is stored as readable JSON next to the app, per product in
+`data/products/<name>/`. There is no cloud service, no account and no telemetry.

@@ -1,8 +1,8 @@
 """
-Vault Outreach Navigator - Kern: HTTP-Client, Rate-Limiting, Konfiguration, Speicher.
+Mutexx Advertiser core: HTTP client, rate limiting, configuration, storage.
 
-Bewusst OHNE externe Abhaengigkeiten (nur Python-Standardbibliothek), damit die App
-ohne pip-Installation laeuft und in Jahren noch startet.
+Deliberately WITHOUT external dependencies - the standard library only - so the app
+runs with no pip install and still starts years from now.
 """
 
 from __future__ import annotations
@@ -19,22 +19,32 @@ import urllib.request
 from typing import Any
 
 # ---------------------------------------------------------------------------
-# Pfade
+# Paths
 # ---------------------------------------------------------------------------
 
 APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(APP_DIR, "data")
+PRODUCTS_DIR = os.path.join(DATA_DIR, "products")
 CONFIG_PATH = os.path.join(APP_DIR, "config.json")
 
 os.makedirs(DATA_DIR, exist_ok=True)
 
 
 # ---------------------------------------------------------------------------
-# Konfiguration
+# Configuration
 # ---------------------------------------------------------------------------
 
 DEFAULT_CONFIG: dict[str, Any] = {
-    # Dein Produkt. Diese Angaben landen in jedem Entwurf.
+    # Configuration version. Drives the one-off migration into product profiles.
+    "schema_version": 0,
+    # Your products. Every profile gets its own data folder; everything analysis,
+    # strategy and drafts need lives there - see products.py.
+    "products": [],
+    "active_product": "",
+    # Interface language. English by default; the switch lives in Settings.
+    "ui_language": "en",
+    # Deprecated: the old single-product configuration. Carried into a profile on
+    # first start and never read again.
     "site": {
         "name": "Mein Produkt",
         "url": "https://example.com",
@@ -42,37 +52,32 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "one_liner": "Kurzbeschreibung deines Produkts in einem Satz.",
         "reddit_username": "",
     },
-    # Wie sich die App im Netz identifiziert. Ehrliche Kennung ist Pflicht -
-    # gefaelschte Browser-User-Agents sind bei Reddit ein Regelverstoss.
-    "user_agent": "MutexxAdvertiser/0.1 (Recherche-Tool; Kontakt: bitte-eigene-adresse-eintragen)",
+    # How the app identifies itself on the network. An honest identifier is required -
+    # faking a browser user agent breaks Reddit's rules.
+    "user_agent": "MutexxAdvertiser/0.3 (research tool; contact: please-enter-your-own-address)",
     "request_delay_seconds": 1.3,
+    # Limits of the scan. The keywords are NOT here but on the product - they come
+    # from its profile and from the analysis (see analysis.merged_keywords).
     "discovery": {
         "max_communities": 140,
         "deep_scan_top_n": 70,
         "min_subscribers": 400,
-        "keywords": [
-            "demonolatry", "demonology", "goetia", "ars goetia", "grimoire",
-            "sigil", "occult", "esoteric", "esotericism", "luciferian",
-            "satanism", "left hand path", "witchcraft", "spirit work",
-            "ceremonial magic", "chaos magick", "theistic satanism",
-            "solomonic", "daemon", "infernal",
-        ],
     },
-    # Kanaele, in denen die App VOLLAUTOMATISCH posten darf.
-    # Nur eigene / ausdruecklich erlaubte Kanaele - siehe README.
+    # Channels the app may post to FULLY AUTOMATICALLY.
+    # Only channels you own or where it is explicitly allowed - see the README.
     "auto_channels": {
         "discord_webhooks": [],
         "mastodon": {"instance": "", "access_token": ""},
     },
-    # Reddit-API (nur lesend). Kostenlos unter reddit.com/prefs/apps registrieren -
-    # ohne das antwortet Reddit auf Programmanfragen grundsaetzlich mit 403.
-    # bot_username/bot_password nur ausfuellen, wenn Reddit das client_credentials-
-    # Verfahren ablehnt. Die Daten bleiben lokal in dieser Datei.
+    # Reddit API (read-only). Register for free at reddit.com/prefs/apps - without
+    # that, Reddit answers programmatic requests with 403 as a matter of course.
+    # Fill in bot_username/bot_password only if Reddit rejects the client_credentials
+    # flow. The data stays local in this file.
     "reddit": {"client_id": "", "client_secret": "", "bot_username": "", "bot_password": ""},
-    # Optional: echte KI-Entwuerfe statt Vorlagen.
+    # Optional: real AI drafts instead of templates.
     "anthropic": {"api_key": "", "model": "claude-opus-5"},
     "safety": {
-        # Harte Bremse: nie mehr als N manuelle Reddit-Posts pro Tag vorschlagen.
+        # Hard brake: never propose more than N manual Reddit posts per day.
         "max_reddit_posts_per_day": 1,
         "min_days_between_same_subreddit": 45,
     },
@@ -89,15 +94,33 @@ def _deep_merge(base: dict, override: dict) -> dict:
     return out
 
 
+# Configuration changes that must run exactly once. products.py registers itself
+# here - core must not import products (circular import).
+_MIGRATIONS: list[Any] = []
+
+
+def register_migration(func: Any) -> None:
+    if func not in _MIGRATIONS:
+        _MIGRATIONS.append(func)
+
+
+def _apply_migrations(config: dict) -> bool:
+    return any([bool(migration(config)) for migration in _MIGRATIONS])
+
+
 def load_config() -> dict:
+    config = json.loads(json.dumps(DEFAULT_CONFIG))
     if os.path.exists(CONFIG_PATH):
         try:
             with open(CONFIG_PATH, "r", encoding="utf-8") as handle:
-                return _deep_merge(DEFAULT_CONFIG, json.load(handle))
+                config = _deep_merge(DEFAULT_CONFIG, json.load(handle))
         except (json.JSONDecodeError, OSError):
             pass
-    save_config(DEFAULT_CONFIG)
-    return json.loads(json.dumps(DEFAULT_CONFIG))
+    if _apply_migrations(config):
+        save_config(config)
+    elif not os.path.exists(CONFIG_PATH):
+        save_config(config)
+    return config
 
 
 def save_config(config: dict) -> None:
@@ -106,7 +129,7 @@ def save_config(config: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Speicher (schlichte JSON-Dateien, damit alles nachvollziehbar bleibt)
+# Storage - plain JSON files, so everything stays inspectable
 # ---------------------------------------------------------------------------
 
 _store_lock = threading.Lock()
@@ -128,19 +151,61 @@ def load(name: str, default: Any) -> Any:
 
 
 def save(name: str, payload: Any) -> None:
+    _write_json(store_path(name), payload)
+
+
+def _write_json(path: str, payload: Any) -> None:
     with _store_lock:
-        tmp = store_path(name) + ".tmp"
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp = path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2, ensure_ascii=False)
-        os.replace(tmp, store_path(name))
+        os.replace(tmp, path)
+
+
+# -- Per-product storage ---------------------------------------------------
+# Every product gets its own folder. Without that separation the safety catch counts
+# one product's posts against the other product's daily limit.
+
+def product_store_path(slug: str, name: str) -> str:
+    return os.path.join(PRODUCTS_DIR, slug or "_ohne-produkt", f"{name}.json")
+
+
+def load_product(slug: str, name: str, default: Any) -> Any:
+    path = product_store_path(slug, name)
+    if not os.path.exists(path):
+        return json.loads(json.dumps(default))
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            return json.load(handle)
+    except (json.JSONDecodeError, OSError):
+        return json.loads(json.dumps(default))
+
+
+def save_product(slug: str, name: str, payload: Any) -> None:
+    _write_json(product_store_path(slug, name), payload)
+
+
+def forget_product(slug: str) -> None:
+    """Deletes a product's data folder. products.py clears the configuration."""
+    folder = os.path.join(PRODUCTS_DIR, slug or "_ohne-produkt")
+    if not slug or not os.path.isdir(folder):
+        return
+    for entry in os.listdir(folder):
+        if entry.endswith(".json") or entry.endswith(".json.tmp"):
+            os.remove(os.path.join(folder, entry))
+    try:
+        os.rmdir(folder)
+    except OSError:
+        pass
 
 
 # ---------------------------------------------------------------------------
-# HTTP mit Rate-Limit, Backoff und ehrlicher Kennung
+# HTTP with rate limiting, backoff and an honest identifier
 # ---------------------------------------------------------------------------
 
 class RateLimiter:
-    """Serialisiert alle ausgehenden Requests pro Host mit fester Mindestpause."""
+    """Serialises all outgoing requests per host with a fixed minimum pause."""
 
     def __init__(self, delay: float) -> None:
         self.delay = delay
@@ -179,7 +244,7 @@ def fetch(
     timeout: int = 25,
     retries: int = 3,
 ) -> tuple[int, bytes]:
-    """Ein HTTP-Request mit Rate-Limit und Backoff. Gibt (status, body) zurueck."""
+    """One HTTP request with rate limiting and backoff. Returns (status, body)."""
     host = urllib.parse.urlparse(url).netloc
     base_headers = {
         "User-Agent": user_agent,
@@ -203,13 +268,13 @@ def fetch(
             body = b""
             try:
                 body = error.read()
-                # Fehlerantworten kommen ebenfalls gzip-komprimiert - sonst steht
-                # in der Meldung nur Zeichensalat statt des echten Grundes.
+                # Error responses come gzipped too - otherwise the message is
+                # nothing but mojibake instead of the actual reason.
                 if error.headers.get("Content-Encoding") == "gzip" and body:
                     body = gzip.GzipFile(fileobj=io.BytesIO(body)).read()
-            except Exception:  # noqa: BLE001 - Fehlerkoerper ist optional
+            except Exception:  # noqa: BLE001 - the error body is optional
                 pass
-            # 429/5xx: hoeflich warten und erneut versuchen. 403/404: sofort aufgeben.
+            # 429/5xx: wait politely and retry. 403/404: give up immediately.
             if error.code in (429, 500, 502, 503, 504) and attempt < retries - 1:
                 time.sleep(min(30, 2 ** (attempt + 2)))
                 last_error = error
@@ -220,7 +285,7 @@ def fetch(
             if attempt < retries - 1:
                 time.sleep(2 ** (attempt + 1))
                 continue
-    raise HttpError(0, f"Netzwerkfehler bei {url}: {last_error}")
+    raise HttpError(0, f"Network error for {url}: {last_error}")
 
 
 def fetch_json(url: str, *, user_agent: str, **kwargs: Any) -> Any:
@@ -230,7 +295,7 @@ def fetch_json(url: str, *, user_agent: str, **kwargs: Any) -> Any:
     try:
         return json.loads(body.decode("utf-8", "replace"))
     except json.JSONDecodeError as error:
-        raise HttpError(status, f"Keine gueltige JSON-Antwort von {url}: {error}") from error
+        raise HttpError(status, f"No valid JSON response from {url}: {error}") from error
 
 
 def post_json(url: str, payload: dict, *, user_agent: str, headers: dict[str, str] | None = None) -> tuple[int, str]:
