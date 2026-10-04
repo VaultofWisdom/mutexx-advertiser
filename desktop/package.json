@@ -1,7 +1,7 @@
 {
   "name": "mutexx-advertiser-desktop",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Mutexx Advertiser - desktop shell (Tauri) around the Python app",
   "scripts": {
     "prepare-runtime": "python scripts/prepare_runtime.py",

@@ -1,6 +1,6 @@
 [package]
 name = "mutexx-advertiser"
-version = "0.6.0"
+version = "0.6.1"
 description = "Mutexx Advertiser - desktop shell"
 authors = ["Mutexx Production"]
 edition = "2021"
@@ -15,7 +15,6 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
-tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"

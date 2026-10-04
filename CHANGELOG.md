@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.1
+
+* **Updates inside the app.** The native Windows dialog is gone. A new version shows up
+  as a card in the app's own style, with the changes, a download progress bar and the
+  installation step; a "Later" keeps it one click away in the sidebar footer. Settings
+  has "Check for updates". The page and the shell talk without giving the page access
+  to Tauri: the shell reports by script, the page asks through a navigation to
+  `/__desktop/...` that the shell intercepts.
+* **Start menu entry.** Tauri's installer creates it on a first install only and skips it
+  on every update, so a missing entry never came back. The installer now makes sure it
+  exists under "Mutexx Production" on every install and update, and removes it on
+  uninstall.
+* **Sidebar** fits at common window heights without scrolling; its scrollbar only shows
+  on hover. The data folder path breaks at folder boundaries instead of mid-name.
+
 ## 0.6.0
 
 * **Write with your Claude subscription.** "with claude.ai" buttons on the analysis, the

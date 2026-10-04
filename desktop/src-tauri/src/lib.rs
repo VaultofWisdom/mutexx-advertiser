@@ -16,12 +16,13 @@ use std::io::{Read, Seek, SeekFrom};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
+use tauri::webview::PageLoadEvent;
 use tauri::{Manager, RunEvent, Url, WebviewWindow, WebviewWindowBuilder};
-use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
-use tauri_plugin_updater::UpdaterExt;
+use tauri_plugin_updater::{Update, UpdaterExt};
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
@@ -102,6 +103,13 @@ struct Server {
     port: Mutex<u16>,
 }
 
+/// The update found at start, held until the user decides in the app.
+#[derive(Default)]
+struct Updates {
+    pending: Mutex<Option<Update>>,
+    installing: AtomicBool,
+}
+
 /// `%LOCALAPPDATA%\Mutexx Production\Mutexx Advertiser` - the same folder the
 /// Python side picks on its own (`core._home`). Set explicitly anyway, so the
 /// two can never disagree.
@@ -114,19 +122,6 @@ fn data_dir() -> PathBuf {
 
 fn log_path() -> PathBuf {
     data_dir().join("logs").join("server.log")
-}
-
-/// The interface language the user chose, for the few words the shell says
-/// itself (the update question). Falls back to the system language.
-fn german() -> bool {
-    if let Ok(text) = fs::read_to_string(data_dir().join("config.json")) {
-        if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
-            if let Some(lang) = value.get("ui_language").and_then(|v| v.as_str()) {
-                return lang == "de";
-            }
-        }
-    }
-    std::env::var("LANG").map(|l| l.starts_with("de")).unwrap_or(false)
 }
 
 fn free_port() -> u16 {
@@ -258,71 +253,127 @@ fn open_outside(url: &Url) {
     }
 }
 
-/// Checks once, quietly, a few seconds after the start. An update is only
-/// installed after asking - and the question says that Windows will want
-/// administrator rights, because the app lives under Program Files.
-fn check_for_update(app: tauri::AppHandle) {
+// ---------------------------------------------------------------------------
+// Updates, shown inside the app
+// ---------------------------------------------------------------------------
+//
+// The app itself is a page from the local Python server - a remote origin as far
+// as Tauri is concerned, deliberately without access to Tauri's IPC. So the two
+// talk through the two channels a shell has over any page anyway:
+//
+//   shell -> page   eval(): `window.mutexxDesktop.update({...})` and friends;
+//   page  -> shell  a navigation to /__desktop/... on the app's own address. It is
+//                   caught in on_navigation and never reaches the server, and only
+//                   the app's own page can navigate this window.
+//
+// The page draws the update card in the app's own style. Nothing here opens a
+// native dialog.
+
+/// Runs a script in the app page. Payloads are JSON, never pasted strings.
+fn tell_page(app: &tauri::AppHandle, script: String) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.eval(&format!("window.mutexxDesktop && {script}"));
+    }
+}
+
+fn announce(app: &tauri::AppHandle, update: &Update) {
+    let info = serde_json::json!({
+        "version": update.version,
+        "current": update.current_version,
+        "notes": update.body.clone().unwrap_or_default(),
+    });
+    tell_page(app, format!("window.mutexxDesktop.update({info})"));
+}
+
+/// Quietly a few seconds after the start; at once when the user asks in Settings.
+fn check_for_update(app: tauri::AppHandle, asked: bool) {
     std::thread::spawn(move || {
-        std::thread::sleep(Duration::from_secs(4));
-        let Ok(updater) = app.updater() else { return };
-        let update = match tauri::async_runtime::block_on(updater.check()) {
-            Ok(Some(update)) => update,
-            _ => return,
-        };
-        let de = german();
-        let (title, text, yes, no) = if de {
-            (
-                "Update verfügbar".to_string(),
-                format!(
-                    "Mutexx Advertiser {} ist verfügbar (installiert: {}).\n\n{}\n\nJetzt installieren? Windows fragt dabei nach Administratorrechten. Deine Daten bleiben unberührt.",
-                    update.version,
-                    update.current_version,
-                    update.body.clone().unwrap_or_default()
-                ),
-                "Installieren",
-                "Später",
-            )
-        } else {
-            (
-                "Update available".to_string(),
-                format!(
-                    "Mutexx Advertiser {} is available (installed: {}).\n\n{}\n\nInstall now? Windows will ask for administrator rights. Your data is not touched.",
-                    update.version,
-                    update.current_version,
-                    update.body.clone().unwrap_or_default()
-                ),
-                "Install",
-                "Later",
-            )
-        };
-        let install = app
-            .dialog()
-            .message(text)
-            .title(title)
-            .kind(MessageDialogKind::Info)
-            .buttons(MessageDialogButtons::OkCancelCustom(yes.into(), no.into()))
-            .blocking_show();
-        if !install {
-            return;
+        if !asked {
+            std::thread::sleep(Duration::from_secs(4));
         }
-        // The installer replaces the files the server runs from - stop it first.
+        let result = match app.updater() {
+            Ok(updater) => tauri::async_runtime::block_on(updater.check()),
+            Err(error) => Err(error),
+        };
+        match result {
+            Ok(Some(update)) => {
+                announce(&app, &update);
+                *app.state::<Updates>().pending.lock().unwrap() = Some(update);
+            }
+            Ok(None) if asked => tell_page(&app, "window.mutexxDesktop.upToDate()".into()),
+            Err(error) if asked => {
+                let message = serde_json::to_string(&error.to_string()).unwrap_or_default();
+                tell_page(&app, format!("window.mutexxDesktop.failed({message})"));
+            }
+            _ => {}
+        }
+    });
+}
+
+/// Download with progress in the card, then hand over to the installer. Windows
+/// asks for administrator rights at that point - the app lives under Program
+/// Files - and the installer brings the app back up afterwards.
+fn install_update(app: tauri::AppHandle) {
+    let state = app.state::<Updates>();
+    let Some(update) = state.pending.lock().unwrap().clone() else { return };
+    if state.installing.swap(true, Ordering::SeqCst) {
+        return;
+    }
+    std::thread::spawn(move || {
+        let mut received: u64 = 0;
+        let mut last = Instant::now() - Duration::from_secs(1);
+        let progress_app = app.clone();
+        let download = tauri::async_runtime::block_on(update.download(
+            move |chunk, total| {
+                received += chunk as u64;
+                // A few updates a second are plenty; one per chunk would flood eval.
+                if last.elapsed() >= Duration::from_millis(120) {
+                    last = Instant::now();
+                    let total = total.map(|t| t.to_string()).unwrap_or_else(|| "null".into());
+                    tell_page(&progress_app, format!("window.mutexxDesktop.progress({received},{total})"));
+                }
+            },
+            || {},
+        ));
+        let bytes = match download {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                let message = serde_json::to_string(&error.to_string()).unwrap_or_default();
+                tell_page(&app, format!("window.mutexxDesktop.failed({message})"));
+                app.state::<Updates>().installing.store(false, Ordering::SeqCst);
+                return;
+            }
+        };
+        tell_page(&app, "window.mutexxDesktop.installing()".into());
+        // Give the page a moment to say so, then free the files the installer
+        // is about to replace.
+        std::thread::sleep(Duration::from_millis(600));
         stop_server(&app);
-        match tauri::async_runtime::block_on(update.download_and_install(|_, _| {}, || {})) {
+        match update.install(bytes) {
             Ok(()) => app.restart(),
             Err(error) => {
-                let message = if de {
-                    format!("Das Update ist fehlgeschlagen:\n{error}")
-                } else {
-                    format!("The update failed:\n{error}")
-                };
-                app.dialog()
-                    .message(message)
-                    .kind(MessageDialogKind::Error)
-                    .blocking_show();
+                // The server is gone; the start screen is the only thing left to
+                // show the reason on. A restart brings the old version back up.
+                let _ = fs::write(log_path(), format!("Update failed: {error}"));
                 app.restart();
             }
         }
     });
+}
+
+/// The page's way of asking the shell for something. See the block comment above.
+fn desktop_request(app: &tauri::AppHandle, url: &Url, port: u16) -> bool {
+    let ours = matches!(url.host_str(), Some("127.0.0.1") | Some("localhost"))
+        && url.port() == Some(port);
+    if !ours || !url.path().starts_with("/__desktop/") {
+        return false;
+    }
+    match url.path() {
+        "/__desktop/update/install" => install_update(app.clone()),
+        "/__desktop/update/check" => check_for_update(app.clone(), true),
+        _ => {}
+    }
+    true
 }
 
 fn stop_server(app: &tauri::AppHandle) {
@@ -346,10 +397,10 @@ pub fn run() {
                 let _ = window.set_focus();
             }
         }))
-        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(Server::default())
+        .manage(Updates::default())
         .setup(|app| {
             let port = match start_server(app.handle()) {
                 Ok(port) => port,
@@ -374,14 +425,28 @@ pub fn run() {
                 .find(|w| w.label == "main")
                 .cloned()
                 .ok_or("window configuration 'main' missing in tauri.conf.json")?;
+            let handle = app.handle().clone();
+            let load_handle = app.handle().clone();
             let window = WebviewWindowBuilder::from_config(app.handle(), &config)?
                 .data_directory(data_dir().join("webview"))
                 .on_navigation(move |url| {
+                    if desktop_request(&handle, url, port) {
+                        return false;
+                    }
                     if is_inside(url, port) {
                         return true;
                     }
                     open_outside(url);
                     false
+                })
+                // A reload of the page forgets what it was told - tell it again.
+                .on_page_load(move |_window, payload| {
+                    let ours = payload.url().port() == Some(port);
+                    if ours && matches!(payload.event(), PageLoadEvent::Finished) {
+                        if let Some(update) = load_handle.state::<Updates>().pending.lock().unwrap().as_ref() {
+                            announce(&load_handle, update);
+                        }
+                    }
                 })
                 // window.open() - the posting assistant opens submit forms this
                 // way. A second app window would have none of the user's logins.
@@ -403,7 +468,7 @@ pub fn run() {
                 wait_and_show(app.handle().clone(), window, port);
             }
 
-            check_for_update(app.handle().clone());
+            check_for_update(app.handle().clone(), false);
             Ok(())
         })
         .build(tauri::generate_context!())

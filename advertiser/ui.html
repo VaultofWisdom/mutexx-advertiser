@@ -49,7 +49,7 @@ a:hover{color:var(--violet-soft)}
 ::-webkit-scrollbar-track{background:transparent}
 
 /* ---------- Account chip ---------- */
-.acct{display:flex;align-items:center;gap:10px;margin:0 12px 10px;padding:9px 11px;border-radius:12px;
+.acct{display:flex;align-items:center;gap:10px;margin:0 12px 8px;padding:8px 10px;border-radius:12px;
   border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;cursor:pointer;
   text-align:left;min-width:0}
 .acct:hover{border-color:var(--indigo-soft)}
@@ -68,23 +68,27 @@ a:hover{color:var(--violet-soft)}
 .app{position:relative;z-index:1;display:grid;grid-template-columns:var(--side) 1fr;height:100vh}
 .side{background:linear-gradient(180deg,#101017,#0b0b11);border-right:1px solid var(--line);
   display:flex;flex-direction:column;min-height:0}
-.brand{display:flex;gap:11px;align-items:center;padding:20px 18px 16px}
-.logo{width:36px;height:36px;border-radius:11px;background:var(--grad);display:grid;
+.brand{display:flex;gap:11px;align-items:center;padding:16px 16px 12px}
+.logo{width:34px;height:34px;border-radius:11px;background:var(--grad);display:grid;
   place-items:center;box-shadow:0 8px 24px -8px rgba(124,57,246,.8);flex:none}
 .logo .ic{color:#fff;width:20px;height:20px;stroke-width:2}
 .brand-name{font-weight:700;font-size:15px;letter-spacing:-.01em;line-height:1.2}
 .brand-sub{font-size:11.5px;color:var(--muted-2)}
-.switch{margin:0 14px 10px;padding:10px;border:1px solid var(--line);border-radius:var(--r-m);
+.switch{margin:0 12px 6px;padding:9px;border:1px solid var(--line);border-radius:var(--r-m);
   background:var(--panel)}
 .switch label{display:block;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
   color:var(--muted-2);margin:0 0 6px 2px}
 .switch .row{gap:6px;flex-wrap:nowrap}
 .switch select{flex:1;min-width:0;padding:7px 9px}
-nav{flex:1;overflow:auto;padding:6px 10px 14px}
+nav{flex:1;overflow:auto;padding:4px 10px 10px;scrollbar-width:thin;scrollbar-color:transparent transparent}
+nav:hover{scrollbar-color:#2c2c38 transparent}
+nav::-webkit-scrollbar{width:6px}
+nav::-webkit-scrollbar-thumb{background:transparent;border:0}
+nav:hover::-webkit-scrollbar-thumb{background:#2c2c38}
 .nav-group{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted-2);
-  padding:16px 10px 6px}
+  padding:12px 10px 4px}
 .nav-item{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;
-  color:var(--muted);font:inherit;font-size:14px;padding:8px 10px;border-radius:10px;
+  color:var(--muted);font:inherit;font-size:13.5px;padding:7px 10px;border-radius:10px;
   cursor:pointer;text-align:left;position:relative;transition:background .15s,color .15s}
 .nav-item:hover{background:rgba(255,255,255,.035);color:var(--text)}
 .nav-item.active{background:linear-gradient(90deg,rgba(152,16,250,.16),rgba(79,57,246,.08));
@@ -99,7 +103,7 @@ nav{flex:1;overflow:auto;padding:6px 10px 14px}
 .nav-item .state .ic{width:11px;height:11px;stroke-width:3}
 .nav-item .count{font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;
   background:var(--grad);color:#fff}
-.side-foot{border-top:1px solid var(--line);padding:12px 16px;display:flex;align-items:center;
+.side-foot{border-top:1px solid var(--line);padding:10px 14px;display:flex;align-items:center;
   justify-content:space-between;gap:10px;font-size:12px;color:var(--muted-2)}
 .seg{display:inline-flex;border:1px solid var(--line-2);border-radius:999px;padding:2px;
   background:var(--panel)}
@@ -458,6 +462,35 @@ dialog.cai{width:min(640px,calc(100vw - 32px))}
 .cai textarea{font-size:12.5px}
 
 /* ---------- Responsive ---------- */
+@media (max-height:820px){
+  .brand{padding:12px 14px 8px}
+  .brand-sub{display:none}
+  .switch label{display:none}
+  .nav-group{padding:8px 10px 2px}
+  .nav-item{padding:5px 10px}
+  .acct small{display:none}
+}
+.vtag{border:0;background:none;color:var(--muted-2);font:inherit;font-size:12px;cursor:default;padding:0}
+.vtag.has{cursor:pointer;color:#fff;background:var(--grad);padding:2px 9px;border-radius:999px;font-weight:600}
+
+/* ---------- Update card ---------- */
+.upd{position:fixed;right:22px;bottom:22px;z-index:70;width:min(380px,calc(100vw - 32px));
+  border-radius:18px;padding:1px;background:linear-gradient(135deg,rgba(152,16,250,.7),rgba(79,57,246,.5));
+  box-shadow:0 30px 80px -20px rgba(0,0,0,.9);animation:rise .3s ease}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.upd-in{border-radius:17px;background:#13131b;padding:18px 18px 16px}
+.upd-head{display:flex;gap:12px;align-items:flex-start}
+.upd-icon{width:38px;height:38px;border-radius:12px;background:var(--grad);display:grid;place-items:center;flex:none}
+.upd-icon .ic{color:#fff}
+.upd-head b{display:block;font-size:15px;letter-spacing:-.01em}
+.upd-head small{color:var(--muted);font-size:12.5px}
+.upd-x{margin-left:auto;border:0;background:none;color:var(--muted-2);cursor:pointer;padding:2px;border-radius:7px}
+.upd-x:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.upd p{margin:12px 0 0;font-size:13.5px;color:#d3d3dc;line-height:1.55}
+.upd .hint{font-size:12px;margin-top:8px}
+.upd .row{margin-top:14px}
+.upd .progress{margin:14px 0 6px}
+
 @media (max-width:1180px){
   .steps{grid-template-columns:repeat(4,minmax(0,1fr))}
   .grid4{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -514,7 +547,7 @@ dialog.cai{width:min(640px,calc(100vw - 32px))}
     <button class="acct" id="acctChip"></button>
     <div class="side-foot">
       <div class="seg" id="langSeg"></div>
-      <span id="versionTag"></span>
+      <button class="vtag" id="versionTag"></button>
     </div>
   </aside>
 
@@ -775,7 +808,12 @@ dialog.cai{width:min(640px,calc(100vw - 32px))}
           <div class="card">
             <h2 data-i18n="settings.data"></h2>
             <p class="card-sub" data-i18n="settings.data_note"></p>
-            <div class="small"><span class="muted" data-i18n="settings.data_dir"></span><br><code id="dataDir" style="font-family:var(--mono);font-size:12.5px;word-break:break-all"></code></div>
+            <div class="small"><span class="muted" data-i18n="settings.data_dir"></span><br><code id="dataDir" style="font-family:var(--mono);font-size:12.5px;overflow-wrap:anywhere"></code></div>
+            <div class="row" style="margin-top:14px">
+              <span class="small"><span class="muted" data-i18n="settings.version"></span> <b id="appVersion"></b></span>
+              <span class="spacer"></span>
+              <button class="btn ghost sm" id="checkUpdate" hidden></button>
+            </div>
           </div>
         </div>
         <div class="card">
@@ -873,6 +911,7 @@ dialog.cai{width:min(640px,calc(100vw - 32px))}
   </div>
 </div></dialog>
 
+<div class="upd" id="updCard" hidden></div>
 <div id="toasts" aria-live="polite"></div>
 <dialog id="dlg"><form method="dialog" class="dlg" onsubmit="return false">
   <h2 id="dlgTitle"></h2><div class="hint" id="dlgBody"></div>
@@ -1034,6 +1073,7 @@ function applyStatic(){
   label($('testReddit'), 'link', 'settings.test_connection');
   label($('testLemmy'), 'link', 'settings.test_connection');
   label($('saveCfg'), 'check', 'settings.save');
+  label($('checkUpdate'), 'refresh', 'update.check');
   label($('anaCai'), 'spark', 'claudeai.analyse');
   label($('strCai'), 'spark', 'claudeai.strategy');
   label($('seedCai'), 'spark', 'claudeai.seeds');
@@ -1232,7 +1272,7 @@ function render(){
   renderLegal();
   renderAccount();
   renderJob();
-  $('versionTag').textContent = 'v' + (STATE.version || '');
+  renderVersionTag();
 }
 
 /* ---------- Language ---------- */
@@ -2314,6 +2354,114 @@ function renderManual(){
 }
 
 /* =====================================================================
+   Updates (desktop app only)
+   ===================================================================== */
+/* The desktop shell checks for updates and reports here; this page draws the card.
+   The way back is a navigation to /__desktop/... - the shell catches it before it
+   reaches the server (see desktop/src-tauri/src/lib.rs). In a browser none of this
+   ever fires. */
+let UPDATE = null, CHECKING = false, LEAVING_FOR_SHELL = false;
+
+function askShell(path){
+  LEAVING_FOR_SHELL = true;            // not a real page change - no "unsaved" prompt
+  location.href = path;
+  setTimeout(() => { LEAVING_FOR_SHELL = false; }, 800);
+}
+
+window.mutexxDesktop = {
+  update(info){
+    CHECKING = false;
+    UPDATE = Object.assign({phase:'available', hidden:false}, UPDATE || {}, info);
+    if (UPDATE.phase === 'failed') UPDATE.phase = 'available';
+    renderUpdate(); renderVersionTag(); renderCheck();
+  },
+  progress(received, total){
+    if (!UPDATE) return;
+    Object.assign(UPDATE, {phase:'downloading', received, total, hidden:false});
+    renderUpdate();
+  },
+  installing(){ if (UPDATE){ UPDATE.phase = 'installing'; UPDATE.hidden = false; renderUpdate(); } },
+  failed(message){
+    if (CHECKING && (!UPDATE || UPDATE.phase === 'available')){
+      CHECKING = false; renderCheck();
+      toast(t('update.check_failed', {error: message}), 'err'); return;
+    }
+    if (UPDATE){ Object.assign(UPDATE, {phase:'failed', error: message, hidden:false}); renderUpdate(); }
+  },
+  upToDate(){
+    CHECKING = false; renderCheck();
+    toast(t('update.up_to_date', {version: STATE.version || ''}));
+  },
+};
+
+function mb(bytes){ return (bytes / 1048576).toFixed(1); }
+
+function renderUpdate(){
+  const card = $('updCard');
+  if (!UPDATE || UPDATE.hidden){ card.hidden = true; return; }
+  const u = UPDATE;
+  let body = '';
+  if (u.phase === 'available' || u.phase === 'failed'){
+    body = `${u.notes ? `<p>${esc(u.notes)}</p>` : ''}
+      ${u.phase === 'failed' ? note('bad', esc(t('update.failed', {error: u.error || ''}))) : ''}
+      <div class="hint">${esc(t('update.admin_note'))}</div>
+      <div class="row">
+        <button class="btn" id="updGo">${ic('arrow','sm')}<span>${esc(t(u.phase === 'failed' ? 'update.retry' : 'update.install'))}</span></button>
+        <button class="btn ghost" id="updLater">${esc(t('update.later'))}</button>
+      </div>`;
+  } else if (u.phase === 'downloading'){
+    const pct = u.total ? Math.min(100, Math.round(100 * u.received / u.total)) : 0;
+    body = `<div class="progress"><span style="width:${u.total ? pct : 12}%"></span></div>
+      <div class="hint">${esc(u.total ? t('update.downloading', {done: mb(u.received), total: mb(u.total), percent: pct})
+                                    : t('update.downloading_unknown', {done: mb(u.received)}))}</div>`;
+  } else {
+    body = `<div class="row" style="margin-top:14px;flex-wrap:nowrap"><div class="spin"></div>
+      <span class="small">${esc(t('update.installing'))}</span></div>`;
+  }
+  card.innerHTML = `<div class="upd-in">
+    <div class="upd-head">
+      <div class="upd-icon">${ic(u.phase === 'installing' ? 'refresh' : 'spark')}</div>
+      <div><b>${esc(t('update.title', {version: u.version}))}</b>
+        <small>${esc(t('update.installed', {version: u.current || STATE.version || ''}))}</small></div>
+      ${u.phase === 'available' || u.phase === 'failed'
+        ? `<button class="upd-x" id="updClose" aria-label="${esc(t('update.later'))}">${ic('x','sm')}</button>` : ''}
+    </div>${body}</div>`;
+  card.hidden = false;
+  const hide = () => { UPDATE.hidden = true; renderUpdate(); };
+  if ($('updClose')) $('updClose').onclick = hide;
+  if ($('updLater')) $('updLater').onclick = hide;
+  if ($('updGo')) $('updGo').onclick = () => {
+    Object.assign(UPDATE, {phase:'downloading', received:0, total:0});
+    renderUpdate();
+    askShell('/__desktop/update/install');
+  };
+}
+
+function renderVersionTag(){
+  const tag = $('versionTag');
+  const has = !!(UPDATE && UPDATE.version);
+  tag.classList.toggle('has', has);
+  tag.textContent = has ? t('update.tag', {version: UPDATE.version}) : 'v' + (STATE.version || '');
+  tag.title = has ? t('update.title', {version: UPDATE.version}) : '';
+  tag.onclick = has ? () => { UPDATE.hidden = false; renderUpdate(); } : null;
+}
+
+function renderCheck(){
+  const b = $('checkUpdate');
+  if (!b) return;
+  b.disabled = CHECKING;
+  b.innerHTML = CHECKING ? `<div class="spin"></div><span>${esc(t('update.checking'))}</span>`
+                         : ic('refresh','sm') + `<span>${esc(t('update.check'))}</span>`;
+}
+$('checkUpdate').onclick = () => {
+  if (UPDATE && UPDATE.version){ UPDATE.hidden = false; renderUpdate(); return; }
+  CHECKING = true; renderCheck();
+  askShell('/__desktop/update/check');
+  // No answer at all means no shell behind this page.
+  setTimeout(() => { if (CHECKING){ CHECKING = false; renderCheck(); } }, 30000);
+};
+
+/* =====================================================================
    The claude.ai route - with the user's own Claude subscription
    ===================================================================== */
 /* The app may not use a claude.ai subscription itself. So the request goes out
@@ -2498,7 +2646,10 @@ function bindSecretRemove(){
 
 function fillSettings(){
   const c = STATE.config || {}; if (!c.discovery) return;
-  $('dataDir').textContent = STATE.data_dir || '';
+  // Break the path at its separators, never inside a folder name.
+  $('dataDir').innerHTML = esc(STATE.data_dir || '').replace(/\\/g, '\\<wbr>');
+  $('appVersion').textContent = STATE.version || '';
+  $('checkUpdate').hidden = !STATE.desktop;
   for (const [id, path] of Object.entries(SECRET_FIELDS)){
     const stored = secretState(path);
     $(id).placeholder = stored ? '••••••••••••' : (id === 'cfgApiKey' ? 'sk-ant-...' : '');
@@ -2558,6 +2709,7 @@ $('saveCfg').onclick = async () => {
 };
 
 window.addEventListener('beforeunload', (e) => {
+  if (LEAVING_FOR_SHELL) return;
   if (PRODUCT_DIRTY || SETTINGS_DIRTY){ e.preventDefault(); e.returnValue = ''; }
 });
 
