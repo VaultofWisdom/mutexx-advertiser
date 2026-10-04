@@ -29,7 +29,7 @@ scan, copy, prepared campaign — and hands back a report of what each stage pro
 what it left out. It publishes nothing. The run ends where the app always ends: with the
 work laid out for a human to send.
 
-Several products run side by side. The switcher at the top right moves between them;
+Several products run side by side. The switcher at the top of the sidebar moves between them;
 communities, queue and history are kept strictly apart per product.
 
 ---
@@ -65,54 +65,64 @@ read the interface in English.
 
 ## State
 
-**Version 0.3.** What works:
+**Version 0.4.** What works:
 
-* **One-click run** — the whole chain in a single pass, with a report of what each
+* **A guided interface** - a sidebar that walks the seven stages in order and ticks off
+  what is done, an overview with the next sensible step, live progress for every
+  background job, posting mode as a focused step-by-step view. Dark house style, works on
+  a phone-sized window too
+* **One-click run** - the whole chain in a single pass, with a report of what each
   stage produced. A stage that fails does not stop the others; it says which one and why
-* **Product profiles** — as many as you like, with separate data per product
-* **Product analysis** — reads the product page, derives keywords, guesses category and
+* **Product profiles** - as many as you like, with separate data per product
+* **Product analysis** - reads the product page, derives keywords, guesses category and
   pricing from signals in the text and shows the passage each guess rests on. With an
   Anthropic key it adds audiences, value propositions, positioning and objections
-* **Strategy engine** — 16 channels in three kinds (owned, organic, paid), scored by
+* **Strategy engine** - 16 channels in three kinds (owned, organic, paid), scored by
   category, pricing and budget, with a phase plan, a budget split and a stated reason for
   every rejected channel
-* **Assets** — nine of them, each within its channel's character limits: search ads for
+* **Assets** - nine of them, each within its channel's character limits: search ads for
   Google and Microsoft, Meta and Reddit ads, directory listings, store listing, press kit,
   SEO fields, announcement for owned channels. Plus negative keywords and the destination
   URL with UTM tagging
-* **Community discovery** — Lemmy through its open API, forums and wikis including link
-  harvesting, subreddits through the Reddit API. Keywords are weighted: what you typed in
-  outranks a word your page happened to repeat, and only the strong ones go out as
-  searches. A forum running **Discourse** is asked
-  about itself instead of guessed at: real member count, real activity, the rules at their
-  known address, and the category where sharing your own work is invited
+* **Community discovery** - Lemmy through its open API, forums and wikis including link
+  harvesting and Discourse forums read through their own API, Hacker News and Lobsters
+  judged by the topic's actual record there, subreddits through the Reddit API
 * **Rule analysis** with a traffic light and original quotes, for rules fetched
   automatically **and** for rules you paste in yourself
-* **Drafts** in five angles, English and German, filled from profile and analysis — from
+* **Drafts** in five angles, English and German, filled from profile and analysis - from
   templates or written freely through the Anthropic API
 * **Batch preparation** of whole campaigns with scheduling and a posting mode
-* **Fully automatic publishing** to your own Discord and Mastodon channels
+* **Fully automatic publishing** to your own Discord and Mastodon channels - always
+  behind a confirmation, and without ever cutting the link off a long post
 * **Safety catch** against exceeding the daily limit and against repeats
 * Full manual inside the interface, 22 chapters, in both languages
+* 220 tests, no network needed to run them
 
 Stated honestly, what is missing:
 
-* **Further channels** are not connected yet — Stack Exchange, AlternativeTo, Product
-  Hunt. Lemmy, Discourse, Hacker News and Lobsters are done; see
-  [the roadmap](docs/ROADMAP.md), stage 5, for the rest.
+* **Further channels** are not connected yet - Stack Exchange, AlternativeTo, Product
+  Hunt. See [the roadmap](docs/ROADMAP.md), stage 5.
 * There is **no feedback loop**. The UTM tagging is in place, but nothing reports back
   which channel actually carried, so channels are still scored by keyword density rather
   than by results.
 * **The templates are plain.** They assemble only what is in the profile and invent
-  nothing — deliberate, but dry without an API key.
+  nothing - deliberate, but dry without an API key.
 * The **Reddit part** needs approval from Reddit, see below.
-* It is not yet a **downloadable Windows app**. Today it runs from source.
+* There is no **installer** yet. It runs from source - which, with no dependencies, means
+  "install Python, double-click".
 
 ---
 
 ## Installation
 
-There is none. Python 3.10 or newer is enough; no third-party libraries are used.
+There is none to speak of. Python 3.10 or newer is enough; no third-party libraries are
+used.
+
+**Windows:** install Python from [python.org](https://www.python.org/downloads/) (tick
+*Add python.exe to PATH*), download this repository as a ZIP or clone it, and double-click
+**`Start.bat`**.
+
+**Any system:**
 
 ```bash
 git clone https://github.com/VaultofWisdom/mutexx-advertiser.git
@@ -120,15 +130,25 @@ cd mutexx-advertiser
 python start.py
 ```
 
-On Windows, double-clicking **`Start.bat`** is enough. The interface opens in your browser
-at `http://127.0.0.1:8777`. The server listens on `127.0.0.1` only and is not reachable
-from the network.
+The interface opens in your browser at `http://127.0.0.1:8777`. The server listens on
+`127.0.0.1` only and is not reachable from the network.
 
-On first start the app creates a `config.json`. `config.example.json` shows what belongs in
-it. The real `config.json` and the `data/` folder are excluded by `.gitignore` — that is
-where credentials live.
+### Where your data lives
 
-Tests run without any extra tooling (191 of them, under a second):
+Configuration, keys and campaign data are plain JSON files in one folder:
+
+| Copy | Folder |
+|---|---|
+| Windows | `%LOCALAPPDATA%\Mutexx Production\Mutexx Advertiser` |
+| macOS / Linux | `~/.local/share/mutexx-advertiser` |
+| Portable | next to the app - put an empty file named `portable` there |
+| Anything else | set `MUTEXX_ADVERTISER_HOME` |
+
+A copy that already has a `config.json` next to it (every copy from before 0.4) keeps
+using it. Settings shows the folder in use. `config.example.json` shows what belongs in a
+configuration; the real one is never committed.
+
+Tests run without any extra tooling, and without the network:
 
 ```bash
 python -m unittest discover -s tests
@@ -136,10 +156,30 @@ python -m unittest discover -s tests
 
 ---
 
+## Security and privacy
+
+The app runs a small web server on your machine, and a web server on your machine is
+something every page in your browser can talk to. So it does not trust them:
+
+* **Only its own page gets in.** Requests naming any host but `127.0.0.1`/`localhost`
+  (DNS rebinding) are refused, and so is every write request from another origin or
+  without a JSON body - which a foreign page cannot send without the browser asking
+  first, and the app never says yes.
+* **Keys never reach the browser.** The Anthropic key, the Reddit secret and password,
+  the Mastodon token and Discord webhook URLs stay in the configuration file. The
+  interface only learns *that* one is set, and an empty field on save keeps it.
+* **The page loads nothing from anywhere else** and sends no referrer, enforced by a
+  content security policy.
+* No account, no cloud service, no telemetry. The app talks to the services you use and
+  to the sites it scans - with an honest user agent, one request at a time per host.
+
+---
+
 ## First steps
 
-The short way: fill in the product profile, then press **Run everything** and read the
-report. The long way, if you would rather watch each stage:
+The short way: create a product on the **Overview** (name, page, one sentence), then press
+**Run everything** and read the report. The overview then always shows the next sensible
+step. The long way, if you would rather watch each stage:
 
 1. **Product** — name, URL, one-liner, category, pricing, audience and monthly budget, then
    *Save profile*.
@@ -148,7 +188,7 @@ report. The long way, if you would rather watch each stage:
 3. **Strategy** — read the channel plan. It also says what is not worth it, and why.
 4. **Assets** — generate the copy for the channels you intend to work.
 5. **Seed lists** — enter subreddits and forums, or ask for suggestions.
-6. **Start scan** at the top right.
+6. **Start scan** at the top of the window.
 7. **Campaign** — *Prepare campaign*, then *Start posting mode*.
 
 The full manual is in the **Manual** tab inside the app.
@@ -368,6 +408,7 @@ docs/ROADMAP.md            where the tool is going
 advertiser/core.py         HTTP, rate limiting, configuration, storage
 advertiser/i18n.py         translation catalogue and machinery
 advertiser/i18n_content.py translation catalogue, long form: channels and assets
+advertiser/i18n_ui.py      translation catalogue, interface shell
 advertiser/manual.py       the in-app manual, both languages
 advertiser/products.py     product profiles and migration
 advertiser/analysis.py     product analysis: read the page, keywords, guess category
@@ -389,5 +430,9 @@ advertiser/ui.html         interface
 tests/                     python -m unittest discover -s tests
 ```
 
-Everything is stored as readable JSON next to the app, per product in
-`data/products/<name>/`. There is no cloud service, no account and no telemetry.
+Everything is stored as readable JSON in the data folder (see *Where your data lives*), per
+product in `data/products/<name>/`. There is no cloud service, no account and no telemetry.
+
+## Licence
+
+No licence has been chosen yet. Until one is, the default applies: all rights reserved.

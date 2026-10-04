@@ -22,7 +22,7 @@ import json
 import time
 import urllib.parse
 
-from . import core
+from . import core, i18n
 
 TOKEN_URL = "https://www.reddit.com/api/v1/access_token"
 API = "https://oauth.reddit.com"
@@ -31,15 +31,15 @@ _token: dict = {"value": "", "expires": 0.0, "key": ""}
 
 
 class RedditAuthError(Exception):
-    pass
+    """Carries a catalogue message, so the reason reaches the interface in the
+    reader's language. str() gives the English sentence for logs."""
+
+    def __init__(self, message: dict) -> None:
+        super().__init__(i18n.render(message))
+        self.message = message
 
 
-NO_CREDENTIALS = (
-    "No Reddit API access on file. Since 2023 Reddit answers requests without a "
-    "registered app with 403. Create a free app of type 'script' at "
-    "https://www.reddit.com/prefs/apps and put the client ID and secret into Settings. "
-    "It takes two minutes and it is the route Reddit intends."
-)
+NO_CREDENTIALS = i18n.message("reddit.no_credentials")
 
 
 def _credentials(config: dict) -> tuple[str, str, str, str]:
@@ -109,7 +109,7 @@ def get_token(config: dict) -> str:
                 continue
             token = payload.get("access_token")
             if not token:
-                errors.append(f"{label}: kein Token in der Antwort ({body[:120]})")
+                errors.append(f"{label}: no token in the response ({body[:120]})")
                 continue
             _token.update({"value": token,
                            "expires": time.time() + float(payload.get("expires_in", 3600)),
@@ -117,17 +117,10 @@ def get_token(config: dict) -> str:
             return token
         errors.append(f"{label}: HTTP {status} {body[:120]}")
 
-    hint = ""
+    key = "reddit.no_token"
     if any("401" in e for e in errors):
-        if not bot_user:
-            hint = (" Reddit verlangt fuer Script-Apps inzwischen meist ein eigenes Bot-Konto. "
-                    "Lege ein separates Reddit-Konto an, trage es bei der App unter prefs/apps "
-                    "als Developer ein und hinterlege es hier unter 'Bot-Konto'.")
-        else:
-            hint = (" Pruefe: Client-ID (steht klein UNTER dem App-Namen), Secret, und ob das "
-                    "Bot-Konto bei der App als Developer eingetragen ist. Bei aktiver "
-                    "Zwei-Faktor-Anmeldung muss das Passwort als 'passwort:2facode' angegeben werden.")
-    raise RedditAuthError("Reddit hat kein Token ausgestellt." + hint + " Details: " + " | ".join(errors))
+        key = "reddit.no_token_check" if bot_user else "reddit.no_token_need_bot"
+    raise RedditAuthError(i18n.message(key, details=" | ".join(errors)))
 
 
 def get(config: dict, path: str, params: dict | None = None) -> dict | None:
@@ -146,7 +139,7 @@ def get(config: dict, path: str, params: dict | None = None) -> dict | None:
     if status in (403, 404, 451):
         return None
     if status == 401:
-        # Token abgelaufen oder zurueckgezogen - einmal neu holen.
+        # Token expired or revoked - fetch a new one, once.
         _token.update({"value": "", "expires": 0.0})
         token = get_token(config)
         status, raw = core.fetch(url, user_agent=config["user_agent"],
@@ -166,9 +159,9 @@ def check(config: dict) -> dict:
     try:
         get_token(config)
     except RedditAuthError as error:
-        return {"ok": False, "detail": str(error)}
+        return {"ok": False, "detail": error.message}
     payload = get(config, "/r/test/about")
     if not payload:
-        return {"ok": False, "detail": "Token erhalten, aber kein Lesezugriff. Bitte App-Typ 'script' pruefen."}
+        return {"ok": False, "detail": i18n.message("reddit.no_read_access")}
     return {"ok": True,
-            "detail": f"Verbindung zur Reddit-API steht (Verfahren: {_token.get('mode', 'unbekannt')})."}
+            "detail": i18n.message("reddit.connected", mode=_token.get("mode", "?"))}

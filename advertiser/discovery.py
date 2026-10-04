@@ -20,7 +20,7 @@ import time
 import urllib.parse
 from typing import Callable
 
-from . import aggregators, core, discourse_api, lemmy_api, reddit_api, rules, seeds
+from . import aggregators, core, discourse_api, i18n, lemmy_api, reddit_api, rules, seeds
 
 Progress = Callable[[str, int, int], None]
 
@@ -153,18 +153,18 @@ def scan_reddit(config: dict, keywords: list[str], seed_list: list[str] | None =
 
     # 1) Keyword search
     for index, keyword in enumerate(search_terms):
-        progress(f"Reddit-Suche: {keyword}", index, len(search_terms))
+        progress(i18n.message("scan.step.reddit_search", keyword=keyword), index, len(search_terms))
         for name in _search_subreddits(keyword, config):
             candidates.setdefault(name, None)
 
     names = list(candidates)
-    progress(f"{len(names)} Subreddit-Kandidaten gefunden - lade Stammdaten", 0, len(names))
+    progress(i18n.message("scan.step.reddit_candidates", count=len(names)), 0, len(names))
 
     # 2) Basic data for every candidate
     shallow: list[dict] = []
     limit = min(len(names), settings["max_communities"] * 2)
     for index, name in enumerate(names[:limit]):
-        progress(f"Stammdaten r/{name}", index, limit)
+        progress(i18n.message("scan.step.reddit_about", name=name), index, limit)
         data = _about(name, config)
         if not data or int(data.get("subscribers") or 0) < settings["min_subscribers"]:
             continue
@@ -179,7 +179,7 @@ def scan_reddit(config: dict, keywords: list[str], seed_list: list[str] | None =
     extra -= {e["handle"] for e in shallow}
     extra = set(sorted(extra)[:40])
     for index, name in enumerate(sorted(extra)):
-        progress(f"Nachbar-Subreddit r/{name}", index, len(extra))
+        progress(i18n.message("scan.step.reddit_neighbour", name=name), index, len(extra))
         data = _about(name, config)
         if not data or int(data.get("subscribers") or 0) < settings["min_subscribers"]:
             continue
@@ -189,7 +189,7 @@ def scan_reddit(config: dict, keywords: list[str], seed_list: list[str] | None =
     shallow.sort(key=lambda e: e["fit_raw"], reverse=True)
     deep = shallow[: settings["deep_scan_top_n"]]
     for index, entry in enumerate(deep):
-        progress(f"Regeln & Aktivitaet {entry['name']}", index, len(deep))
+        progress(i18n.message("scan.step.rules", name=entry["name"]), index, len(deep))
         rule_list = _rules(entry["handle"], config)
         texts = {f"Regel {i + 1}: {r.get('short_name') or ''}".strip():
                  f"{r.get('short_name') or ''} {r.get('description') or ''}"
@@ -235,7 +235,7 @@ def scan_forums(config: dict, keywords: list[str], seed_list: list[dict] | None 
     harvested: dict[str, str] = {}
 
     for index, seed in enumerate(seed_list):
-        progress(f"Forum pruefen: {seed.get('name') or seed['url']}", index, len(seed_list))
+        progress(i18n.message("scan.step.forum", name=seed.get("name") or seed["url"]), index, len(seed_list))
         entry = _probe_forum(seed["url"], seed.get("name") or seed["url"],
                              seed.get("note", ""), ua, keywords, weights)
         # _harvest is a working field and has no business in the stored entry -
@@ -250,7 +250,7 @@ def scan_forums(config: dict, keywords: list[str], seed_list: list[dict] | None 
     candidates = [(u, l) for u, l in harvested.items()
                   if not any(u.startswith(f["url"]) for f in seed_list)][:25]
     for index, (url, label) in enumerate(candidates):
-        progress(f"Neues Forum pruefen: {label[:40]}", index, len(candidates))
+        progress(i18n.message("scan.step.forum_new", name=label[:40]), index, len(candidates))
         entry = _probe_forum(url, label, "Automatisch gefunden ueber Linkanalyse", ua,
                              keywords, weights)
         entry.pop("_harvest", None)
@@ -519,7 +519,7 @@ def scan_lemmy(config: dict, keywords: list[str], instances: list[str] | None = 
     for host in hosts:
         for keyword in search_terms:
             step += 1
-            progress(f"Lemmy-Suche auf {host}: {keyword}", step, steps)
+            progress(i18n.message("scan.step.lemmy_search", host=host, keyword=keyword), step, steps)
             for view in lemmy_api.search_communities(host, keyword, ua):
                 entry = _lemmy_entry(view, keywords, weights)
                 if not entry or entry["subscribers"] < min_subscribers:
@@ -540,7 +540,7 @@ def scan_lemmy(config: dict, keywords: list[str], instances: list[str] | None = 
 
     deep = entries[: settings["deep_scan_top_n"]]
     for index, entry in enumerate(deep):
-        progress(f"Regeln & Aktivitaet {entry['name']}", index, len(deep))
+        progress(i18n.message("scan.step.rules", name=entry["name"]), index, len(deep))
         home = entry["handle"].split("@", 1)[1]
         source = via.get(entry["id"], home)
         if home not in instance_rules:
@@ -615,13 +615,13 @@ def scan_aggregators(config: dict, keywords: list[str],
     ua = config["user_agent"]
     entries: list[dict] = []
 
-    progress("Hacker News: Regeln und Themenlage", 0, 2)
+    progress(i18n.message("scan.step.hackernews"), 0, 2)
     entry = aggregators.hacker_news(keywords, ua)
     entry["fit_raw"] = _hn_fit(entry["topic_record"])
     _finish_aggregator(entry)
     entries.append(entry)
 
-    progress("Lobsters: Regeln und passende Tags", 1, 2)
+    progress(i18n.message("scan.step.lobsters"), 1, 2)
     entry = aggregators.lobsters(keywords, ua)
     # Lobsters sorts everything by tag. No matching tag, no place for the topic -
     # and that is a fit of zero, not a small one.

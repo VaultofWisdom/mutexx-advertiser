@@ -20,7 +20,6 @@ correctly in either language, because the language was never baked into it.
 from __future__ import annotations
 
 import json
-import re
 import time
 from typing import Any
 
@@ -234,7 +233,8 @@ def score_channel(channel: dict, product: dict) -> dict:
             required=i18n.message(products.CATEGORIES[hard[0]]),
             actual=i18n.message(products.CATEGORIES.get(category, "category.other")))
     elif channel.get("needs") and not _has(product, channel["needs"]):
-        blocked = i18n.message("blocked.needs_field", field=channel["needs"])
+        blocked = i18n.message("blocked.needs_field",
+                               field=i18n.message("field." + channel["needs"]))
     elif channel["kind"] == "bezahlt":
         if budget <= 0:
             blocked = i18n.message("blocked.no_budget")
@@ -534,26 +534,7 @@ BUDGET SPLIT
 Give 3 to 6 points for the first week and 2 to 4 warnings.
 Answer in {i18n.LANGUAGES.get(language, 'English')}."""
 
-    status, raw = core.post_json(
-        "https://api.anthropic.com/v1/messages",
-        {
-            "model": api.get("model") or "claude-opus-5",
-            "max_tokens": 2000,
-            "system": _SYSTEM,
-            "messages": [{"role": "user", "content": prompt}],
-        },
-        user_agent=config.get("user_agent", "MutexxAdvertiser/0.3"),
-        headers={"x-api-key": key, "anthropic-version": "2023-06-01"},
-    )
-    if status != 200:
-        raise ValueError(i18n.t("error.api_status", status=status, detail=raw[:300]))
-
-    payload = json.loads(raw)
-    text = "".join(block.get("text", "") for block in payload.get("content", []))
-    match = re.search(r"\{.*\}", text, re.S)
-    if not match:
-        raise ValueError(i18n.t("error.no_json"))
-    parsed = json.loads(match.group(0))
+    parsed = core.ask_claude_json(config, _SYSTEM, prompt)
 
     # What the model writes is free prose in one language. It cannot be switched
     # later, so it is stored as-is and marked with the language it was written in.

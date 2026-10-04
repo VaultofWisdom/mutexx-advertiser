@@ -21,7 +21,6 @@ it traceable which part came off the page and which part the model contributed.
 from __future__ import annotations
 
 import html
-import json
 import re
 import time
 from collections import Counter
@@ -381,26 +380,7 @@ ALLOWED PRICING KEYS: {', '.join(products.PRICE_MODELS)}
 Liefere 2 bis 4 Zielgruppensegmente, 3 bis 5 Nutzenversprechen, 3 bis 5 Einwaende
 und 8 bis 15 Suchbegriffe."""
 
-    status, raw = core.post_json(
-        "https://api.anthropic.com/v1/messages",
-        {
-            "model": api.get("model") or "claude-opus-5",
-            "max_tokens": 3000,
-            "system": _SYSTEM,
-            "messages": [{"role": "user", "content": prompt}],
-        },
-        user_agent=config.get("user_agent", "MutexxAdvertiser/0.2"),
-        headers={"x-api-key": key, "anthropic-version": "2023-06-01"},
-    )
-    if status != 200:
-        raise ValueError(i18n.t("error.api_status", status=status, detail=raw[:300]))
-
-    payload = json.loads(raw)
-    text = "".join(block.get("text", "") for block in payload.get("content", []))
-    match = re.search(r"\{.*\}", text, re.S)
-    if not match:
-        raise ValueError(i18n.t("error.no_json"))
-    parsed = json.loads(match.group(0))
+    parsed = core.ask_claude_json(config, _SYSTEM, prompt)
 
     out: dict[str, Any] = {
         "audience_segments": _dicts(parsed.get("audience_segments"), ("name", "why", "where")),

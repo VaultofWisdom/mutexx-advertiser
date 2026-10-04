@@ -1,5 +1,5 @@
 {
-  "_note": "This file is only an example. The app creates its own config.json on first start; credentials entered there stay local and are never committed. Products are created in the interface under the Product tab - the block below only shows what a saved profile looks like.",
+  "_note": "This file is only an example. The app creates its own config.json on first start - in %LOCALAPPDATA%\\Mutexx Production\\Mutexx Advertiser on Windows, or next to the app for a portable copy. Credentials entered there stay local and are never committed or shown in the interface again. Products are created in the interface - the block below only shows what a saved profile looks like.",
   "schema_version": 2,
   "ui_language": "en",
   "active_product": "my-product",
@@ -45,7 +45,7 @@
       "utm_source_base": "my-product"
     }
   ],
-  "user_agent": "MutexxAdvertiser/0.3 (research tool; contact: your@address.tld)",
+  "user_agent": "MutexxAdvertiser/0.4 (research tool; contact: your@address.tld)",
   "request_delay_seconds": 1.3,
   "discovery": {
     "max_communities": 140,
@@ -73,7 +73,7 @@
   },
   "anthropic": {
     "api_key": "",
-    "model": "claude-opus-5"
+    "model": "claude-opus-5-5"
   },
   "safety": {
     "max_reddit_posts_per_day": 1,

@@ -27,12 +27,30 @@ from . import core, i18n
 # Route 1: your own channels - genuine auto-posting
 # ---------------------------------------------------------------------------
 
+def fit_post(title: str, body: str, limit: int, link: str = "") -> str:
+    """Title and body within a platform's character limit - without losing the link.
+
+    Cutting at the limit is what a naive version does, and the link sits at the end
+    of almost every post, so the one part the post exists for was the part that went.
+    When the text is too long the body is shortened and the link is put back.
+    """
+    text = f"{title}\n\n{body}".strip()
+    if len(text) <= limit:
+        return text
+    keep = f"\n\n{link}" if link and link in text else ""
+    head = text.replace(link, "").rstrip() if keep else text
+    room = max(0, limit - len(keep) - 2)
+    cut = head[:room].rstrip()
+    space = cut.rfind(" ")
+    if space > room * 0.6:
+        cut = cut[:space]
+    return f"{cut} …{keep}"
+
+
 def post_discord_webhook(webhook_url: str, draft: dict, config: dict, product: dict) -> dict:
     """Posts to a Discord server you OWN. A webhook only works where someone with
     server rights created it - which is what makes this safe."""
-    content = f"**{draft['title']}**\n\n{draft['body']}"
-    if len(content) > 1900:
-        content = content[:1890] + " ..."
+    content = fit_post(f"**{draft['title']}**", draft["body"], 1900, product.get("url", ""))
     payload = {
         "content": content,
         "username": (product.get("name") or "Mutexx Advertiser")[:80],
@@ -43,19 +61,19 @@ def post_discord_webhook(webhook_url: str, draft: dict, config: dict, product: d
     return {"ok": ok, "status": status, "detail": "" if ok else raw[:400]}
 
 
-def post_mastodon(config: dict, draft: dict) -> dict:
+def post_mastodon(config: dict, draft: dict, product: dict | None = None) -> dict:
     """Posts to the Mastodon account you OWN (token from Settings)."""
     mastodon = config["auto_channels"]["mastodon"]
     instance = (mastodon.get("instance") or "").strip().rstrip("/")
     token = (mastodon.get("access_token") or "").strip()
     if not instance or not token:
-        return {"ok": False, "status": 0, "detail": "Mastodon ist nicht konfiguriert."}
+        return {"ok": False, "status": 0, "detail": i18n.message("channels.mastodon_missing")}
     if not instance.startswith("http"):
         instance = "https://" + instance
 
-    text = f"{draft['title']}\n\n{draft['body']}"
-    if len(text) > 480:
-        text = text[:470] + " ..."
+    # 500 is Mastodon's default limit. Counting the link in full (Mastodon counts
+    # it as 23) keeps the post valid on instances with stricter settings too.
+    text = fit_post(draft["title"], draft["body"], 480, (product or {}).get("url", ""))
     status, raw = core.post_json(
         f"{instance}/api/v1/statuses",
         {"status": text, "visibility": "public"},
@@ -80,7 +98,7 @@ def run_auto_channels(config: dict, draft: dict, product: dict) -> list[dict]:
 
     mastodon = config["auto_channels"].get("mastodon", {})
     if mastodon.get("instance") and mastodon.get("access_token"):
-        result = post_mastodon(config, draft)
+        result = post_mastodon(config, draft, product)
         result.update({"channel": mastodon["instance"], "kind": "mastodon"})
         results.append(result)
 

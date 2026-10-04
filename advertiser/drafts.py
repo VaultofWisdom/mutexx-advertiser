@@ -17,7 +17,6 @@ difference between growth and a banned domain.
 
 from __future__ import annotations
 
-import json
 import random
 import re
 from typing import Any
@@ -69,11 +68,11 @@ _TEMPLATES: dict[str, dict[str, dict[str, Any]]] = {
 
 {benefits}
 
-Was ich allein nicht pruefen kann, ist die Praxis. Ihr arbeitet taeglich mit {topic},
-und ich haette lieber jetzt Widerspruch als in einem Jahr einen Fehler, den alle
+Was ich allein nicht prüfen kann, ist die Praxis. Ihr arbeitet täglich mit {topic},
+und ich hätte lieber jetzt Widerspruch als in einem Jahr einen Fehler, den alle
 mitschleppen.
 
-Wenn ihr fuenf Minuten habt: sucht euch die Stelle, die euch am duennsten vorkommt,
+Wenn ihr fünf Minuten habt: sucht euch die Stelle, die euch am dünnsten vorkommt,
 und sagt mir, was daran nicht stimmt. Deutlich ist willkommen.
 
 {closing}""",
@@ -96,17 +95,17 @@ und sagt mir, was daran nicht stimmt. Deutlich ist willkommen.
         },
         "question": {
             "titles": [
-                "{topic_title}: welcher Weg hat sich bei euch bewaehrt?",
+                "{topic_title}: welcher Weg hat sich bei euch bewährt?",
                 "Frage aus der Praxis zu {topic}",
-                "Ein Einwand, an dem ich haenge - wie seht ihr das?",
+                "Ein Einwand, an dem ich hänge - wie seht ihr das?",
             ],
-            "body": """Ein Punkt, an dem ich beim Bauen dauernd haenge:
+            "body": """Ein Punkt, an dem ich beim Bauen dauernd hänge:
 
 {pain}
 
 {context}
 
-Wie handhabt ihr das? Ich habe fuer mich einen Weg gewaehlt und ihn in {name} ({url})
+Wie handhabt ihr das? Ich habe für mich einen Weg gewählt und ihn in {name} ({url})
 umgesetzt, bin mir aber nicht sicher, dass es der richtige ist.
 
 {closing}""",
@@ -218,9 +217,9 @@ say so and I will edit the link out.
 _CLOSINGS = {
     "de": [
         "Fragen zu Aufbau oder Vorgehen beantworte ich gern in den Kommentaren.",
-        "Wenn euch eine Stelle zu duenn vorkommt, sagt welche - die nehme ich mir als naechstes vor.",
+        "Wenn euch eine Stelle zu dünn vorkommt, sagt welche - die nehme ich mir als nächstes vor.",
         "Korrekturen und Hinweise sind mir mehr wert als Zustimmung.",
-        "Ich lese jeden Kommentar - wenn etwas nicht stimmt, hoere ich das lieber hier.",
+        "Ich lese jeden Kommentar - wenn etwas nicht stimmt, höre ich das lieber hier.",
     ],
     "en": [
         "Happy to answer anything about how it works in the comments.",
@@ -233,10 +232,10 @@ _CLOSINGS = {
 _PRICE_LINE = {
     "de": {
         "free": "Kostenlos, ohne Konto, ohne Werbung.",
-        "freemium": "Der Grundumfang ist kostenlos, eine Bezahlversion gibt es zusaetzlich.",
+        "freemium": "Der Grundumfang ist kostenlos, eine Bezahlversion gibt es zusätzlich.",
         "one_time": "Einmalkauf{price}, kein Abo.",
         "subscription": "Als Abo{price}.",
-        "ad_supported": "Kostenlos nutzbar, finanziert ueber Werbung.",
+        "ad_supported": "Kostenlos nutzbar, finanziert über Werbung.",
         "shop": "Direkt bestellbar{price}.",
         "quote": "Preis auf Anfrage.",
     },
@@ -264,7 +263,7 @@ _FALLBACK_ONE_LINER = {
 }
 
 _FALLBACK_PAIN = {
-    "de": "Die vorhandenen Loesungen wollen entweder zu viel oder koennen zu wenig.",
+    "de": "Die vorhandenen Lösungen wollen entweder zu viel oder können zu wenig.",
     "en": "The existing options either do too much or not enough.",
 }
 
@@ -539,7 +538,7 @@ def build_with_api(entry: dict, product: dict, config: dict,
     api = config.get("anthropic", {})
     key = (api.get("api_key") or "").strip()
     if not key:
-        raise ValueError("Kein Anthropic-API-Schluessel hinterlegt.")
+        raise ValueError(i18n.t("error.no_api_key"))
 
     analysis_result = analysis_result or {}
     angle = angle if angle in ANGLES else pick_angle(entry, product)
@@ -573,32 +572,13 @@ Tone: {products.tone_label(product.get('tone'), language)}
 ANALYSE
 Positionierung: {analysis_result.get('positioning') or '(keine)'}
 Nutzenversprechen: {'; '.join(analysis_result.get('value_props') or []) or '(keine)'}
-Zu erwartende Einwaende: {'; '.join(analysis_result.get('objections') or []) or '(keine)'}
+Zu erwartende Einwände: {'; '.join(analysis_result.get('objections') or []) or '(keine)'}
 
 Angle: {i18n.t(ANGLES[angle], language)}
 Sprache des Beitrags: {'Deutsch' if language == 'de' else 'Englisch'}
-Laenge: 120 bis 220 Woerter."""
+Länge: 120 bis 220 Wörter."""
 
-    status, raw = core.post_json(
-        "https://api.anthropic.com/v1/messages",
-        {
-            "model": api.get("model") or "claude-opus-5",
-            "max_tokens": 1500,
-            "system": _SYSTEM,
-            "messages": [{"role": "user", "content": prompt}],
-        },
-        user_agent=config.get("user_agent", "MutexxAdvertiser/0.2"),
-        headers={"x-api-key": key, "anthropic-version": "2023-06-01"},
-    )
-    if status != 200:
-        raise ValueError(f"Anthropic-API antwortete mit {status}: {raw[:300]}")
-
-    payload = json.loads(raw)
-    text = "".join(block.get("text", "") for block in payload.get("content", []))
-    match = re.search(r"\{.*\}", text, re.S)
-    if not match:
-        raise ValueError("Antwort der API enthielt kein verwertbares JSON.")
-    parsed = json.loads(match.group(0))
+    parsed = core.ask_claude_json(config, _SYSTEM, prompt)
 
     draft = build(entry, product, analysis_result, angle, language=language)
     draft.update({

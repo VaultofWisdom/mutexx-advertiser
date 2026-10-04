@@ -22,7 +22,6 @@ Three principles separate this module from a text generator:
 
 from __future__ import annotations
 
-import json
 import re
 import time
 import urllib.parse
@@ -291,11 +290,11 @@ _CTA = {
 # on is in its description or nowhere.
 _CATEGORY_PHRASE = {
     "de": {
-        "software_desktop": "Fuer den Desktop",
-        "software_web": "Laeuft im Browser",
-        "app_mobile": "Fuer das Handy",
+        "software_desktop": "Für den Desktop",
+        "software_web": "Läuft im Browser",
+        "app_mobile": "Für das Handy",
         "game": "Jetzt spielen",
-        "dev_tool": "Fuer Entwickler",
+        "dev_tool": "Für Entwickler",
         "content_site": "Nachschlagen statt suchen",
         "shop_physical": "",
         "service": "",
@@ -692,26 +691,7 @@ FELDER
 
 Sprache: {'Deutsch' if bausteine['language'] == 'de' else 'Englisch'}."""
 
-    status, raw = core.post_json(
-        "https://api.anthropic.com/v1/messages",
-        {
-            "model": api.get("model") or "claude-opus-5",
-            "max_tokens": 4000,
-            "system": _SYSTEM,
-            "messages": [{"role": "user", "content": prompt}],
-        },
-        user_agent=config.get("user_agent", "MutexxAdvertiser/0.2"),
-        headers={"x-api-key": key, "anthropic-version": "2023-06-01"},
-    )
-    if status != 200:
-        raise ValueError(i18n.t("error.api_status", status=status, detail=raw[:300]))
-
-    payload = json.loads(raw)
-    text = "".join(block.get("text", "") for block in payload.get("content", []))
-    match = re.search(r"\{.*\}", text, re.S)
-    if not match:
-        raise ValueError(i18n.t("error.no_json"))
-    parsed = json.loads(match.group(0))
+    parsed = core.ask_claude_json(config, _SYSTEM, prompt)
 
     out: dict[str, list[str]] = {}
     for field in spec["fields"]:

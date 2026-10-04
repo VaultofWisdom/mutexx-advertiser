@@ -244,9 +244,34 @@ is. The three original
 defects are fixed: `one_liner` is editable, `/api/draft` no longer throws a 500 on an
 unknown angle, the old branding is gone.
 
-Open: `scan_reddit` and `scan_forums` are still untested, and `server.py` entirely so —
-there is no coverage of the scan flow against broken HTML responses and timeouts.
-`_probe_forum` is now covered for both branches, which is the half that was riskiest.
+**0.4 closed the server's boundary** (`tests/test_server.py`, 25 tests against a real
+server on a free port). Before it, the app trusted every request that reached
+127.0.0.1 — and every page open in the browser can reach 127.0.0.1. A hostile page could
+have rewritten the configuration, started runs, posted to the owned channels and, through
+DNS rebinding, read every stored key. Now a foreign Host header is refused, so is any
+write from another origin or without a JSON body, and the keys no longer travel to the
+browser at all: the interface learns only *that* one is set, and an empty field on save
+keeps it. Writing the test turned up one more defect of its own: a refused request was
+answered before its body had been read, and Windows resets such a connection — the caller
+saw a network error instead of the 403.
+
+Three smaller defects found by the first live run of 0.4, all fixed:
+
+* Mastodon and Discord posts were cut at the character limit, and the link sits at the
+  end of nearly every post — so the one part the post exists for was the part that went.
+  `publish.fit_post` shortens the body and puts the link back.
+* The German post templates wrote "bewaehrt", "hoere", "Loesungen" — ASCII stand-ins that
+  would have gone out verbatim under the user's name.
+* Scan progress messages were German literals in an English interface.
+
+The five copies of the Anthropic request are now one (`core.ask_claude_json`): current
+default model, a budget that leaves room for the model's thinking, a timeout measured in
+minutes rather than the 25 seconds a forum page gets, and a refusal reported as a refusal
+instead of as "no JSON found".
+
+Open: `scan_reddit` and `scan_forums` are still untested — there is no coverage of the
+scan flow against broken HTML responses and timeouts. `_probe_forum` is covered for both
+branches, which is the half that was riskiest.
 
 ### Stage 9 — House style and two languages — **done**
 
@@ -267,6 +292,14 @@ Deliberately excluded from the switch: generated marketing content. Drafts and a
 follow the languages set on the *product*, because they are written for an audience rather
 than for the operator.
 
+**0.4 rebuilt the interface around the workflow** instead of around a row of twelve tabs:
+a sidebar that lists the seven stages in their working order and ticks off what is done,
+an overview that names the next sensible step and the day's safety-catch budget, a live
+progress pill for every background job, posting mode as a focused overlay, toasts and
+proper dialogs instead of `alert()` and `prompt()`, and a layout that holds at phone
+width. Saving one thing no longer throws the user back to the top of the page or
+regenerates the open draft, and unsaved edits in the profile survive a background refresh.
+
 Still open in this stage: the Python source comments and docstrings are still largely
 German. That does not affect the product, but for a public repository with an English-first
 interface it is inconsistent.
@@ -282,6 +315,11 @@ undo more than it gains. That rules out the obvious one-file bundlers as a first
 The route that preserves the property: a folder distribution built on Python's official
 embeddable distribution plus a small launcher, zipped, and optionally wrapped in an
 installer. Everything stays inspectable, nothing is packed into an opaque executable.
+
+0.4 laid the ground for it: data no longer has to live next to the app. An installed copy
+under `C:\Program Files\Mutexx Production\Mutexx Advertiser` cannot write there, so it uses
+`%LOCALAPPDATA%\Mutexx Production\Mutexx Advertiser` — the folder rule every Mutexx
+product follows — while copies run from source keep their existing `config.json`.
 
 ### Stage 11 — Browser extension — open, and worth it for exactly one job
 

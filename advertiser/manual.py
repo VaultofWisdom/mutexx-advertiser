@@ -41,7 +41,7 @@ responsibly can. Five stages, in this order:</p>
 <p>The principle behind every text is <b>value first, link second</b>. A post that would
 be worth reading without the link does not get read as advertising - and in specialist
 communities that is the difference between a welcome and a deletion.</p>
-<p>Several products run side by side. The switcher at the top right moves between them;
+<p>Several products run side by side. The switcher at the top of the sidebar moves between them;
 communities, queue and history are kept strictly apart per product.</p>
 """,
     },
@@ -481,7 +481,7 @@ aus, wie sich das verantworten lässt. Fünf Stufen, in dieser Reihenfolge:</p>
 <p>Der Grundsatz hinter allen Texten lautet <b>erst Nutzen, dann Link</b>. Ein Beitrag,
 der auch ohne den Link lesenswert wäre, wird nicht als Werbung gelesen - und genau das
 ist in Fachcommunities der Unterschied zwischen Zuspruch und Löschung.</p>
-<p>Mehrere Produkte laufen nebeneinander. Der Umschalter oben rechts wechselt zwischen
+<p>Mehrere Produkte laufen nebeneinander. Der Umschalter oben in der Seitenleiste wechselt zwischen
 ihnen; Communities, Warteschlange und Verlauf sind je Produkt streng getrennt.</p>
 """,
     },

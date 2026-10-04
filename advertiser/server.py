@@ -21,8 +21,8 @@ import webbrowser
 from typing import Any
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from . import (analysis, assets, core, discovery, drafts, i18n, lemmy_api, manual,
-               products, publish, reddit_api, rules, seeds, strategy)
+from . import (__version__, analysis, assets, core, discovery, drafts, i18n, lemmy_api,
+               manual, products, publish, reddit_api, rules, seeds, strategy)
 
 UI_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui.html")
 
@@ -112,7 +112,7 @@ def _run_scan(platforms: list[str], slug: str) -> None:
                                                  _progress, weights, search_terms)
             except reddit_api.RedditAuthError as error:
                 # Scan the forums anyway - the rest of the app stays usable.
-                warning = str(error)
+                warning = error.message
                 platforms = [p for p in platforms if p != "reddit"]
         if "lemmy" in platforms:
             # No key, no approval, no account - so no error path that could take
@@ -366,7 +366,7 @@ def _scan_platforms(config: dict, slug: str, keywords: list[str],
                                              _progress, weights, search_terms)
             touched.append("reddit")
         except reddit_api.RedditAuthError as error:
-            skipped.append(i18n.message("run.skipped.reddit", error=error))
+            skipped.append(i18n.message("run.skipped.reddit", error=error.message))
     if "lemmy" in platforms:
         entries += discovery.scan_lemmy(config, keywords, seed_data["lemmy_instances"],
                                         _progress, weights, search_terms)
@@ -448,11 +448,114 @@ def _run_seed_suggestion(slug: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Secrets
+# ---------------------------------------------------------------------------
+
+# Configuration values that never travel to the browser. The interface learns only
+# THAT one is set; to change one, the user types a new value, and an empty field
+# means "keep what is there". A page that cannot read the key cannot leak it -
+# not to a browser extension, not to a screenshot, not to a shoulder.
+SECRET_PATHS = (
+    ("anthropic", "api_key"),
+    ("reddit", "client_secret"),
+    ("reddit", "bot_password"),
+    ("auto_channels", "mastodon", "access_token"),
+)
+
+
+def _get_path(data: dict, path: tuple) -> Any:
+    for key in path:
+        if not isinstance(data, dict):
+            return None
+        data = data.get(key)
+    return data
+
+
+def _set_path(data: dict, path: tuple, value: Any) -> None:
+    for key in path[:-1]:
+        data = data.setdefault(key, {})
+    data[path[-1]] = value
+
+
+def _drop_path(data: dict, path: tuple) -> None:
+    for key in path[:-1]:
+        data = data.get(key)
+        if not isinstance(data, dict):
+            return
+    if isinstance(data, dict):
+        data.pop(path[-1], None)
+
+
+def mask_webhook(url: str) -> str:
+    """A Discord webhook URL is a password: whoever has it can post as the server.
+    Enough of it stays visible to tell two apart."""
+    url = url or ""
+    head, _, token = url.rpartition("/")
+    if not head or len(token) < 8:
+        return url[:24] + "\u2026" if len(url) > 24 else url
+    return f"{head}/{token[:4]}\u2026{token[-2:]}"
+
+
+def public_config(config: dict) -> dict:
+    """The configuration as the browser may see it: secrets blanked, plus a map of
+    which ones are set."""
+    safe = json.loads(json.dumps(config))
+    present: dict[str, bool] = {}
+    for path in SECRET_PATHS:
+        present[".".join(path)] = bool(str(_get_path(config, path) or "").strip())
+        if _get_path(safe, path) is not None:
+            _set_path(safe, path, "")
+    hooks = ((safe.get("auto_channels") or {}).get("discord_webhooks")) or []
+    safe.setdefault("auto_channels", {})["discord_webhooks"] = [
+        {"name": (hook.get("name") if isinstance(hook, dict) else "") or "Discord",
+         "url": mask_webhook(hook.get("url") if isinstance(hook, dict) else hook)}
+        for hook in hooks]
+    safe["secrets_set"] = present
+    return safe
+
+
+def merge_config_update(config: dict, update: dict) -> dict:
+    """Applies a Settings save. Empty secrets keep the stored value; 'clear_secrets'
+    removes one on purpose. Webhooks are not changed through here - they have their
+    own routes, because the browser only ever holds their masked form."""
+    update = json.loads(json.dumps(update or {}))
+    clear = set(update.pop("clear_secrets", []) or [])
+    update.pop("secrets_set", None)
+    if isinstance(update.get("auto_channels"), dict):
+        update["auto_channels"].pop("discord_webhooks", None)
+    for path in SECRET_PATHS:
+        if ".".join(path) in clear:
+            _set_path(update, path, "")
+        elif not str(_get_path(update, path) or "").strip():
+            _drop_path(update, path)
+    return core._deep_merge(config, update)
+
+
+# ---------------------------------------------------------------------------
 # HTTP
 # ---------------------------------------------------------------------------
 
+# The one origin the interface is served from. Everything else is refused:
+#  * a Host header naming anything but this machine is a DNS-rebinding attempt -
+#    a web page whose domain was re-pointed at 127.0.0.1 to read /api/state;
+#  * a POST from another origin is a page in some other tab trying to drive the
+#    app - start a run, rewrite the configuration, post to the owned channels.
+# Requiring application/json on POST closes the last gap: browsers will not send
+# that cross-origin without a preflight, and this server answers no preflight.
+_LOCAL_HOSTS = ("127.0.0.1", "localhost", "[::1]")
+
+# Nothing the interface sends comes near this; a pasted rule text is a few KB.
+_MAX_BODY = 4 * 1024 * 1024
+
+# The interface needs nothing from anywhere else, so it may load nothing from
+# anywhere else.
+_CSP = ("default-src 'self'; script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; "
+        "frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
+
 class Handler(BaseHTTPRequestHandler):
-    server_version = "MutexxAdvertiser/0.2"
+    server_version = f"MutexxAdvertiser/{__version__}"
+    sys_version = ""
 
     # Do not spam the console with every request
     def log_message(self, fmt: str, *args) -> None:  # noqa: A002
@@ -468,17 +571,46 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", f"{content_type}; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
+        if content_type == "text/html":
+            self.send_header("Content-Security-Policy", _CSP)
+            self.send_header("X-Frame-Options", "DENY")
         self.end_headers()
         self.wfile.write(body)
 
+    def _port(self) -> int:
+        return int(self.server.server_address[1])
+
+    def _host_ok(self) -> bool:
+        host = (self.headers.get("Host") or "").strip().lower()
+        return host in {f"{name}:{self._port()}" for name in _LOCAL_HOSTS}
+
+    def _origin_ok(self) -> bool:
+        origin = (self.headers.get("Origin") or "").strip().lower()
+        if not origin:
+            # Same-origin fetches may omit it; a cross-site one always sends it.
+            return True
+        return origin in {f"http://{name}:{self._port()}" for name in _LOCAL_HOSTS}
+
+    def _refuse(self) -> None:
+        self._send(403, {"error_key": "error.forbidden_origin"})
+
     def _body(self) -> dict:
-        length = int(self.headers.get("Content-Length") or 0)
-        if not length:
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            return {}
+        if length <= 0:
+            return {}
+        raw = self.rfile.read(min(length, _MAX_BODY))
+        if length > _MAX_BODY:
             return {}
         try:
-            return json.loads(self.rfile.read(length).decode("utf-8"))
-        except json.JSONDecodeError:
+            data = json.loads(raw.decode("utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
             return {}
+        return data if isinstance(data, dict) else {}
 
     def _active(self) -> tuple[dict, dict, str]:
         """Configuration, active profile and its slug. The slug is empty while no
@@ -496,6 +628,9 @@ class Handler(BaseHTTPRequestHandler):
     # -- GET ---------------------------------------------------------------
     def do_GET(self) -> None:  # noqa: N802
         path = self.path.split("?")[0]
+        if not self._host_ok():
+            self._refuse()
+            return
         try:
             if path in ("/", "/index.html"):
                 with open(UI_PATH, "rb") as handle:
@@ -515,7 +650,9 @@ class Handler(BaseHTTPRequestHandler):
         config, product, slug = self._active()
         keywords = _scan_keywords(product) if slug else []
         return {
-            "config": config,
+            "version": __version__,
+            "data_dir": core.HOME_DIR,
+            "config": public_config(config),
             "products": products.all_products(config),
             "active_product": slug,
             "product": product,
@@ -538,15 +675,20 @@ class Handler(BaseHTTPRequestHandler):
             "categories": products.CATEGORIES,
             "price_models": products.PRICE_MODELS,
             "tones": products.TONES,
-            "channel_kinds": {"eigen": "Eigener Kanal", "organisch": "Organisch",
-                              "bezahlt": "Bezahlt"},
             "has_api_key": bool((config.get("anthropic") or {}).get("api_key", "").strip()),
         }
 
     # -- POST --------------------------------------------------------------
     def do_POST(self) -> None:  # noqa: N802
         path = self.path.split("?")[0]
+        content_type = (self.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+        # Read the body before anything else, refused or not: answering with unread
+        # data still in the socket makes Windows reset the connection, and the
+        # caller sees a network error instead of the 403.
         body = self._body()
+        if not (self._host_ok() and self._origin_ok() and content_type == "application/json"):
+            self._refuse()
+            return
         try:
             handler = getattr(self, "_post_" + path.replace("/api/", "").replace("/", "_"), None)
             if handler is None:
@@ -698,7 +840,7 @@ class Handler(BaseHTTPRequestHandler):
                 draft = drafts.build_with_api(entry, product, config, result, angle)
             except Exception as error:  # noqa: BLE001 - fall back to the template
                 draft = drafts.build(entry, product, result, angle, seed=body.get("seed"))
-                draft["warning"] = f"KI-Entwurf fehlgeschlagen ({error}); Vorlage verwendet."
+                draft["warning"] = i18n.message("draft.api_failed", error=error)
         else:
             draft = drafts.build(entry, product, result, angle, seed=body.get("seed"))
         self._send(200, draft)
@@ -758,19 +900,21 @@ class Handler(BaseHTTPRequestHandler):
                 {"id": f"auto:{result['kind']}", "name": result["channel"],
                  "platform": result["kind"]},
                 draft, result["channel"],
-                "erfolgreich" if result["ok"] else f"Fehler {result['status']}",
+                i18n.message("history.result.sent") if result["ok"]
+                else i18n.message("history.result.failed", status=result["status"]),
             )
         self._send(200, {"results": results})
 
     def _post_log(self, body: dict) -> None:
         _config, _product, slug = self._active()
         entry = self._community(slug, body.get("community_id", "")) or {
-            "id": body.get("community_id", "unbekannt"),
-            "name": body.get("community", "unbekannt"),
+            "id": body.get("community_id", "unknown"),
+            "name": body.get("community", "unknown"),
             "platform": body.get("platform", "reddit"),
         }
         publish.log_post(slug, entry, body.get("draft") or {},
-                         body.get("channel", "manuell"), body.get("result", "gepostet"))
+                         body.get("channel") or entry["name"],
+                         i18n.message("history.result.posted"))
         queue = [item for item in core.load_product(slug, "queue", [])
                  if item.get("community_id") != entry["id"]]
         core.save_product(slug, "queue", queue)
@@ -779,10 +923,32 @@ class Handler(BaseHTTPRequestHandler):
     # -- Configuration and communities -------------------------------------
     def _post_config(self, body: dict) -> None:
         config = core.load_config()
-        merged = core._deep_merge(config, body.get("config") or {})
+        merged = merge_config_update(config, body.get("config") or {})
         core.save_config(merged)
         core.set_delay(merged["request_delay_seconds"])
-        self._send(200, {"ok": True, "config": merged})
+        self._send(200, {"ok": True, "config": public_config(merged)})
+
+    def _post_webhook_add(self, body: dict) -> None:
+        url = (body.get("url") or "").strip()
+        if not url.startswith("https://"):
+            self._send(400, {"error_key": "error.webhook_url"})
+            return
+        config = core.load_config()
+        hooks = config["auto_channels"].setdefault("discord_webhooks", [])
+        hooks.append({"name": (body.get("name") or "").strip() or "Discord", "url": url})
+        core.save_config(config)
+        self._send(200, {"ok": True, "config": public_config(config)})
+
+    def _post_webhook_remove(self, body: dict) -> None:
+        config = core.load_config()
+        hooks = config["auto_channels"].get("discord_webhooks", [])
+        index = body.get("index")
+        if not isinstance(index, int) or not 0 <= index < len(hooks):
+            self._send(404, {"error_key": "error.not_found"})
+            return
+        hooks.pop(index)
+        core.save_config(config)
+        self._send(200, {"ok": True, "config": public_config(config)})
 
     def _post_community_add(self, body: dict) -> None:
         config, product, slug = self._active()
@@ -832,8 +998,10 @@ class Handler(BaseHTTPRequestHandler):
         # through the API - same traffic light, same quotes.
         rules_text = (new.pop("rules_text", "") or "").strip()
         if rules_text:
-            new["analysis"] = rules.analyse({"Eingefuegte Regeln": rules_text})
-            new["rules"] = [{"name": "Von Hand eingefuegt", "text": rules_text[:4000]}]
+            # The source is a catalogue key - the interface shows it in the
+            # reader's language, like everything else it renders.
+            new["analysis"] = rules.analyse({"communities.pasted_rules": rules_text})
+            new["rules"] = [{"name": "communities.pasted_rules", "text": rules_text[:4000]}]
         else:
             new.setdefault("analysis", {"verdict": rules.UNKNOWN, "labels": [],
                                         "evidence": [], "explicitly_allowed": False})
@@ -841,7 +1009,7 @@ class Handler(BaseHTTPRequestHandler):
 
         new["subscribers"] = int(new.get("subscribers") or 0)
         new.setdefault("title", "")
-        new.setdefault("description", "Von Hand aufgenommen")
+        new.setdefault("description", "")
         new.setdefault("posts_per_day", 0.0)
         keywords, weights, _terms = _scan_terms(product)
         new["fit_raw"] = discovery.fit_score(
@@ -879,13 +1047,15 @@ def main() -> None:
     url = f"http://127.0.0.1:{port}/"
 
     print("=" * 64)
-    print("  Mutexx Advertiser  -  a Mutexx Production tool")
+    print(f"  Mutexx Advertiser {__version__}  -  a Mutexx Production tool")
     print("=" * 64)
     print(f"  Interface: {url}")
+    print(f"  Data:      {core.HOME_DIR}")
     print("  To stop:   close this window or press Ctrl+C")
     print("=" * 64)
 
-    threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+    if not os.environ.get("MUTEXX_ADVERTISER_NO_BROWSER"):
+        threading.Timer(1.0, lambda: webbrowser.open(url)).start()
     try:
         server.serve_forever()
     except KeyboardInterrupt:

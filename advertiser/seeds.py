@@ -19,7 +19,6 @@ scanner's check is exactly why they can be used anyway.
 from __future__ import annotations
 
 import json
-import re
 import urllib.parse
 from typing import Any
 
@@ -186,26 +185,7 @@ Audience segments: {'; '.join(seg.get('name','') for seg in analysis_result.get(
 
 Name 12 to 20 subreddits and 6 to 12 forums or specialist communities."""
 
-    status, raw = core.post_json(
-        "https://api.anthropic.com/v1/messages",
-        {
-            "model": api.get("model") or "claude-opus-5",
-            "max_tokens": 2000,
-            "system": _SYSTEM,
-            "messages": [{"role": "user", "content": prompt}],
-        },
-        user_agent=config.get("user_agent", "MutexxAdvertiser/0.2"),
-        headers={"x-api-key": key, "anthropic-version": "2023-06-01"},
-    )
-    if status != 200:
-        raise ValueError(i18n.t("error.api_status", status=status, detail=raw[:300]))
-
-    payload = json.loads(raw)
-    text = "".join(block.get("text", "") for block in payload.get("content", []))
-    match = re.search(r"\{.*\}", text, re.S)
-    if not match:
-        raise ValueError(i18n.t("error.no_json"))
-    parsed = json.loads(match.group(0))
+    parsed = core.ask_claude_json(config, _SYSTEM, prompt)
 
     return {
         "subreddits": [str(name) for name in (parsed.get("subreddits") or [])][:30],

@@ -1306,8 +1306,12 @@ DE: dict[str, str] = {
 # The channel catalogue and the asset specifications live in their own file so both
 # stay readable. They belong to the same dictionary.
 from .i18n_content import DE_CONTENT, EN_CONTENT  # noqa: E402
+from .i18n_ui import DE_UI, EN_UI  # noqa: E402
 
 EN.update(EN_CONTENT)
 DE.update(DE_CONTENT)
+# The interface shell last: a few of its entries deliberately reword older ones.
+EN.update(EN_UI)
+DE.update(DE_UI)
 
 CATALOG: dict[str, dict[str, str]] = {"en": EN, "de": DE}
