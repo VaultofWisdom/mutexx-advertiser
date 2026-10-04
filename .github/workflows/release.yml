@@ -14,9 +14,9 @@
 # same key as Mutexx Notes and Mutexx VocalRemover. Code signing would only buy the
 # absence of the SmartScreen warning.
 #
-# Needs two repository secrets: TAURI_SIGNING_PRIVATE_KEY (the content of the key
-# file) and TAURI_SIGNING_PRIVATE_KEY_PASSWORD (may be empty - but must exist, see
-# below).
+# Needs the repository secret TAURI_SIGNING_PRIVATE_KEY (the content of the key
+# file). TAURI_SIGNING_PRIVATE_KEY_PASSWORD only if the key has one - the Mutexx key
+# has none, and a missing secret arrives as an empty string, which is what is wanted.
 name: Release
 
 on:
@@ -39,7 +39,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Publishing a release that was built by hand creates its tag, and the tag
+      # starts this workflow. Rebuilding would attach a second installer under a
+      # second name and rewrite latest.json behind the published one's back.
+      - name: Already built?
+        id: existing
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ] && \
+             gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" \
+               --json assets --jq '.assets[].name' 2>/dev/null | grep -q 'setup\.exe$'; then
+            echo "The release ${{ github.ref_name }} already carries an installer - nothing to do."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Signing key present?
+        if: steps.existing.outputs.skip != 'true'
         shell: bash
         env:
           KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -50,32 +67,40 @@ jobs:
           fi
 
       - uses: actions/setup-python@v5
+        if: steps.existing.outputs.skip != 'true'
         with:
           python-version: '3.12'
 
       - name: Tests
+        if: steps.existing.outputs.skip != 'true'
         working-directory: .
         run: python -m unittest discover -s tests
 
       - uses: actions/setup-node@v4
+        if: steps.existing.outputs.skip != 'true'
         with:
           node-version: lts/*
 
       - uses: dtolnay/rust-toolchain@stable
+        if: steps.existing.outputs.skip != 'true'
 
       - uses: Swatinem/rust-cache@v2
+        if: steps.existing.outputs.skip != 'true'
         with:
           workspaces: desktop/src-tauri
 
       - name: Tauri CLI
+        if: steps.existing.outputs.skip != 'true'
         run: npm ci || npm install
 
       # Python's embeddable distribution (checked against a pinned SHA-256) and a
       # copy of the app, into src-tauri/resources.
       - name: Runtime
+        if: steps.existing.outputs.skip != 'true'
         run: python scripts/prepare_runtime.py
 
       - name: Build, sign, attach to the draft
+        if: steps.existing.outputs.skip != 'true'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
