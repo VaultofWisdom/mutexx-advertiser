@@ -21,8 +21,8 @@ import webbrowser
 from typing import Any
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from . import (__version__, analysis, assets, core, discovery, drafts, i18n, lemmy_api,
-               manual, products, publish, reddit_api, rules, seeds, strategy)
+from . import (__version__, account, analysis, assets, core, discovery, drafts, i18n,
+               lemmy_api, manual, products, publish, reddit_api, rules, seeds, strategy)
 
 UI_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui.html")
 
@@ -676,6 +676,8 @@ class Handler(BaseHTTPRequestHandler):
             "price_models": products.PRICE_MODELS,
             "tones": products.TONES,
             "has_api_key": bool((config.get("anthropic") or {}).get("api_key", "").strip()),
+            "account": account.summary(),
+            "desktop": bool(os.environ.get("MUTEXX_ADVERTISER_DESKTOP")),
         }
 
     # -- POST --------------------------------------------------------------
@@ -920,6 +922,43 @@ class Handler(BaseHTTPRequestHandler):
         core.save_product(slug, "queue", queue)
         self._send(200, {"ok": True})
 
+    # -- Mutexx account -----------------------------------------------------
+    # The password passes through here on its way to the account server and is
+    # never stored; what stays is the session, encrypted for this Windows user.
+    def _account_call(self, action) -> None:
+        try:
+            result = action()
+        except account.AccountError as error:
+            self._send(400 if error.status != "offline" else 503,
+                       {"error_message": error.message, "status": error.status})
+            return
+        self._send(200, {"ok": True, "account": result, "state": self._state()})
+
+    def _post_account_signin(self, body: dict) -> None:
+        config = core.load_config()
+        self._account_call(lambda: account.sign_in(config, body.get("email", ""),
+                                                   body.get("password", "")))
+
+    def _post_account_signup(self, body: dict) -> None:
+        config = core.load_config()
+        self._account_call(lambda: account.sign_up(config, body.get("email", ""),
+                                                   body.get("password", ""),
+                                                   body.get("display_name", "")))
+
+    def _post_account_signout(self, _body: dict) -> None:
+        config = core.load_config()
+        self._account_call(lambda: account.sign_out(config))
+
+    def _post_account_sync(self, _body: dict) -> None:
+        with _job_lock:
+            busy = JOB["running"]
+        if busy:
+            self._send(409, {"error_key": "scan.busy"})
+            return
+        result = account.sync()
+        self._send(200, {"ok": result.get("status") == "ok", "result": result,
+                         "state": self._state()})
+
     # -- Configuration and communities -------------------------------------
     def _post_config(self, body: dict) -> None:
         config = core.load_config()
@@ -1042,7 +1081,10 @@ def _free_port(preferred: int = 8777) -> int:
 
 def main() -> None:
     core.load_config()  # creates config.json and migrates older versions
-    port = _free_port()
+    # The desktop app picks the port itself and waits for it - it has to know
+    # where to point its window before the server has said anything.
+    wanted = os.environ.get("MUTEXX_ADVERTISER_PORT", "").strip()
+    port = int(wanted) if wanted.isdigit() else _free_port()
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     url = f"http://127.0.0.1:{port}/"
 
@@ -1053,6 +1095,8 @@ def main() -> None:
     print(f"  Data:      {core.HOME_DIR}")
     print("  To stop:   close this window or press Ctrl+C")
     print("=" * 64)
+
+    account.start_background(lambda: JOB["running"])
 
     if not os.environ.get("MUTEXX_ADVERTISER_NO_BROWSER"):
         threading.Timer(1.0, lambda: webbrowser.open(url)).start()

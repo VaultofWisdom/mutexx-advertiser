@@ -213,6 +213,57 @@ EN_UI: dict[str, str] = {
     "scan.step.hackernews": "Hacker News: rules and the topic's record",
     "scan.step.lobsters": "Lobsters: rules and matching tags",
 
+    # -- Mutexx account ------------------------------------------------------
+    "account.title": "Mutexx account",
+    "account.optional": "optional",
+    "account.local_only": "not signed in - everything stays local",
+    "account.pitch": "One account for all Mutexx apps. Signed in, your products and "
+                     "campaigns sync between your computers - including the history the "
+                     "safety catch counts against, so a second machine never proposes a "
+                     "community you posted to yesterday.",
+    "account.never_synced": "Never synced: API keys, the Reddit secret, the Mastodon token "
+                            "and Discord webhooks. They stay on this computer.",
+    "account.display_name": "Display name",
+    "account.email": "E-mail",
+    "account.password": "Password",
+    "account.sign_in": "Sign in",
+    "account.create": "Create account",
+    "account.no_account": "No account yet? Create one",
+    "account.have_one": "Already have one? Sign in",
+    "account.welcome": "Signed in. Syncing ...",
+    "account.check_inbox": "Almost there - confirm the e-mail sent to {email}, then sign in.",
+    "account.connected": "connected",
+    "account.what_syncs": "Product profiles, seed lists, analysis, strategy, assets, "
+                          "communities, campaign and history sync in the background every "
+                          "few minutes. Keys and passwords never leave this computer.",
+    "account.signed_in_as": "signed in as",
+    "account.this_device": "this device",
+    "account.sync_now": "Sync now",
+    "account.syncing": "syncing ...",
+    "account.synced_short": "sync on",
+    "account.never": "Not synced yet.",
+    "account.last_ok": "Last sync {when}: {pulled} received, {pushed} sent.",
+    "account.conflicts": "{count} edited on two devices at once - the other device's "
+                         "version was kept, yours is saved under data/account/conflicts.",
+    "account.last_offline": "Last attempt {when}: no connection. Changes stay here and go "
+                            "out with the next sync.",
+    "account.last_error": "Last attempt {when} failed: {error}",
+    "account.sign_out": "Sign out",
+    "account.sign_out_title": "Sign out of the Mutexx account?",
+    "account.sign_out_body": "Your data stays on this computer. It just stops syncing.",
+    "account.signed_out": "Signed out.",
+    "account.missing_fields": "E-mail and password, please.",
+    "account.password_short": "The password needs at least 8 characters.",
+    "account.wrong_credentials": "E-mail or password is not right.",
+    "account.not_confirmed": "This account's e-mail address is not confirmed yet - look for "
+                             "the confirmation e-mail.",
+    "account.signup_failed": "The account could not be created: {error}",
+    "account.not_signed_in": "Not signed in.",
+    "account.expired": "The session has expired - please sign in again.",
+    "account.unauthorized": "The account server refused the request - please sign in again.",
+    "account.offline": "No connection to the account server ({error}).",
+    "account.failed": "Sync failed: {error}",
+
     # -- Errors --------------------------------------------------------------
     "error.network": "No connection to the app. Is the window with the server still open?",
     "error.forbidden_origin": "Refused: the request did not come from this app's own page.",
@@ -439,6 +490,58 @@ DE_UI: dict[str, str] = {
     "scan.step.lemmy_search": "Lemmy-Suche auf {host}: {keyword}",
     "scan.step.hackernews": "Hacker News: Regeln und Themenlage",
     "scan.step.lobsters": "Lobsters: Regeln und passende Tags",
+
+    "account.title": "Mutexx Konto",
+    "account.optional": "freiwillig",
+    "account.local_only": "nicht angemeldet - alles bleibt lokal",
+    "account.pitch": "Ein Konto für alle Mutexx-Apps. Angemeldet gleichen sich deine "
+                     "Produkte und Kampagnen zwischen deinen Rechnern ab - auch der Verlauf, "
+                     "gegen den der Schutzschalter zählt, damit ein zweiter Rechner nie eine "
+                     "Community vorschlägt, in der du gestern gepostet hast.",
+    "account.never_synced": "Nie abgeglichen: API-Schlüssel, Reddit-Secret, Mastodon-Token "
+                            "und Discord-Webhooks. Sie bleiben auf diesem Rechner.",
+    "account.display_name": "Anzeigename",
+    "account.email": "E-Mail",
+    "account.password": "Passwort",
+    "account.sign_in": "Anmelden",
+    "account.create": "Konto anlegen",
+    "account.no_account": "Noch kein Konto? Jetzt anlegen",
+    "account.have_one": "Schon ein Konto? Anmelden",
+    "account.welcome": "Angemeldet. Abgleich läuft ...",
+    "account.check_inbox": "Fast geschafft - bestätige die E-Mail an {email} und melde dich "
+                           "dann an.",
+    "account.connected": "verbunden",
+    "account.what_syncs": "Produktprofile, Startlisten, Analyse, Strategie, Werbemittel, "
+                          "Communities, Kampagne und Verlauf gleichen sich alle paar Minuten im "
+                          "Hintergrund ab. Schlüssel und Passwörter verlassen diesen Rechner nie.",
+    "account.signed_in_as": "angemeldet als",
+    "account.this_device": "dieses Gerät",
+    "account.sync_now": "Jetzt abgleichen",
+    "account.syncing": "gleicht ab ...",
+    "account.synced_short": "Abgleich an",
+    "account.never": "Noch nicht abgeglichen.",
+    "account.last_ok": "Letzter Abgleich {when}: {pulled} empfangen, {pushed} gesendet.",
+    "account.conflicts": "{count} gleichzeitig auf zwei Geräten bearbeitet - die Fassung des "
+                         "anderen Geräts gilt, deine liegt unter data/account/conflicts.",
+    "account.last_offline": "Letzter Versuch {when}: keine Verbindung. Änderungen bleiben hier "
+                            "und gehen mit dem nächsten Abgleich raus.",
+    "account.last_error": "Letzter Versuch {when} fehlgeschlagen: {error}",
+    "account.sign_out": "Abmelden",
+    "account.sign_out_title": "Vom Mutexx Konto abmelden?",
+    "account.sign_out_body": "Deine Daten bleiben auf diesem Rechner. Sie gleichen sich nur "
+                             "nicht mehr ab.",
+    "account.signed_out": "Abgemeldet.",
+    "account.missing_fields": "Bitte E-Mail und Passwort angeben.",
+    "account.password_short": "Das Passwort braucht mindestens 8 Zeichen.",
+    "account.wrong_credentials": "E-Mail oder Passwort stimmt nicht.",
+    "account.not_confirmed": "Die E-Mail-Adresse dieses Kontos ist noch nicht bestätigt - "
+                             "bitte die Bestätigungsmail suchen.",
+    "account.signup_failed": "Das Konto ließ sich nicht anlegen: {error}",
+    "account.not_signed_in": "Nicht angemeldet.",
+    "account.expired": "Die Sitzung ist abgelaufen - bitte neu anmelden.",
+    "account.unauthorized": "Der Kontoserver hat die Anfrage abgelehnt - bitte neu anmelden.",
+    "account.offline": "Keine Verbindung zum Kontoserver ({error}).",
+    "account.failed": "Abgleich fehlgeschlagen: {error}",
 
     "error.network": "Keine Verbindung zur App. Ist das Fenster mit dem Server noch offen?",
     "error.forbidden_origin": "Abgelehnt: Die Anfrage kam nicht von der eigenen Seite der App.",

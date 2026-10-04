@@ -48,6 +48,22 @@ a:hover{color:var(--violet-soft)}
 ::-webkit-scrollbar-thumb{background:#262631;border-radius:10px;border:2px solid var(--bg)}
 ::-webkit-scrollbar-track{background:transparent}
 
+/* ---------- Account chip ---------- */
+.acct{display:flex;align-items:center;gap:10px;margin:0 12px 10px;padding:9px 11px;border-radius:12px;
+  border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;cursor:pointer;
+  text-align:left;min-width:0}
+.acct:hover{border-color:var(--indigo-soft)}
+.acct .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none;
+  background:var(--panel-3);color:var(--muted);font-size:12px;font-weight:650}
+.acct.on .av{background:var(--grad);color:#fff}
+.acct .who{min-width:0;flex:1}
+.acct .who b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct .who small{display:block;font-size:11.5px;color:var(--muted-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct .dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--grey)}
+.acct .dot.ok{background:var(--green)}
+.acct .dot.warn{background:var(--yellow)}
+.acct .dot.busy{background:var(--indigo-soft);animation:spin 1s linear infinite;border-radius:2px}
+
 /* ---------- Shell ---------- */
 .app{position:relative;z-index:1;display:grid;grid-template-columns:var(--side) 1fr;height:100vh}
 .side{background:linear-gradient(180deg,#101017,#0b0b11);border-right:1px solid var(--line);
@@ -485,6 +501,7 @@ dialog::backdrop{background:rgba(5,5,9,.7);backdrop-filter:blur(6px)}
       </div>
     </div>
     <nav id="nav" aria-label="Main"></nav>
+    <button class="acct" id="acctChip"></button>
     <div class="side-foot">
       <div class="seg" id="langSeg"></div>
       <span id="versionTag"></span>
@@ -725,7 +742,8 @@ dialog::backdrop{background:rgba(5,5,9,.7);backdrop-filter:blur(6px)}
 
       <!-- ============ SETTINGS ============ -->
       <section class="page" id="tab-settings" hidden>
-        <div class="grid2">
+        <div class="card" id="accountCard"></div>
+        <div class="grid2" style="margin-top:16px">
           <div class="card">
             <h2 data-i18n="settings.language"></h2>
             <p class="card-sub" data-i18n="settings.language_hint"></p>
@@ -1062,6 +1080,7 @@ async function api(path, body){
   let data = {};
   try { data = await res.json(); } catch (e) { data = {error: 'HTTP ' + res.status}; }
   if (data && data.error_key) data.error = t(data.error_key);
+  if (data && data.error_message) data.error = tr(data.error_message);
   return data;
 }
 
@@ -1162,6 +1181,7 @@ function render(){
   renderChannels();
   renderHistory();
   renderManual();
+  renderAccount();
   renderJob();
   $('versionTag').textContent = 'v' + (STATE.version || '');
 }
@@ -2231,6 +2251,101 @@ function renderManual(){
 }
 
 /* =====================================================================
+   Mutexx account
+   ===================================================================== */
+let ACCOUNT_MODE = 'signin';
+
+function syncLine(last){
+  if (!last) return t('account.never');
+  const when = last.at ? new Date(last.at*1000).toLocaleString(LANG === 'de' ? 'de-DE' : 'en-GB',
+    {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '';
+  if (last.status === 'ok') return t('account.last_ok', {when, pulled: last.pulled||0,
+    pushed: last.pushed||0}) + (last.conflicts ? ' ' + t('account.conflicts', {count: last.conflicts}) : '');
+  if (last.status === 'offline') return t('account.last_offline', {when});
+  return t('account.last_error', {when, error: tr(last.error)});
+}
+
+function renderAccount(){
+  const a = STATE.account || {};
+  const last = a.last;
+  const chip = $('acctChip');
+  chip.classList.toggle('on', !!a.signed_in);
+  const dot = a.syncing ? 'busy' : (last && last.status !== 'ok' ? 'warn' : 'ok');
+  chip.innerHTML = `<span class="av">${a.signed_in ? esc((a.email||'?')[0].toUpperCase()) : ic('users','sm')}</span>
+    <span class="who"><b>${esc(a.signed_in ? a.email : t('account.title'))}</b>
+    <small>${esc(a.signed_in ? (a.syncing ? t('account.syncing') : t('account.synced_short')) : t('account.local_only'))}</small></span>
+    ${a.signed_in ? `<span class="dot ${dot}"></span>` : ''}`;
+  chip.onclick = () => { openTab('settings'); $('main').scrollTop = 0; };
+
+  const box = $('accountCard');
+  if (a.signed_in){
+    box.innerHTML = `
+      <div class="card-head"><div class="grow">
+        <h2>${ic('users')} ${esc(t('account.title'))} <span class="badge gruen">${esc(t('account.connected'))}</span></h2>
+        <p class="card-sub">${esc(t('account.what_syncs'))}</p></div></div>
+      <div class="facts">
+        <div><b style="font-size:14px">${esc(a.email)}</b>${esc(t('account.signed_in_as'))}</div>
+        <div><b style="font-size:14px">${esc(a.device)}</b>${esc(t('account.this_device'))}</div>
+      </div>
+      <p class="hint small" id="acctLast">${esc(syncLine(last))}</p>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="acctSync" ${a.syncing ? 'disabled' : ''}>${ic('refresh','sm')}<span>${esc(t('account.sync_now'))}</span></button>
+        <button class="btn ghost" id="acctOut">${esc(t('account.sign_out'))}</button>
+      </div>`;
+    $('acctSync').onclick = async () => {
+      $('acctSync').disabled = true;
+      $('acctLast').innerHTML = `<span class="row" style="gap:8px"><span class="spin"></span>${esc(t('account.syncing'))}</span>`;
+      const res = await api('/api/account/sync', {});
+      if (res.error) toast(res.error, 'err');
+      else if (res.result) toast(syncLine(res.result), res.result.status === 'ok' ? 'ok' : 'warn');
+      await refresh();
+    };
+    $('acctOut').onclick = async () => {
+      if (!(await ask({title: t('account.sign_out_title'), body: t('account.sign_out_body'),
+                       confirm: t('account.sign_out')}))) return;
+      await api('/api/account/signout', {});
+      await refresh();
+      toast(t('account.signed_out'));
+    };
+    return;
+  }
+  const up = ACCOUNT_MODE === 'signup';
+  box.innerHTML = `
+    <div class="card-head"><div class="grow">
+      <h2>${ic('users')} ${esc(t('account.title'))} <span class="badge grau">${esc(t('account.optional'))}</span></h2>
+      <p class="card-sub">${esc(t('account.pitch'))}</p></div></div>
+    <div class="fields">
+      ${up ? `<label class="field wide"><span>${esc(t('account.display_name'))}</span><input id="acctName" autocomplete="nickname"></label>` : ''}
+      <label class="field"><span>${esc(t('account.email'))}</span><input id="acctEmail" type="email" autocomplete="email"></label>
+      <label class="field"><span>${esc(t('account.password'))}</span><input id="acctPass" type="password" autocomplete="${up ? 'new-password' : 'current-password'}"></label>
+    </div>
+    <p class="hint small" style="margin-top:12px">${esc(t('account.never_synced'))}</p>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="acctGo">${ic('arrow','sm')}<span>${esc(t(up ? 'account.create' : 'account.sign_in'))}</span></button>
+      <a href="#" id="acctSwitch" class="small">${esc(t(up ? 'account.have_one' : 'account.no_account'))}</a>
+    </div>`;
+  $('acctSwitch').onclick = (e) => { e.preventDefault(); ACCOUNT_MODE = up ? 'signin' : 'signup'; renderAccount(); };
+  $('acctPass').onkeydown = (e) => { if (e.key === 'Enter') $('acctGo').click(); };
+  $('acctGo').onclick = async () => {
+    const body = {email: $('acctEmail').value.trim(), password: $('acctPass').value};
+    if (up) body.display_name = $('acctName').value.trim();
+    $('acctGo').disabled = true;
+    const res = await api(up ? '/api/account/signup' : '/api/account/signin', body);
+    $('acctGo').disabled = false;
+    if (res.error){ toast(res.error, 'err'); return; }
+    if (res.account && res.account.pending_confirmation){
+      toast(t('account.check_inbox', {email: res.account.pending_confirmation}), 'info');
+      ACCOUNT_MODE = 'signin'; renderAccount(); return;
+    }
+    STATE = res.state; render();
+    toast(t('account.welcome'));
+    const sync = await api('/api/account/sync', {});
+    await refresh();
+    if (sync.result) toast(syncLine(sync.result), sync.result.status === 'ok' ? 'ok' : 'warn');
+  };
+}
+
+/* =====================================================================
    Settings
    ===================================================================== */
 const SETTINGS_FIELDS = ['cfgApiKey','cfgModel','cfgRedditId','cfgRedditSecret','cfgBotUser','cfgBotPass',
@@ -2325,6 +2440,18 @@ window.addEventListener('beforeunload', (e) => {
    ===================================================================== */
 TAB = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
 refresh().then(pollJob);
+// The account syncs on its own every few minutes. Pick up what it brought in -
+// but never while the user is typing in a form that a re-render would reset.
+setInterval(async () => {
+  if (!(STATE.account||{}).signed_in || JOB.running || PRODUCT_DIRTY || SETTINGS_DIRTY) return;
+  if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  if (!$('focus').hidden || $('dlg').open) return;
+  const before = JSON.stringify((STATE.account||{}).last || null);
+  const fresh = await api('/api/state');
+  if (JSON.stringify((fresh.account||{}).last || null) !== before){
+    STATE = fresh; LANG = STATE.ui_language || LANG; render();
+  }
+}, 60000);
 </script>
 </body>
 </html>

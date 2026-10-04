@@ -65,7 +65,12 @@ read the interface in English.
 
 ## State
 
-**Version 0.4.** What works:
+**Version 0.5.** What works:
+
+* **A Windows app** - installer, its own window, Python included, nothing else to
+  install. Updates are checked at start, signed, and installed after asking
+* **Mutexx account** - optional. Signed in, products and campaigns sync between your
+  computers; keys and passwords never do
 
 * **A guided interface** - a sidebar that walks the seven stages in order and ticks off
   what is done, an overview with the next sensible step, live progress for every
@@ -96,7 +101,7 @@ read the interface in English.
   behind a confirmation, and without ever cutting the link off a long post
 * **Safety catch** against exceeding the daily limit and against repeats
 * Full manual inside the interface, 22 chapters, in both languages
-* 220 tests, no network needed to run them
+* 230 tests, no network needed to run them, run on every push
 
 Stated honestly, what is missing:
 
@@ -108,14 +113,32 @@ Stated honestly, what is missing:
 * **The templates are plain.** They assemble only what is in the profile and invent
   nothing - deliberate, but dry without an API key.
 * The **Reddit part** needs approval from Reddit, see below.
-* There is no **installer** yet. It runs from source - which, with no dependencies, means
-  "install Python, double-click".
+* The installer is **not code-signed**, so Windows SmartScreen warns on first start.
+  The update signature is a different thing and is in place.
+* Windows only for the app. From source it runs anywhere Python does.
 
 ---
 
 ## Installation
 
-There is none to speak of. Python 3.10 or newer is enough; no third-party libraries are
+### Windows app
+
+Download `Mutexx-Advertiser_<version>_x64-setup.exe` from
+[Releases](https://github.com/VaultofWisdom/mutexx-advertiser/releases) and run it. It
+installs to `C:\Program Files\Mutexx Production\Mutexx Advertiser`, next to the other
+Mutexx products, and brings its own Python - nothing else to install.
+
+SmartScreen will warn that the publisher is unknown: the installer is not code-signed.
+`SHA256SUMS.txt` on the release lets you check the file is the one that was built.
+
+**Updates** are checked quietly at every start. When there is one, the app asks; Windows
+then asks for administrator rights, because the app lives under Program Files. Every
+update is checked against the Mutexx signing key before anything is installed. Your data
+is never touched by an update - it does not live in the program folder.
+
+### From source
+
+No installation either. Python 3.10 or newer is enough; no third-party libraries are
 used.
 
 **Windows:** install Python from [python.org](https://www.python.org/downloads/) (tick
@@ -130,8 +153,8 @@ cd mutexx-advertiser
 python start.py
 ```
 
-The interface opens in your browser at `http://127.0.0.1:8777`. The server listens on
-`127.0.0.1` only and is not reachable from the network.
+From source the interface opens in your browser at `http://127.0.0.1:8777`. The server
+listens on `127.0.0.1` only and is not reachable from the network.
 
 ### Where your data lives
 
@@ -154,6 +177,47 @@ Tests run without any extra tooling, and without the network:
 python -m unittest discover -s tests
 ```
 
+### Building the app
+
+The app in `desktop/` is a thin [Tauri](https://tauri.app) shell: it starts the bundled
+Python on a free local port, shows it in a native window, sends every outside link to
+your own browser - where you are signed in to Reddit, Lemmy or the forum - and handles
+updates. The Advertiser itself is the same Python program as above.
+
+Needs Rust, Node and Python 3.12:
+
+```bash
+cd desktop
+npm install
+npm run build
+```
+
+`npm run build` first downloads Python's official embeddable distribution, checks it
+against a pinned SHA-256, and copies the app next to it (`scripts/prepare_runtime.py`).
+Everything stays readable in the install folder; nothing is packed into an opaque
+executable. Releases are built by `.github/workflows/release.yml` from a tag `v*` and land
+as a draft.
+
+---
+
+## Mutexx account
+
+Optional, and off until you sign in (Settings -> Mutexx account). One account for all
+Mutexx apps; each app has its own compartment, and the Advertiser's is `advertiser`.
+
+| Synced | Never synced |
+|---|---|
+| product profiles, seed lists, analysis, strategy, assets, communities, the prepared campaign, the history | `config.json`: the Anthropic key, the Reddit secret and password, the Mastodon token, Discord webhooks |
+
+The history is the reason it exists. The safety catch counts against it, and a second
+computer that does not know what went out yesterday would propose the same community
+again.
+
+Sync runs every few minutes in the background. When the same thing was changed on two
+computers at once, the other computer's version wins and yours is kept in
+`data/account/conflicts/` - nothing is lost. The history is merged instead. The session is
+encrypted with Windows' DPAPI, so a copied data folder carries no usable login.
+
 ---
 
 ## Security and privacy
@@ -170,8 +234,9 @@ something every page in your browser can talk to. So it does not trust them:
   interface only learns *that* one is set, and an empty field on save keeps it.
 * **The page loads nothing from anywhere else** and sends no referrer, enforced by a
   content security policy.
-* No account, no cloud service, no telemetry. The app talks to the services you use and
-  to the sites it scans - with an honest user agent, one request at a time per host.
+* No account required, no telemetry. The app talks to the services you use, to the sites
+  it scans - with an honest user agent, one request at a time per host - and, only if
+  you sign in, to the Mutexx account server.
 
 ---
 
@@ -424,14 +489,18 @@ advertiser/discourse_api.py Discourse forums, read-only - figures, rules, catego
 advertiser/aggregators.py  Hacker News and Lobsters, read-only - the topic's record
                            (the whole-chain run lives in server.py: _run_everything)
 advertiser/publish.py      owned channels, posting assistant, safety catch
+advertiser/account.py      Mutexx account: sign-in and optional sync
 advertiser/server.py       local server
 advertiser/ui.html         interface
 
 tests/                     python -m unittest discover -s tests
+
+desktop/                   the Windows app: Tauri shell, installer, updater
+desktop/scripts/prepare_runtime.py   embedded Python + app copy for the installer
 ```
 
 Everything is stored as readable JSON in the data folder (see *Where your data lives*), per
-product in `data/products/<name>/`. There is no cloud service, no account and no telemetry.
+product in `data/products/<name>/`. No telemetry; the account is optional.
 
 ## Licence
 

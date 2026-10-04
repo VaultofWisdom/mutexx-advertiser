@@ -86,7 +86,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     },
     # How the app identifies itself on the network. An honest identifier is required -
     # faking a browser user agent breaks Reddit's rules.
-    "user_agent": "MutexxAdvertiser/0.4 (research tool; contact: please-enter-your-own-address)",
+    "user_agent": "MutexxAdvertiser/0.5 (research tool; contact: please-enter-your-own-address)",
     "request_delay_seconds": 1.3,
     # Limits of the scan. The keywords are NOT here but on the product - they come
     # from its profile and from the analysis (see analysis.merged_keywords).
@@ -279,8 +279,13 @@ def fetch(
     headers: dict[str, str] | None = None,
     timeout: int = 25,
     retries: int = 3,
+    polite: bool = True,
 ) -> tuple[int, bytes]:
-    """One HTTP request with rate limiting and backoff. Returns (status, body)."""
+    """One HTTP request with rate limiting and backoff. Returns (status, body).
+
+    polite=False skips the per-host pause. Only for our own backend (the Mutexx
+    account): the pause exists for other people's sites, and a sync of seven
+    files should not take ten seconds because of it."""
     host = urllib.parse.urlparse(url).netloc
     base_headers = {
         "User-Agent": user_agent,
@@ -292,7 +297,8 @@ def fetch(
 
     last_error: Exception | None = None
     for attempt in range(retries):
-        _limiter.wait(host)
+        if polite:
+            _limiter.wait(host)
         request = urllib.request.Request(url, data=data, headers=base_headers, method=method)
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:

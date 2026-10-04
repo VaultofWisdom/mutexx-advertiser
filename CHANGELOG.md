@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.5.0
+
+**Windows app**
+
+* Installer (NSIS) to `C:\Program Files\Mutexx Production\Mutexx Advertiser`, start menu
+  group "Mutexx Production", data in `%LOCALAPPDATA%\Mutexx Production\Mutexx Advertiser`
+  - including the WebView's own data, which would otherwise scatter into a folder named
+  after the app identifier.
+* Brings Python's official embeddable distribution (pinned SHA-256, PSF-signed); nothing
+  else to install.
+* Native window; every link that leaves the app - submit forms, subreddits, forums - opens
+  in the user's own browser, where they are signed in.
+* The Python server dies with the window, also after a crash or a kill (job object).
+* One instance only; starting it again brings the open window forward.
+* **Updates:** checked at every start against
+  `releases/latest/download/latest.json`, verified with the Mutexx signing key (shared with
+  Mutexx Notes and VocalRemover), installed only after asking. Windows asks for
+  administrator rights, as the app lives under Program Files.
+
+**Mutexx account**
+
+* Optional sign-in with the Mutexx account (Settings, and a chip in the sidebar).
+* Sync of product profiles and each product's working data - seed lists, analysis,
+  strategy, assets, communities, campaign, history - in the `advertiser` compartment,
+  every few minutes and on demand. Keys, secrets and webhooks are never synced.
+* Same rules as the TypeScript SDK the other Mutexx apps use: server revisions, tombstones
+  for deletions, payloads above 64 KB in the storage bucket. A conflict keeps the other
+  device's version and saves ours under `data/account/conflicts/`; the history is merged.
+* The session is encrypted with DPAPI; the interface never sees a token.
+
+**Other**
+
+* Tests run in GitHub Actions on Windows and Linux, Python 3.10 and 3.12; 230 tests.
+* Releases are built from a tag by `.github/workflows/release.yml` into a draft release.
+
 ## 0.4.0
 
 The release that makes the tool usable by someone who did not build it.

@@ -1,0 +1,6 @@
+node_modules/
+.cache/
+src-tauri/target/
+src-tauri/gen/
+# Built by scripts/prepare_runtime.py - the embedded Python and a copy of the app
+src-tauri/resources/

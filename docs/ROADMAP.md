@@ -304,7 +304,16 @@ Still open in this stage: the Python source comments and docstrings are still la
 German. That does not affect the product, but for a public repository with an English-first
 interface it is inconsistent.
 
-### Stage 10 — Downloadable Windows 11 app — open
+### Stage 10 — Downloadable Windows 11 app — **done in 0.5**
+
+Built the way this stage asked for: a Tauri shell (`desktop/`) around Python's official
+embeddable distribution, every file readable in the install folder, nothing packed into
+an opaque executable. Installer, start menu group and data folder follow the Mutexx
+folder rule; updates are signed with the Mutexx key and installed after asking. The one
+thing still missing is code signing - the SmartScreen warning on first start stays until
+a certificate is bought.
+
+The original reasoning, kept for why it looks the way it does:
 
 Today the tool runs from source. The target is a download that a non-developer can use.
 

@@ -45,7 +45,7 @@
       "utm_source_base": "my-product"
     }
   ],
-  "user_agent": "MutexxAdvertiser/0.4 (research tool; contact: your@address.tld)",
+  "user_agent": "MutexxAdvertiser/0.5 (research tool; contact: your@address.tld)",
   "request_delay_seconds": 1.3,
   "discovery": {
     "max_communities": 140,

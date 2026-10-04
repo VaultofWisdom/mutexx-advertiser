@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "What the start screen may do: nothing beyond the basics. The app itself runs from the local Python server at 127.0.0.1, a remote origin as far as Tauri is concerned, and gets no access to Tauri at all - it does not need any. Updates are checked and installed from Rust.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default"
+  ]
+}
