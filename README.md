@@ -502,6 +502,14 @@ desktop/scripts/prepare_runtime.py   embedded Python + app copy for the installe
 Everything is stored as readable JSON in the data folder (see *Where your data lives*), per
 product in `data/products/<name>/`. No telemetry; the account is optional.
 
+## Imprint and privacy
+
+Inside the app under *Help & settings -> Imprint & privacy*, in German (binding) and
+English. The privacy notice describes what the app itself does: it keeps everything on
+your computer, connects to GitHub for the update check and to the sites a scan reads, to
+the services you set up yourself, and - only if you sign in - to the Mutexx account.
+The provider is [Mutexx Production](https://mutexxproduction.de/impressum).
+
 ## Licence
 
 No licence has been chosen yet. Until one is, the default applies: all rights reserved.

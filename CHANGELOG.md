@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1
+
+* **Imprint and privacy notice** inside the app (Help & settings), German and English.
+  The privacy notice covers what the app does: local storage, the update check with
+  GitHub, the sites a scan reads, the services you set up yourself, and the optional
+  Mutexx account. Linked from the account sign-in.
+* The release workflow no longer rebuilds a release that already carries an installer.
+
 ## 0.5.0
 
 **Windows app**

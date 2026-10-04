@@ -424,6 +424,11 @@ tbody tr:last-child td{border-bottom:0}
 .doc i{color:var(--violet-soft);font-style:normal}
 .doc table{margin:16px 0;border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden;display:table}
 .doc td:first-child{white-space:nowrap;color:var(--muted);width:210px}
+.legal{align-items:start}
+.legal .doc{max-width:none;font-size:14px;line-height:1.7}
+.legal .doc h2{font-size:18px;margin:0 0 6px;padding-bottom:10px}
+.legal .doc h3{font-size:14px;margin:20px 0 4px}
+.legal .doc p,.legal .doc li{color:#cfcfd8}
 
 /* ---------- Toasts / dialog ---------- */
 #toasts{position:fixed;right:22px;bottom:22px;z-index:80;display:flex;flex-direction:column;gap:10px;
@@ -740,6 +745,14 @@ dialog::backdrop{background:rgba(5,5,9,.7);backdrop-filter:blur(6px)}
         <div class="manual"><div class="toc" id="manualToc"></div><div class="doc" id="manualBody"></div></div>
       </section>
 
+      <!-- ============ LEGAL ============ -->
+      <section class="page" id="tab-legal" hidden>
+        <div class="grid2 legal">
+          <div class="card doc"><h2 id="m-imprint" data-i18n="legal.imprint"></h2><div id="legalImprint"></div></div>
+          <div class="card doc"><h2 id="m-privacy" data-i18n="legal.privacy"></h2><div id="legalPrivacy"></div></div>
+        </div>
+      </section>
+
       <!-- ============ SETTINGS ============ -->
       <section class="page" id="tab-settings" hidden>
         <div class="card" id="accountCard"></div>
@@ -902,11 +915,11 @@ const NAV = [
   {group:'nav.group.plan', items:['product','analysis','strategy','assets']},
   {group:'nav.group.reach', items:['seeds','communities','campaign']},
   {group:'nav.group.publish', items:['channels','history']},
-  {group:'nav.group.help', items:['manual','settings']},
+  {group:'nav.group.help', items:['manual','settings','legal']},
 ];
 const TAB_ICON = {overview:'home', product:'box', analysis:'search', strategy:'target',
   assets:'pen', seeds:'list', communities:'users', campaign:'send', channels:'radio',
-  history:'clock', manual:'book', settings:'sliders'};
+  history:'clock', manual:'book', settings:'sliders', legal:'shield'};
 const WORKFLOW = ['product','analysis','strategy','assets','seeds','communities','campaign'];
 const TABS = NAV.flatMap(g => g.items);
 const MANUAL_PLATFORMS = ['reddit','lemmy','hackernews','lobsters'];
@@ -1181,6 +1194,7 @@ function render(){
   renderChannels();
   renderHistory();
   renderManual();
+  renderLegal();
   renderAccount();
   renderJob();
   $('versionTag').textContent = 'v' + (STATE.version || '');
@@ -2251,6 +2265,16 @@ function renderManual(){
 }
 
 /* =====================================================================
+   Imprint and privacy
+   ===================================================================== */
+function renderLegal(){
+  const pages = (STATE.legal||{})[LANG] || (STATE.legal||{}).de || {};
+  // The provider's own text from legal.py - not scanned content.
+  $('legalImprint').innerHTML = pages.imprint || '';
+  $('legalPrivacy').innerHTML = pages.privacy || '';
+}
+
+/* =====================================================================
    Mutexx account
    ===================================================================== */
 let ACCOUNT_MODE = 'signin';
@@ -2319,11 +2343,13 @@ function renderAccount(){
       <label class="field"><span>${esc(t('account.email'))}</span><input id="acctEmail" type="email" autocomplete="email"></label>
       <label class="field"><span>${esc(t('account.password'))}</span><input id="acctPass" type="password" autocomplete="${up ? 'new-password' : 'current-password'}"></label>
     </div>
-    <p class="hint small" style="margin-top:12px">${esc(t('account.never_synced'))}</p>
+    <p class="hint small" style="margin-top:12px">${esc(t('account.never_synced'))}
+      <a href="#legal" id="acctPrivacy">${esc(t('account.privacy_link'))}</a></p>
     <div class="row" style="margin-top:10px">
       <button class="btn" id="acctGo">${ic('arrow','sm')}<span>${esc(t(up ? 'account.create' : 'account.sign_in'))}</span></button>
       <a href="#" id="acctSwitch" class="small">${esc(t(up ? 'account.have_one' : 'account.no_account'))}</a>
     </div>`;
+  $('acctPrivacy').onclick = (e) => { e.preventDefault(); openTab('legal'); };
   $('acctSwitch').onclick = (e) => { e.preventDefault(); ACCOUNT_MODE = up ? 'signin' : 'signup'; renderAccount(); };
   $('acctPass').onkeydown = (e) => { if (e.key === 'Enter') $('acctGo').click(); };
   $('acctGo').onclick = async () => {

@@ -22,7 +22,7 @@ from typing import Any
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from . import (__version__, account, analysis, assets, core, discovery, drafts, i18n,
-               lemmy_api, manual, products, publish, reddit_api, rules, seeds, strategy)
+               legal, lemmy_api, manual, products, publish, reddit_api, rules, seeds, strategy)
 
 UI_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui.html")
 
@@ -668,6 +668,7 @@ class Handler(BaseHTTPRequestHandler):
             "discord_searches": seeds.discord_searches(keywords),
             "catalog": i18n.catalogue(),
             "manual": {code: manual.chapters(code) for code in i18n.LANGUAGES},
+            "legal": {code: legal.pages(code) for code in i18n.LANGUAGES},
             "languages": i18n.LANGUAGES,
             "ui_language": i18n.normalise(config.get("ui_language")),
             "verdict_text": rules.VERDICT_TEXT,

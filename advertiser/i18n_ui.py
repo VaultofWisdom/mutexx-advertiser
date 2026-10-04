@@ -11,6 +11,11 @@ from __future__ import annotations
 EN_UI: dict[str, str] = {
     # -- Navigation ----------------------------------------------------------
     "tab.overview": "Overview",
+    "tab.legal": "Imprint & privacy",
+    "page.legal.sub": "Who is behind the app, and what it does with data",
+    "legal.imprint": "Imprint",
+    "legal.privacy": "Privacy notice",
+    "account.privacy_link": "Privacy notice",
     "nav.group.plan": "Plan",
     "nav.group.reach": "Reach",
     "nav.group.publish": "Publish",
@@ -293,6 +298,11 @@ EN_UI: dict[str, str] = {
 
 DE_UI: dict[str, str] = {
     "tab.overview": "Übersicht",
+    "tab.legal": "Impressum & Datenschutz",
+    "page.legal.sub": "Wer hinter der App steht, und was sie mit Daten macht",
+    "legal.imprint": "Impressum",
+    "legal.privacy": "Datenschutzhinweise",
+    "account.privacy_link": "Datenschutzhinweise",
     "nav.group.plan": "Planen",
     "nav.group.reach": "Reichweite",
     "nav.group.publish": "Veröffentlichen",
