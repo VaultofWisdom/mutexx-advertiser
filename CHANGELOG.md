@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0
+
+* **Write with your Claude subscription.** "with claude.ai" buttons on the analysis, the
+  strategy summary, the seed suggestions, every asset and every post draft. Anthropic does
+  not let other apps use a claude.ai subscription on someone's behalf, so the route is
+  manual by design: the app prepares the request, you paste it into claude.ai and paste the
+  answer back. The answer goes through exactly the checks an API answer does - the
+  character limits included - because it is the same code path: the request is built by
+  the module that would send it, and only the sending is replaced.
+* The privacy notice covers the claude.ai route.
+
 ## 0.5.1
 
 * **Imprint and privacy notice** inside the app (Help & settings), German and English.

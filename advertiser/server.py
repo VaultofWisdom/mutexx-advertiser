@@ -421,6 +421,59 @@ def _progress_stage(key: str, index: int, total: int) -> None:
         JOB["total"] = total
 
 
+# ---------------------------------------------------------------------------
+# The claude.ai route
+# ---------------------------------------------------------------------------
+
+CLAUDE_AI_TASKS = ("draft", "asset", "analysis", "strategy", "seeds")
+
+
+def _claude_ai_task(task: str, body: dict, config: dict, product: dict, slug: str) -> Any:
+    """Runs one of the five things the app writes with Claude, through exactly the
+    function the API route uses. Whether that function's request is captured or
+    answered is decided by the context it runs in (see core.claude_ai_capture)."""
+    config = core.claude_ai_config(config)
+    result = analysis.load(slug)
+    if task == "draft":
+        entry = next((item for item in core.load_product(slug, "communities", [])
+                      if item.get("id") == body.get("community_id")), None)
+        if not entry:
+            raise LookupError("error.not_found")
+        draft = drafts.build_with_api(entry, product, config, result, body.get("angle") or None)
+        draft["generated_by"] = "claudeai"
+        return draft
+    if task == "asset":
+        asset_id = body.get("asset_id", "")
+        if asset_id not in assets.ASSETS_BY_ID:
+            raise LookupError("error.unknown_asset")
+        asset = assets.build(asset_id, product, result, config, use_api=True)
+        if asset.get("generated_by") == "anthropic":
+            asset["generated_by"] = "claudeai"
+        assets.store(slug, asset)
+        return asset
+    if task == "analysis":
+        fresh = analysis.analyse(product, config, lambda *_args: None, use_api=True)
+        analysis.store(slug, fresh)
+        # The strategy hangs off the analysis, as on the ordinary route - rebuilt by
+        # the rules here; its own summary has its own claude.ai button.
+        strategy.store(slug, strategy.build(product, fresh, config, use_api=False))
+        return fresh
+    if task == "strategy":
+        plan = strategy.build(product, result, config, use_api=True)
+        strategy.store(slug, plan)
+        return plan
+    if task == "seeds":
+        suggested = seeds.suggest_with_api(product, result, config, _scan_keywords(product))
+        existing = seeds.load_seeds(slug)
+        return seeds.save_seeds(slug, {
+            "subreddits": existing["subreddits"] + suggested["subreddits"],
+            "forums": existing["forums"] + suggested["forums"],
+            "lemmy_instances": existing["lemmy_instances"],
+            "source": "vorschlag",
+        })
+    raise LookupError("error.unknown_path")
+
+
 def _run_seed_suggestion(slug: str) -> None:
     try:
         config = core.load_config()
@@ -922,6 +975,60 @@ class Handler(BaseHTTPRequestHandler):
                  if item.get("community_id") != entry["id"]]
         core.save_product(slug, "queue", queue)
         self._send(200, {"ok": True})
+
+    # -- The claude.ai route -------------------------------------------------
+    def _claude_ai_context(self, body: dict) -> tuple[str, dict, dict, str] | None:
+        config, product, slug = self._active()
+        task = body.get("task", "")
+        if not slug:
+            self._send(400, {"error_key": "error.no_product"})
+            return None
+        if task not in CLAUDE_AI_TASKS:
+            self._send(404, {"error_key": "error.unknown_path"})
+            return None
+        return task, config, product, slug
+
+    def _post_claudeai_prompt(self, body: dict) -> None:
+        """Step one: the finished request, for the user to paste into claude.ai."""
+        context = self._claude_ai_context(body)
+        if not context:
+            return
+        task, config, product, slug = context
+        try:
+            with core.claude_ai_capture():
+                _claude_ai_task(task, body, config, product, slug)
+        except core.PromptCaptured as captured:
+            self._send(200, {"ok": True,
+                             "text": core.claude_ai_text(captured.system, captured.prompt)})
+            return
+        except LookupError as error:
+            self._send(404, {"error_key": str(error.args[0])})
+            return
+        # The task finished without ever asking Claude - nothing to take to claude.ai.
+        self._send(409, {"error_key": "claudeai.nothing_to_ask"})
+
+    def _post_claudeai_answer(self, body: dict) -> None:
+        """Step two: the answer pasted back. Checked before anything is written - a
+        half-copied answer must not replace a good analysis with an empty one."""
+        context = self._claude_ai_context(body)
+        if not context:
+            return
+        task, config, product, slug = context
+        try:
+            parsed = core.parse_claude_text(body.get("answer", ""))
+        except core.ClaudeError as error:
+            self._send(400, {"error_key": error.key})
+            return
+        try:
+            with core.claude_ai_answer(parsed):
+                result = _claude_ai_task(task, body, config, product, slug)
+        except LookupError as error:
+            self._send(404, {"error_key": str(error.args[0])})
+            return
+        except core.PromptCaptured:
+            self._send(500, {"error_key": "error.no_json"})
+            return
+        self._send(200, {"ok": True, "result": result, "state": self._state()})
 
     # -- Mutexx account -----------------------------------------------------
     # The password passes through here on its way to the account server and is

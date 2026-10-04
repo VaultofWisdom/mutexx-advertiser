@@ -65,10 +65,13 @@ read the interface in English.
 
 ## State
 
-**Version 0.5.** What works:
+**Version 0.6.** What works:
 
 * **A Windows app** - installer, its own window, Python included, nothing else to
   install. Updates are checked at start, signed, and installed after asking
+* **Your Claude subscription or an API key** - with an Anthropic API key the app writes
+  on its own; without one, "with claude.ai" buttons prepare each request for you to paste
+  into claude.ai and take the answer back, checked like an API answer
 * **Mutexx account** - optional. Signed in, products and campaigns sync between your
   computers; keys and passwords never do
 

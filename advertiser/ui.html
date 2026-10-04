@@ -451,6 +451,11 @@ dialog::backdrop{background:rgba(5,5,9,.7);backdrop-filter:blur(6px)}
 .dlg .hint{margin:0 0 16px}
 .dlg input{width:100%;margin-bottom:16px}
 .dlg .row{justify-content:flex-end}
+dialog.cai{width:min(640px,calc(100vw - 32px))}
+.cai-step{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-top:1px solid var(--line)}
+.cai-step>b{width:26px;height:26px;border-radius:9px;background:var(--grad);color:#fff;display:grid;
+  place-items:center;font-size:12.5px;flex:none;margin-top:4px}
+.cai textarea{font-size:12.5px}
 
 /* ---------- Responsive ---------- */
 @media (max-width:1180px){
@@ -588,6 +593,8 @@ dialog::backdrop{background:rgba(5,5,9,.7);backdrop-filter:blur(6px)}
           <div class="row">
             <button class="btn" id="anaBtn"></button>
             <label class="check"><input type="checkbox" id="anaApi"> <span data-i18n="analysis.use_api"></span></label>
+            <span class="spacer"></span>
+            <button class="btn ghost" id="anaCai"></button>
           </div>
         </div>
         <div id="anaBox"></div>
@@ -599,6 +606,8 @@ dialog::backdrop{background:rgba(5,5,9,.7);backdrop-filter:blur(6px)}
           <div class="row">
             <button class="btn" id="strBtn"></button>
             <label class="check"><input type="checkbox" id="strApi"> <span data-i18n="strategy.use_api"></span></label>
+            <span class="spacer"></span>
+            <button class="btn ghost" id="strCai"></button>
           </div>
           <div class="note info" style="margin-bottom:0"><span id="noMoneyIcon"></span><div>
             <b data-i18n="strategy.no_money"></b> <span data-i18n="strategy.no_money_body"></span></div></div>
@@ -636,6 +645,7 @@ dialog::backdrop{background:rgba(5,5,9,.7);backdrop-filter:blur(6px)}
           <div class="row" style="margin-top:14px">
             <button class="btn" id="seedSave"></button>
             <button class="btn ghost" id="seedSuggest"></button>
+            <button class="btn ghost" id="seedCai"></button>
           </div>
         </div>
         <div class="card">
@@ -844,6 +854,25 @@ dialog::backdrop{background:rgba(5,5,9,.7);backdrop-filter:blur(6px)}
   </div>
 </div>
 
+<dialog id="caiDlg" class="cai"><div class="dlg">
+  <h2 id="caiTitle"></h2>
+  <p class="hint" id="caiIntro"></p>
+  <div class="cai-step"><b>1</b><div style="flex:1;min-width:0">
+    <button type="button" class="btn" id="caiCopy"></button>
+    <p class="hint small" id="caiCopied" hidden></p>
+    <details style="margin-top:8px"><summary class="hint small" id="caiShow"></summary>
+      <textarea id="caiPrompt" readonly style="min-height:140px;margin-top:6px"></textarea></details>
+  </div></div>
+  <div class="cai-step"><b>2</b><div style="flex:1;min-width:0">
+    <span class="hint small" id="caiStep2"></span>
+    <textarea id="caiAnswer" style="min-height:150px;margin-top:6px"></textarea>
+  </div></div>
+  <div class="row" style="justify-content:flex-end;margin-top:6px">
+    <button type="button" class="btn ghost" id="caiCancel"></button>
+    <button type="button" class="btn" id="caiApply"></button>
+  </div>
+</div></dialog>
+
 <div id="toasts" aria-live="polite"></div>
 <dialog id="dlg"><form method="dialog" class="dlg" onsubmit="return false">
   <h2 id="dlgTitle"></h2><div class="hint" id="dlgBody"></div>
@@ -1005,6 +1034,12 @@ function applyStatic(){
   label($('testReddit'), 'link', 'settings.test_connection');
   label($('testLemmy'), 'link', 'settings.test_connection');
   label($('saveCfg'), 'check', 'settings.save');
+  label($('anaCai'), 'spark', 'claudeai.analyse');
+  label($('strCai'), 'spark', 'claudeai.strategy');
+  label($('seedCai'), 'spark', 'claudeai.seeds');
+  label($('caiCopy'), 'copy', 'claudeai.copy_open');
+  label($('caiApply'), 'check', 'claudeai.apply');
+  label($('caiCancel'), '', 'action.cancel');
   $('newProductBtn').innerHTML = ic('plus','sm');
   $('menuBtn').innerHTML = ic('menu');
   $('runExit').innerHTML = ic('x','sm');
@@ -1723,6 +1758,7 @@ function renderAssets(){
         ${spec.note_key ? note('warn', esc(t(spec.note_key))) : ''}
         <div class="row" style="margin-top:14px">
           <button class="btn sm" data-abuild="${esc(spec.id)}">${ic(a ? 'refresh' : 'spark','sm')}<span>${esc(t(a ? 'assets.rebuild' : 'assets.build'))}</span></button>
+          <button class="btn ghost sm" data-acai="${esc(spec.id)}">${ic('spark','sm')}<span>${esc(t('claudeai.button'))}</span></button>
           ${a ? `<span class="hint small">${esc(t('assets.generated', {source: t('assets.source.' + a.generated_by),
               date: new Date(a.generated_at*1000).toLocaleString(LANG === 'de' ? 'de-DE' : 'en-GB')}))}</span>` : ''}
         </div>
@@ -1748,6 +1784,11 @@ function renderAssets(){
     const d = document.querySelector(`#assetBox details[data-id="${CSS.escape(b.dataset.abuild)}"]`);
     if (d) d.open = true;
   });
+  document.querySelectorAll('[data-acai]').forEach(b => b.onclick = () =>
+    claudeAi('asset', {asset_id: b.dataset.acai}, () => {
+      const d = document.querySelector(`#assetBox details[data-id="${CSS.escape(b.dataset.acai)}"]`);
+      if (d) d.open = true;
+    }));
   document.querySelectorAll('[data-acopy]').forEach(b => b.onclick = () => {
     const a = (STATE.assets||{})[b.dataset.acopy];
     const item = ((a.fields||{})[b.dataset.afield]||[])[+b.dataset.ai];
@@ -1955,12 +1996,20 @@ function renderDetail(generateNow=false){
         <span class="spacer"></span>
         <button class="btn ghost sm" id="genBtn">${ic('spark','sm')}<span>${esc(t('communities.generate'))}</span></button>
         <button class="btn ghost sm" id="varBtn">${ic('refresh','sm')}<span>${esc(t('communities.variant'))}</span></button>
+        <button class="btn ghost sm" id="caiBtn">${ic('spark','sm')}<span>${esc(t('claudeai.button'))}</span></button>
       </div>
       <div id="draftBox"></div>
     </div>`;
 
   $('genBtn').onclick = () => generate(false);
   $('varBtn').onclick = () => generate(true);
+  $('caiBtn').onclick = () => {
+    const community = c.id;
+    claudeAi('draft', {community_id: community, angle: $('angleSel').value}, (draft) => {
+      if (SELECTED !== community) return;
+      DRAFT = draft; renderDetail();
+    });
+  };
   if (DRAFT && DRAFT.community_id === c.id) renderDraft();
   else if (generateNow) generate(false);
   else $('draftBox').innerHTML = `<p class="hint">${esc(t('communities.draft_hint'))}</p>`;
@@ -2263,6 +2312,57 @@ function renderManual(){
     if (TABS.includes(id)){ e.preventDefault(); openTab(id); }
   });
 }
+
+/* =====================================================================
+   The claude.ai route - with the user's own Claude subscription
+   ===================================================================== */
+/* The app may not use a claude.ai subscription itself. So the request goes out
+   through the clipboard into the user's own claude.ai, and the answer comes back
+   the same way - through exactly the checks an API answer goes through. */
+const CAI_TITLE = {draft:'claudeai.title.draft', asset:'claudeai.title.asset',
+  analysis:'claudeai.title.analysis', strategy:'claudeai.title.strategy', seeds:'claudeai.title.seeds'};
+
+async function claudeAi(task, params, done){
+  const res = await api('/api/claudeai/prompt', {task, ...params});
+  if (res.error){ toast(res.error, 'err'); return; }
+  const dlg = $('caiDlg');
+  $('caiTitle').textContent = t(CAI_TITLE[task]);
+  $('caiIntro').textContent = t('claudeai.intro');
+  $('caiShow').textContent = t('claudeai.show', {count: fmtNum(res.text.length)});
+  $('caiStep2').textContent = t('claudeai.step2');
+  $('caiAnswer').placeholder = t('claudeai.answer_ph');
+  $('caiPrompt').value = res.text;
+  $('caiAnswer').value = '';
+  $('caiCopied').hidden = true;
+  $('caiCopy').onclick = async () => {
+    await copyText(res.text);
+    window.open('https://claude.ai/new', '_blank', 'noopener,noreferrer');
+    $('caiCopied').textContent = t('claudeai.copied');
+    $('caiCopied').hidden = false;
+    $('caiAnswer').focus();
+  };
+  $('caiCancel').onclick = () => dlg.close();
+  $('caiApply').onclick = async () => {
+    if (!$('caiAnswer').value.trim()){ $('caiAnswer').focus(); return; }
+    $('caiApply').disabled = true;
+    const out = await api('/api/claudeai/answer', {task, ...params, answer: $('caiAnswer').value});
+    $('caiApply').disabled = false;
+    if (out.error){ toast(out.error, 'err'); return; }
+    dlg.close();
+    STATE = out.state; LANG = STATE.ui_language || LANG; render();
+    toast(t('claudeai.applied'));
+    if (done) done(out.result);
+  };
+  dlg.showModal();
+  $('caiCopy').focus();
+}
+
+$('anaCai').onclick = () => claudeAi('analysis', {});
+$('strCai').onclick = () => claudeAi('strategy', {});
+$('seedCai').onclick = async () => {
+  await api('/api/seeds/save', {seeds: parseSeeds()});
+  claudeAi('seeds', {});
+};
 
 /* =====================================================================
    Imprint and privacy

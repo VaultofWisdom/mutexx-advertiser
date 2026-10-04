@@ -389,7 +389,18 @@ def ask_claude_json(config: dict, system: str, prompt: str, *,
       thinking is drawn from max_tokens, so a tight limit cuts the JSON in half;
     * the timeout is minutes, not the 25 seconds a forum page gets;
     * a refusal is reported as one, instead of as "no JSON found".
+
+    Inside claude_ai_capture() / claude_ai_answer() nothing is sent: the request is
+    handed out for the user to paste into claude.ai, or the answer they pasted back
+    is returned. See there.
     """
+    route = _claude_route.get()
+    if route is not None:
+        mode, answer = route
+        if mode == "capture":
+            raise PromptCaptured(system, prompt)
+        return answer
+
     api = config.get("anthropic") or {}
     key = (api.get("api_key") or "").strip()
     if not key:
@@ -418,12 +429,90 @@ def ask_claude_json(config: dict, system: str, prompt: str, *,
         raise ClaudeError("error.api_refused")
     text = "".join(block.get("text", "") for block in response.get("content", [])
                    if block.get("type") == "text")
-    match = re.search(r"\{.*\}", text, re.S)
+    if response.get("stop_reason") == "max_tokens" and not re.search(r"\{.*\}", text, re.S):
+        raise ClaudeError("error.api_truncated")
+    return parse_claude_text(text)
+
+
+def parse_claude_text(text: str) -> dict:
+    """The JSON object in a model's answer - from the API, or pasted from claude.ai,
+    where it usually arrives in a code block with a sentence before it."""
+    match = re.search(r"\{.*\}", text or "", re.S)
     if not match:
-        if response.get("stop_reason") == "max_tokens":
-            raise ClaudeError("error.api_truncated")
         raise ClaudeError("error.no_json")
     try:
-        return json.loads(match.group(0))
+        parsed = json.loads(match.group(0))
     except json.JSONDecodeError as error:
         raise ClaudeError("error.no_json") from error
+    if not isinstance(parsed, dict):
+        raise ClaudeError("error.no_json")
+    return parsed
+
+
+# ---------------------------------------------------------------------------
+# The claude.ai route - with the user's own Claude subscription
+# ---------------------------------------------------------------------------
+# Anthropic does not allow third-party products to sign people in with their
+# claude.ai account or to spend their subscription for them. What is allowed is the
+# obvious thing: the user takes the request to claude.ai themselves, in Anthropic's
+# own interface, and brings the answer back. The app prepares both ends.
+#
+# Nothing in the five modules that write with Claude knows about this. They build
+# their request and call ask_claude_json as always; inside claude_ai_capture() that
+# call stops with the finished request, inside claude_ai_answer() it returns the
+# pasted answer. Everything around it - what goes into the request, the character
+# limits, the checks on what comes back - is the same code path as the API's, so the
+# two routes cannot drift apart.
+
+import contextlib  # noqa: E402
+import contextvars  # noqa: E402
+
+_claude_route: contextvars.ContextVar = contextvars.ContextVar("claude_route", default=None)
+
+
+class PromptCaptured(BaseException):
+    """Carries the finished request out of a module. A BaseException on purpose: the
+    modules catch Exception to fall back on their templates, and this must pass
+    through them untouched."""
+
+    def __init__(self, system: str, prompt: str) -> None:
+        super().__init__("prompt captured")
+        self.system = system
+        self.prompt = prompt
+
+
+# The modules check for an API key before they build a request. On the claude.ai
+# route there is none and none is needed - this stands in for it, and since the
+# request is never sent, it never leaves the process.
+CLAUDE_AI_KEY = "claude.ai"
+
+
+def claude_ai_config(config: dict) -> dict:
+    copy = json.loads(json.dumps(config))
+    copy.setdefault("anthropic", {})["api_key"] = CLAUDE_AI_KEY
+    return copy
+
+
+@contextlib.contextmanager
+def claude_ai_capture():
+    token = _claude_route.set(("capture", None))
+    try:
+        yield
+    finally:
+        _claude_route.reset(token)
+
+
+@contextlib.contextmanager
+def claude_ai_answer(parsed: dict):
+    token = _claude_route.set(("answer", parsed))
+    try:
+        yield
+    finally:
+        _claude_route.reset(token)
+
+
+def claude_ai_text(system: str, prompt: str) -> str:
+    """One message for claude.ai: the instructions, the task, and the reminder that
+    only the JSON is wanted - a chat answer likes to explain itself first."""
+    return (f"{system.strip()}\n\n---\n\n{prompt.strip()}\n\n---\n\n"
+            "Answer with the JSON object only - no explanation before or after it.")

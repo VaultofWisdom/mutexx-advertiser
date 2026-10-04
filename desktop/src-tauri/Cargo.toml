@@ -1,6 +1,6 @@
 [package]
 name = "mutexx-advertiser"
-version = "0.5.1"
+version = "0.6.0"
 description = "Mutexx Advertiser - desktop shell"
 authors = ["Mutexx Production"]
 edition = "2021"

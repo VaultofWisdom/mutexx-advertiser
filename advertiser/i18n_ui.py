@@ -63,8 +63,6 @@ EN_UI: dict[str, str] = {
     "overview.budget": "{amount} EUR budget per month",
     "overview.no_budget": "No budget - organic only",
     "overview.use_ai": "use AI (Anthropic key on file)",
-    "overview.no_ai": "Without an Anthropic key the run works from templates. Add one under "
-                      "Settings for AI analysis and copy.",
     "overview.next": "Next step",
     "overview.kpi.communities": "Communities",
     "overview.kpi.green": "{count} with no promotion ban",
@@ -218,6 +216,39 @@ EN_UI: dict[str, str] = {
     "scan.step.hackernews": "Hacker News: rules and the topic's record",
     "scan.step.lobsters": "Lobsters: rules and matching tags",
 
+    # -- The claude.ai route -------------------------------------------------
+    "claudeai.button": "with claude.ai",
+    "claudeai.analyse": "Analyse with claude.ai",
+    "claudeai.strategy": "Summary with claude.ai",
+    "claudeai.seeds": "Suggestions with claude.ai",
+    "claudeai.title.draft": "Write this post with claude.ai",
+    "claudeai.title.asset": "Write this copy with claude.ai",
+    "claudeai.title.analysis": "Analyse the product with claude.ai",
+    "claudeai.title.strategy": "Summarise the strategy with claude.ai",
+    "claudeai.title.seeds": "Suggest starting points with claude.ai",
+    "claudeai.intro": "Uses your own Claude subscription instead of an API key. Anthropic does "
+                      "not let other apps use a subscription on your behalf, so you take the "
+                      "request to claude.ai yourself: copy it, paste it into a new chat, and "
+                      "copy Claude's whole answer back here. It is checked exactly like an API "
+                      "answer.",
+    "claudeai.copy_open": "Copy the request and open claude.ai",
+    "claudeai.copied": "Copied. Paste it into a new chat at claude.ai and send it.",
+    "claudeai.show": "Show the request ({count} characters)",
+    "claudeai.step2": "Paste Claude's answer - all of it; the app finds the JSON itself.",
+    "claudeai.answer_ph": "Claude's answer ...",
+    "claudeai.apply": "Use the answer",
+    "claudeai.applied": "Claude's answer was used.",
+    "claudeai.nothing_to_ask": "There is nothing to ask Claude here.",
+    "assets.source.claudeai": "claude.ai",
+    "overview.no_ai": "Without an Anthropic key the run works from templates. For AI copy, add "
+                      "a key under Settings - or use your Claude subscription: the 'with "
+                      "claude.ai' buttons on Analysis, Strategy, Assets and every draft.",
+    "settings.anthropic_hint": "Without a key the app works from templates. With a key, "
+                               "analysis, strategy summaries, drafts and ad copy are written "
+                               "freely. No key but a Claude subscription? Use the 'with "
+                               "claude.ai' buttons - the app prepares the request, you paste it "
+                               "into claude.ai and the answer back.",
+
     # -- Mutexx account ------------------------------------------------------
     "account.title": "Mutexx account",
     "account.optional": "optional",
@@ -350,8 +381,6 @@ DE_UI: dict[str, str] = {
     "overview.budget": "{amount} EUR Budget im Monat",
     "overview.no_budget": "Kein Budget - nur organisch",
     "overview.use_ai": "KI verwenden (Anthropic-Schlüssel hinterlegt)",
-    "overview.no_ai": "Ohne Anthropic-Schlüssel arbeitet der Durchlauf mit Vorlagen. Unter "
-                      "Einstellungen einen hinterlegen für KI-Analyse und -Texte.",
     "overview.next": "Nächster Schritt",
     "overview.kpi.communities": "Communities",
     "overview.kpi.green": "{count} ohne Werbeverbot",
@@ -501,6 +530,39 @@ DE_UI: dict[str, str] = {
     "scan.step.hackernews": "Hacker News: Regeln und Themenlage",
     "scan.step.lobsters": "Lobsters: Regeln und passende Tags",
 
+    "claudeai.button": "mit claude.ai",
+    "claudeai.analyse": "Mit claude.ai analysieren",
+    "claudeai.strategy": "Zusammenfassung mit claude.ai",
+    "claudeai.seeds": "Vorschläge mit claude.ai",
+    "claudeai.title.draft": "Diesen Beitrag mit claude.ai schreiben",
+    "claudeai.title.asset": "Diese Werbetexte mit claude.ai schreiben",
+    "claudeai.title.analysis": "Das Produkt mit claude.ai analysieren",
+    "claudeai.title.strategy": "Die Strategie mit claude.ai zusammenfassen",
+    "claudeai.title.seeds": "Startpunkte mit claude.ai vorschlagen",
+    "claudeai.intro": "Nutzt dein eigenes Claude-Abo statt eines API-Schlüssels. Anthropic "
+                      "erlaubt anderen Apps nicht, ein Abo in deinem Namen zu nutzen - deshalb "
+                      "bringst du den Auftrag selbst zu claude.ai: kopieren, in einen neuen Chat "
+                      "einfügen, Claudes ganze Antwort hierher zurückkopieren. Sie wird genauso "
+                      "geprüft wie eine Antwort der API.",
+    "claudeai.copy_open": "Auftrag kopieren und claude.ai öffnen",
+    "claudeai.copied": "Kopiert. In einen neuen Chat auf claude.ai einfügen und abschicken.",
+    "claudeai.show": "Auftrag anzeigen ({count} Zeichen)",
+    "claudeai.step2": "Claudes Antwort einfügen - komplett; das JSON sucht die App selbst heraus.",
+    "claudeai.answer_ph": "Claudes Antwort ...",
+    "claudeai.apply": "Antwort übernehmen",
+    "claudeai.applied": "Claudes Antwort wurde übernommen.",
+    "claudeai.nothing_to_ask": "Hier gibt es nichts, was Claude gefragt werden müsste.",
+    "assets.source.claudeai": "claude.ai",
+    "overview.no_ai": "Ohne Anthropic-Schlüssel arbeitet der Durchlauf mit Vorlagen. Für "
+                      "KI-Texte einen Schlüssel unter Einstellungen hinterlegen - oder dein "
+                      "Claude-Abo nutzen: die Knöpfe „mit claude.ai“ bei Analyse, Strategie, "
+                      "Werbemitteln und jedem Entwurf.",
+    "settings.anthropic_hint": "Ohne Schlüssel arbeitet die App mit Vorlagen. Mit Schlüssel "
+                               "werden Analyse, Strategie-Zusammenfassung, Entwürfe und "
+                               "Werbetexte frei geschrieben. Kein Schlüssel, aber ein "
+                               "Claude-Abo? Die Knöpfe „mit claude.ai“ nutzen - die App bereitet "
+                               "den Auftrag vor, du fügst ihn in claude.ai ein und die Antwort "
+                               "zurück.",
     "account.title": "Mutexx Konto",
     "account.optional": "freiwillig",
     "account.local_only": "nicht angemeldet - alles bleibt lokal",
