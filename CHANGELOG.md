@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.7.0
+
+* **OpenAI and Google Gemini** next to Anthropic Claude. Settings has one tab per
+  provider - key, model, "Test", and a link to where the key comes from. Gemini keys from
+  Google AI Studio come with a free allowance. The five modules that write never know who
+  answered: one request contract, and refusals, cut-off answers and HTTP errors are reported
+  the same way for all three.
+* **The chat route goes to Claude, the Claude app, ChatGPT or Gemini** - with your own
+  subscription. Claude (web and desktop app, via `claude://`) and ChatGPT open with the
+  request already in the input field; Gemini has no such link, so there it is pasted. None
+  of the three lets other apps use a subscription on someone's behalf, so the user sends it
+  and pastes the answer back - checked like an API answer.
+* Copy is labelled by where it came from: Claude API, OpenAI API, Gemini API, or one of
+  the three chats.
+* Privacy notice covers OpenAI, Google and the chat route.
+
 ## 0.6.1
 
 * **Updates inside the app.** The native Windows dialog is gone. A new version shows up

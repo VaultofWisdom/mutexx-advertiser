@@ -166,9 +166,7 @@ def suggest_with_api(product: dict, analysis_result: dict, config: dict,
                      keywords: list[str] | None = None) -> dict:
     """Has the API suggest starting points. The scanner checks them afterwards - an
     invented forum fails on the first fetch."""
-    api = config.get("anthropic", {})
-    key = (api.get("api_key") or "").strip()
-    if not key:
+    if not core.ai_ready(config):
         raise ValueError(i18n.t("error.no_api_key"))
 
     keywords = keywords or product.get("keywords", [])
@@ -185,7 +183,7 @@ Audience segments: {'; '.join(seg.get('name','') for seg in analysis_result.get(
 
 Name 12 to 20 subreddits and 6 to 12 forums or specialist communities."""
 
-    parsed = core.ask_claude_json(config, _SYSTEM, prompt)
+    parsed = core.ask_ai_json(config, _SYSTEM, prompt)
 
     return {
         "subreddits": [str(name) for name in (parsed.get("subreddits") or [])][:30],

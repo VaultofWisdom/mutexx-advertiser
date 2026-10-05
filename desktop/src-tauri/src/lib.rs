@@ -248,7 +248,9 @@ fn is_inside(url: &Url, port: u16) -> bool {
 /// Reddit, Lemmy or the forum. Posting from inside the app would mean signing in
 /// there a second time, and the last click belongs in their own browser anyway.
 fn open_outside(url: &Url) {
-    if matches!(url.scheme(), "http" | "https" | "mailto") {
+    // claude:// opens the Claude desktop app with a prepared request (the "via
+    // chat" route). Nothing else that is not the web gets handed to Windows.
+    if matches!(url.scheme(), "http" | "https" | "mailto" | "claude") {
         let _ = tauri_plugin_opener::open_url(url.as_str(), None::<&str>);
     }
 }

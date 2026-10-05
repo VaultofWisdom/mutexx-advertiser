@@ -112,6 +112,10 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "reddit": {"client_id": "", "client_secret": "", "bot_username": "", "bot_password": ""},
     # Optional: real AI drafts instead of templates.
     "anthropic": {"api_key": "", "model": "claude-opus-5-5"},
+    "openai": {"api_key": "", "model": "gpt-6.1-sol"},
+    "gemini": {"api_key": "", "model": "gemini-3.8-flash"},
+    # Which of the three writes. Empty means: the first one with a key.
+    "ai": {"provider": ""},
     "safety": {
         # Hard brake: never propose more than N manual Reddit posts per day.
         "max_reddit_posts_per_day": 1,
@@ -354,10 +358,20 @@ def post_json(url: str, payload: dict, *, user_agent: str, headers: dict[str, st
 
 
 # ---------------------------------------------------------------------------
-# Claude - the one place every module talks to the Anthropic API through
+# AI - the one place every module talks to a language model through
 # ---------------------------------------------------------------------------
+# Three providers, one contract: a system text and a task go in, one JSON object
+# comes out, and every failure is a ClaudeError with a catalogue key. The five
+# modules that write (analysis, strategy, seeds, assets, drafts) never know which
+# provider answered.
 
 DEFAULT_MODEL = "claude-opus-5-5"
+
+AI_PROVIDERS: dict[str, dict[str, str]] = {
+    "anthropic": {"name": "Anthropic Claude", "model": DEFAULT_MODEL},
+    "openai": {"name": "OpenAI", "model": "gpt-6.1-sol"},
+    "gemini": {"name": "Google Gemini", "model": "gemini-3.8-flash"},
+}
 
 # Models that accept the server-side refusal fallback. On these a declined request
 # is re-run on Anthropic's recommended substitute inside the same call instead of
@@ -367,7 +381,7 @@ _FALLBACK_MODELS = {"claude-opus-5-5", "claude-opus-5", "claude-fable-5-1", "cla
 
 
 class ClaudeError(ValueError):
-    """The API answered, but not with something usable. Carries a catalogue key."""
+    """The model answered, but not with something usable. Carries a catalogue key."""
 
     def __init__(self, key: str, **params: Any) -> None:
         from . import i18n  # late: i18n is pure data, but keep core import-light
@@ -376,23 +390,50 @@ class ClaudeError(ValueError):
         self.params = params
 
 
-def ask_claude_json(config: dict, system: str, prompt: str, *,
-                    max_tokens: int = 16000) -> dict:
-    """One request, one JSON object back.
+def _key(config: dict, provider: str) -> str:
+    return str(((config.get(provider) or {}).get("api_key")) or "").strip()
 
-    Raw HTTP rather than the SDK on purpose: the app's promise is that it runs on the
-    standard library alone. Everything that has to be right about the request lives
-    here, so five modules cannot drift apart again:
 
-    * the model comes from Settings and defaults to the current Opus;
-    * the budget is generous - current models think before they answer, and that
-      thinking is drawn from max_tokens, so a tight limit cuts the JSON in half;
-    * the timeout is minutes, not the 25 seconds a forum page gets;
-    * a refusal is reported as one, instead of as "no JSON found".
+def ai_provider(config: dict) -> str:
+    """The provider that writes: the one chosen in Settings if it has a key,
+    otherwise the first one that has a key, otherwise the chosen one."""
+    chosen = str((config.get("ai") or {}).get("provider") or "").strip()
+    if chosen in AI_PROVIDERS and _key(config, chosen):
+        return chosen
+    for provider in AI_PROVIDERS:
+        if _key(config, provider):
+            return provider
+    return chosen if chosen in AI_PROVIDERS else "anthropic"
+
+
+def ai_ready(config: dict) -> bool:
+    """Can anything write? A key for some provider - or the chat route, where the
+    user is the transport."""
+    if (config.get("ai") or {}).get("route") == "chat":
+        return True
+    return bool(_key(config, ai_provider(config)))
+
+
+def ai_source(config: dict) -> str:
+    """What to record as the author of generated copy."""
+    route = (config.get("ai") or {}).get("route")
+    if route == "chat":
+        # Prefixed: "gemini" is the API, "chat_gemini" the user's own chat.
+        return "chat_" + ((config.get("ai") or {}).get("service") or "claudeai")
+    return ai_provider(config)
+
+
+def ask_ai_json(config: dict, system: str, prompt: str, *, max_tokens: int = 16000) -> dict:
+    """One request, one JSON object back - from whichever provider is set up.
+
+    Raw HTTP rather than SDKs on purpose: the app's promise is that it runs on the
+    standard library alone. Common to all three: the model comes from Settings, the
+    timeout is minutes rather than the 25 seconds a forum page gets, and a refusal
+    or a cut-off answer is reported as such instead of as "no JSON found".
 
     Inside claude_ai_capture() / claude_ai_answer() nothing is sent: the request is
-    handed out for the user to paste into claude.ai, or the answer they pasted back
-    is returned. See there.
+    handed out for the user to paste into a chat, or the answer they pasted back is
+    returned. See there.
     """
     route = _claude_route.get()
     if route is not None:
@@ -401,12 +442,33 @@ def ask_claude_json(config: dict, system: str, prompt: str, *,
             raise PromptCaptured(system, prompt)
         return answer
 
-    api = config.get("anthropic") or {}
-    key = (api.get("api_key") or "").strip()
+    provider = ai_provider(config)
+    key = _key(config, provider)
     if not key:
         raise ClaudeError("error.no_api_key")
-    model = (api.get("model") or "").strip() or DEFAULT_MODEL
+    model = str((config.get(provider) or {}).get("model") or "").strip() \
+        or AI_PROVIDERS[provider]["model"]
+    ua = config.get("user_agent", "MutexxAdvertiser")
+    if provider == "openai":
+        return _ask_openai(key, model, system, prompt, ua)
+    if provider == "gemini":
+        return _ask_gemini(key, model, system, prompt, ua)
+    return _ask_anthropic(key, model, system, prompt, ua, max_tokens)
 
+
+# Kept for the modules and tests written before there was more than one provider.
+ask_claude_json = ask_ai_json
+
+
+def _failed(provider: str, status: int, raw: str) -> "ClaudeError":
+    return ClaudeError("error.ai_status", provider=AI_PROVIDERS[provider]["name"],
+                       status=status, detail=raw[:300])
+
+
+def _ask_anthropic(key: str, model: str, system: str, prompt: str, ua: str,
+                   max_tokens: int) -> dict:
+    # The budget is generous: current models think before they answer, and that
+    # thinking is drawn from max_tokens - a tight limit cuts the JSON in half.
     payload: dict[str, Any] = {
         "model": model,
         "max_tokens": max_tokens,
@@ -417,19 +479,72 @@ def ask_claude_json(config: dict, system: str, prompt: str, *,
     if model in _FALLBACK_MODELS:
         payload["fallbacks"] = "default"
         headers["anthropic-beta"] = "server-side-fallback-2026-07-01"
-
     status, raw = post_json("https://api.anthropic.com/v1/messages", payload,
-                            user_agent=config.get("user_agent", "MutexxAdvertiser"),
-                            headers=headers, timeout=300)
+                            user_agent=ua, headers=headers, timeout=300)
     if status != 200:
-        raise ClaudeError("error.api_status", status=status, detail=raw[:300])
-
+        raise _failed("anthropic", status, raw)
     response = json.loads(raw)
     if response.get("stop_reason") == "refusal":
         raise ClaudeError("error.api_refused")
     text = "".join(block.get("text", "") for block in response.get("content", [])
                    if block.get("type") == "text")
     if response.get("stop_reason") == "max_tokens" and not re.search(r"\{.*\}", text, re.S):
+        raise ClaudeError("error.api_truncated")
+    return parse_claude_text(text)
+
+
+def _ask_openai(key: str, model: str, system: str, prompt: str, ua: str) -> dict:
+    """OpenAI's Responses API. No output format parameter: the instructions ask for
+    JSON and the parser finds it - one request shape that works on every model."""
+    payload = {"model": model, "instructions": system, "input": prompt}
+    status, raw = post_json("https://api.openai.com/v1/responses", payload, user_agent=ua,
+                            headers={"Authorization": f"Bearer {key}"}, timeout=300)
+    if status != 200:
+        raise _failed("openai", status, raw)
+    response = json.loads(raw)
+    texts: list[str] = []
+    refused = False
+    for item in response.get("output") or []:
+        for part in item.get("content") or []:
+            if part.get("type") == "output_text":
+                texts.append(part.get("text") or "")
+            elif part.get("type") == "refusal":
+                refused = True
+    text = "".join(texts)
+    if refused and not text.strip():
+        raise ClaudeError("error.api_refused")
+    if response.get("status") == "incomplete" and not re.search(r"\{.*\}", text, re.S):
+        raise ClaudeError("error.api_truncated")
+    return parse_claude_text(text)
+
+
+def _ask_gemini(key: str, model: str, system: str, prompt: str, ua: str) -> dict:
+    """Gemini's generateContent. The key travels in a header, not in the URL, so it
+    never ends up in a log line."""
+    url = ("https://generativelanguage.googleapis.com/v1beta/models/"
+           f"{urllib.parse.quote(model, safe='-._')}:generateContent")
+    payload = {
+        "systemInstruction": {"parts": [{"text": system}]},
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {"responseMimeType": "application/json"},
+    }
+    status, raw = post_json(url, payload, user_agent=ua, headers={"x-goog-api-key": key},
+                            timeout=300)
+    if status != 200:
+        raise _failed("gemini", status, raw)
+    response = json.loads(raw)
+    if (response.get("promptFeedback") or {}).get("blockReason"):
+        raise ClaudeError("error.api_refused")
+    candidates = response.get("candidates") or []
+    if not candidates:
+        raise ClaudeError("error.no_json")
+    candidate = candidates[0]
+    text = "".join(part.get("text", "") for part in (candidate.get("content") or {}).get("parts", [])
+                   if not part.get("thought"))
+    reason = candidate.get("finishReason")
+    if reason in ("SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII") and not text.strip():
+        raise ClaudeError("error.api_refused")
+    if reason == "MAX_TOKENS" and not re.search(r"\{.*\}", text, re.S):
         raise ClaudeError("error.api_truncated")
     return parse_claude_text(text)
 
@@ -487,9 +602,12 @@ class PromptCaptured(BaseException):
 CLAUDE_AI_KEY = "claude.ai"
 
 
-def claude_ai_config(config: dict) -> dict:
+def claude_ai_config(config: dict, service: str = "claudeai") -> dict:
     copy = json.loads(json.dumps(config))
-    copy.setdefault("anthropic", {})["api_key"] = CLAUDE_AI_KEY
+    copy.setdefault("ai", {}).update({"route": "chat", "service": service})
+    # Older module code may still look for a key; the stand-in never leaves the
+    # process because the request is never sent.
+    copy.setdefault("anthropic", {})["api_key"] = copy["anthropic"].get("api_key") or CLAUDE_AI_KEY
     return copy
 
 

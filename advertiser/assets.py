@@ -575,7 +575,7 @@ def build(asset_id: str, product: dict, analysis_result: dict | None = None,
     hinweise: list[dict] = []
 
     if use_api is None:
-        use_api = bool((config.get("anthropic") or {}).get("api_key", "").strip())
+        use_api = core.ai_ready(config)
     if use_api:
         try:
             geschrieben = _build_with_api(spec, product, analysis_result, bausteine, config)
@@ -585,7 +585,7 @@ def build(asset_id: str, product: dict, analysis_result: dict | None = None,
                 roh = geschrieben.get(field["key"])
                 if roh:
                     fields[field["key"]] = _pick(roh, field["limit"], field["count"])
-            quelle = "anthropic"
+            quelle = core.ai_source(config)
         except Exception as error:  # noqa: BLE001 - the templates stand
             hinweise.append(i18n.message("assets.warn.api_failed", error=error))
 
@@ -653,9 +653,7 @@ Rules, in this order:
 
 def _build_with_api(spec: dict, product: dict, analysis_result: dict, bausteine: dict,
                     config: dict) -> dict[str, list[str]]:
-    api = config.get("anthropic", {})
-    key = (api.get("api_key") or "").strip()
-    if not key:
+    if not core.ai_ready(config):
         raise ValueError(i18n.t("error.no_api_key"))
 
     language = bausteine["language"]
@@ -691,7 +689,7 @@ FELDER
 
 Sprache: {'Deutsch' if bausteine['language'] == 'de' else 'Englisch'}."""
 
-    parsed = core.ask_claude_json(config, _SYSTEM, prompt)
+    parsed = core.ask_ai_json(config, _SYSTEM, prompt)
 
     out: dict[str, list[str]] = {}
     for field in spec["fields"]:

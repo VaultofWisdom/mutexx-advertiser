@@ -306,7 +306,7 @@ def analyse(product: dict, config: dict, progress: Progress = _noop,
     }
 
     if use_api is None:
-        use_api = bool((config.get("anthropic") or {}).get("api_key", "").strip())
+        use_api = core.ai_ready(config)
     if use_api:
         progress("analysis.step.api", 2, 3)
         try:
@@ -344,9 +344,7 @@ Format:
 
 
 def _analyse_with_api(product: dict, site: dict, keywords: list[dict], config: dict) -> dict:
-    api = config.get("anthropic", {})
-    key = (api.get("api_key") or "").strip()
-    if not key:
+    if not core.ai_ready(config):
         raise ValueError(i18n.t("error.no_api_key"))
 
     prompt = f"""PRODUKTPROFIL
@@ -380,7 +378,7 @@ ALLOWED PRICING KEYS: {', '.join(products.PRICE_MODELS)}
 Liefere 2 bis 4 Zielgruppensegmente, 3 bis 5 Nutzenversprechen, 3 bis 5 Einwaende
 und 8 bis 15 Suchbegriffe."""
 
-    parsed = core.ask_claude_json(config, _SYSTEM, prompt)
+    parsed = core.ask_ai_json(config, _SYSTEM, prompt)
 
     out: dict[str, Any] = {
         "audience_segments": _dicts(parsed.get("audience_segments"), ("name", "why", "where")),

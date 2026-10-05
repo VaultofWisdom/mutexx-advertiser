@@ -408,7 +408,7 @@ def build(product: dict, analysis_result: dict | None = None, config: dict | Non
     }
 
     if use_api is None:
-        use_api = bool((config.get("anthropic") or {}).get("api_key", "").strip())
+        use_api = core.ai_ready(config)
     if use_api:
         try:
             plan.update(_refine_with_api(product, analysis_result, plan, config))
@@ -487,9 +487,7 @@ Format:
 
 
 def _refine_with_api(product: dict, analysis_result: dict, plan: dict, config: dict) -> dict:
-    api = config.get("anthropic", {})
-    key = (api.get("api_key") or "").strip()
-    if not key:
+    if not core.ai_ready(config):
         raise ValueError(i18n.t("error.no_api_key"))
 
     # The prompt is written in the product's language, not the interface language -
@@ -534,7 +532,7 @@ BUDGET SPLIT
 Give 3 to 6 points for the first week and 2 to 4 warnings.
 Answer in {i18n.LANGUAGES.get(language, 'English')}."""
 
-    parsed = core.ask_claude_json(config, _SYSTEM, prompt)
+    parsed = core.ask_ai_json(config, _SYSTEM, prompt)
 
     # What the model writes is free prose in one language. It cannot be switched
     # later, so it is stored as-is and marked with the language it was written in.

@@ -267,7 +267,7 @@ def _run_everything(slug: str, use_api: bool | None, platforms: list[str]) -> No
             raise ValueError(i18n.t("error.product_not_found"))
         core.set_delay(config["request_delay_seconds"])
         if use_api is None:
-            use_api = bool((config.get("anthropic") or {}).get("api_key", "").strip())
+            use_api = core.ai_ready(config)
 
         # 1) Analysis - everything downstream reads its keywords.
         stage(0, "analysis")
@@ -426,29 +426,31 @@ def _progress_stage(key: str, index: int, total: int) -> None:
 # ---------------------------------------------------------------------------
 
 CLAUDE_AI_TASKS = ("draft", "asset", "analysis", "strategy", "seeds")
+# The chats a request can be taken to. Which one is only recorded as the author of
+# the copy - the request itself is the same for all of them.
+CHAT_SERVICES = ("claudeai", "claudeapp", "chatgpt", "gemini")
 
 
 def _claude_ai_task(task: str, body: dict, config: dict, product: dict, slug: str) -> Any:
     """Runs one of the five things the app writes with Claude, through exactly the
     function the API route uses. Whether that function's request is captured or
     answered is decided by the context it runs in (see core.claude_ai_capture)."""
-    config = core.claude_ai_config(config)
+    service = body.get("service") if body.get("service") in CHAT_SERVICES else "claudeai"
+    if service == "claudeapp":
+        service = "claudeai"
+    config = core.claude_ai_config(config, service)
     result = analysis.load(slug)
     if task == "draft":
         entry = next((item for item in core.load_product(slug, "communities", [])
                       if item.get("id") == body.get("community_id")), None)
         if not entry:
             raise LookupError("error.not_found")
-        draft = drafts.build_with_api(entry, product, config, result, body.get("angle") or None)
-        draft["generated_by"] = "claudeai"
-        return draft
+        return drafts.build_with_api(entry, product, config, result, body.get("angle") or None)
     if task == "asset":
         asset_id = body.get("asset_id", "")
         if asset_id not in assets.ASSETS_BY_ID:
             raise LookupError("error.unknown_asset")
         asset = assets.build(asset_id, product, result, config, use_api=True)
-        if asset.get("generated_by") == "anthropic":
-            asset["generated_by"] = "claudeai"
         assets.store(slug, asset)
         return asset
     if task == "analysis":
@@ -510,6 +512,8 @@ def _run_seed_suggestion(slug: str) -> None:
 # not to a browser extension, not to a screenshot, not to a shoulder.
 SECRET_PATHS = (
     ("anthropic", "api_key"),
+    ("openai", "api_key"),
+    ("gemini", "api_key"),
     ("reddit", "client_secret"),
     ("reddit", "bot_password"),
     ("auto_channels", "mastodon", "access_token"),
@@ -729,7 +733,9 @@ class Handler(BaseHTTPRequestHandler):
             "categories": products.CATEGORIES,
             "price_models": products.PRICE_MODELS,
             "tones": products.TONES,
-            "has_api_key": bool((config.get("anthropic") or {}).get("api_key", "").strip()),
+            "has_api_key": core.ai_ready(config),
+            "ai_provider": core.ai_provider(config),
+            "ai_providers": {key: value["name"] for key, value in core.AI_PROVIDERS.items()},
             "account": account.summary(),
             "desktop": bool(os.environ.get("MUTEXX_ADVERTISER_DESKTOP")),
         }
@@ -975,6 +981,31 @@ class Handler(BaseHTTPRequestHandler):
                  if item.get("community_id") != entry["id"]]
         core.save_product(slug, "queue", queue)
         self._send(200, {"ok": True})
+
+    # -- AI provider test ----------------------------------------------------
+    def _post_ai_test(self, body: dict) -> None:
+        """One tiny request to the chosen provider - key and model in one go."""
+        config = core.load_config()
+        provider = body.get("provider")
+        if provider in core.AI_PROVIDERS:
+            config.setdefault("ai", {})["provider"] = provider
+            if not core._key(config, provider):
+                self._send(200, {"ok": False, "detail": i18n.message("error.no_api_key")})
+                return
+        try:
+            answer = core.ask_ai_json(config, "You answer with one JSON object and nothing else.",
+                                      'Reply with exactly this JSON: {"ok": true}')
+        except core.ClaudeError as error:
+            self._send(200, {"ok": False, "detail": i18n.message(error.key, **error.params)})
+            return
+        except core.HttpError as error:
+            self._send(200, {"ok": False, "detail": i18n.message("account.offline", error=error)})
+            return
+        used = core.ai_provider(config)
+        model = (config.get(used) or {}).get("model") or core.AI_PROVIDERS[used]["model"]
+        self._send(200, {"ok": bool(answer.get("ok")),
+                         "detail": i18n.message("settings.ai_ok", provider=core.AI_PROVIDERS[used]["name"],
+                                                model=model)})
 
     # -- The claude.ai route -------------------------------------------------
     def _claude_ai_context(self, body: dict) -> tuple[str, dict, dict, str] | None:

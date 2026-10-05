@@ -174,7 +174,7 @@ class SeedListsAreNotOverwritten(RunTestCase):
             {"subreddits": [], "forums": [], "lemmy_instances": []}))
         job = self.run_all(use_api=False)
         self.assertEqual(self.stubs["seed_suggest"].calls, 0)
-        self.assertTrue(any("Anthropic key" in line
+        self.assertTrue(any("AI key" in line and "via chat" in line
                             for line in self.messages(job, "skipped")))
 
     def test_an_empty_list_and_a_key_produces_a_suggestion(self) -> None:

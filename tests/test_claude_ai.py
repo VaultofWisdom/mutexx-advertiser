@@ -90,14 +90,14 @@ class ClaudeAiRoute(unittest.TestCase):
                                       "body": "A local-first note app."},
                             community_id=COMMUNITY["id"])
         self.assertEqual(draft["title"], "Notes that link themselves")
-        self.assertEqual(draft["generated_by"], "claudeai")
+        self.assertEqual(draft["generated_by"], "chat_claudeai")
 
     def test_pasted_ad_copy_still_meets_the_character_limits(self) -> None:
         """The same check as for API copy - a chat answer counts characters no
         better than an API answer does."""
         asset = self.answer("asset", {"page_title": ["x" * 200], "meta_description": ["y" * 400]},
                             asset_id="seo_meta")
-        self.assertEqual(asset["generated_by"], "claudeai")
+        self.assertEqual(asset["generated_by"], "chat_claudeai")
         for field in asset["spec"]:
             for entry in asset["fields"].get(field["key"], []):
                 self.assertLessEqual(len(entry["text"]), field["limit"])

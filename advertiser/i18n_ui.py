@@ -62,7 +62,6 @@ EN_UI: dict[str, str] = {
     "overview.no_one_liner": "No one-liner yet - add one in the product profile.",
     "overview.budget": "{amount} EUR budget per month",
     "overview.no_budget": "No budget - organic only",
-    "overview.use_ai": "use AI (Anthropic key on file)",
     "overview.next": "Next step",
     "overview.kpi.communities": "Communities",
     "overview.kpi.green": "{count} with no promotion ban",
@@ -235,38 +234,64 @@ EN_UI: dict[str, str] = {
     "update.check_failed": "Could not check for updates: {error}",
     "settings.version": "Version",
 
-    # -- The claude.ai route -------------------------------------------------
-    "claudeai.button": "with claude.ai",
-    "claudeai.analyse": "Analyse with claude.ai",
-    "claudeai.strategy": "Summary with claude.ai",
-    "claudeai.seeds": "Suggestions with claude.ai",
-    "claudeai.title.draft": "Write this post with claude.ai",
-    "claudeai.title.asset": "Write this copy with claude.ai",
-    "claudeai.title.analysis": "Analyse the product with claude.ai",
-    "claudeai.title.strategy": "Summarise the strategy with claude.ai",
-    "claudeai.title.seeds": "Suggest starting points with claude.ai",
-    "claudeai.intro": "Uses your own Claude subscription instead of an API key. Anthropic does "
-                      "not let other apps use a subscription on your behalf, so you take the "
-                      "request to claude.ai yourself: copy it, paste it into a new chat, and "
-                      "copy Claude's whole answer back here. It is checked exactly like an API "
-                      "answer.",
-    "claudeai.copy_open": "Copy the request and open claude.ai",
-    "claudeai.copied": "Copied. Paste it into a new chat at claude.ai and send it.",
+    # -- The chat route (Claude, ChatGPT, Gemini with your own subscription) ---
+    "claudeai.button": "via chat",
+    "claudeai.analyse": "Analyse via chat",
+    "claudeai.strategy": "Summary via chat",
+    "claudeai.seeds": "Suggestions via chat",
+    "claudeai.title.draft": "Write this post in your AI chat",
+    "claudeai.title.asset": "Write this copy in your AI chat",
+    "claudeai.title.analysis": "Analyse the product in your AI chat",
+    "claudeai.title.strategy": "Summarise the strategy in your AI chat",
+    "claudeai.title.seeds": "Suggest starting points in your AI chat",
+    "claudeai.intro": "Uses your own subscription - Claude, ChatGPT or Gemini - instead of an "
+                      "API key. None of them lets other apps use a subscription on your behalf, "
+                      "so the request goes to the chat and you send it there yourself. Then copy "
+                      "the whole answer back here; it is checked exactly like an API answer.",
+    "claudeai.pick": "Where to",
+    "claudeai.service.claudeai": "Claude (web)",
+    "claudeai.service.claudeapp": "Claude app",
+    "claudeai.service.chatgpt": "ChatGPT",
+    "claudeai.service.gemini": "Gemini",
+    "claudeai.copy_open": "Open {service} with the request",
+    "claudeai.copy_open_paste": "Copy the request and open {service}",
+    "claudeai.copied": "Opened with the request filled in - send it there. It is on your "
+                       "clipboard too.",
+    "claudeai.copied_paste": "Copied. Paste it into the chat (Ctrl+V) and send it.",
     "claudeai.show": "Show the request ({count} characters)",
-    "claudeai.step2": "Paste Claude's answer - all of it; the app finds the JSON itself.",
-    "claudeai.answer_ph": "Claude's answer ...",
+    "claudeai.step2": "Paste the whole answer - the app finds the JSON itself.",
+    "claudeai.answer_ph": "The answer from the chat ...",
     "claudeai.apply": "Use the answer",
-    "claudeai.applied": "Claude's answer was used.",
-    "claudeai.nothing_to_ask": "There is nothing to ask Claude here.",
-    "assets.source.claudeai": "claude.ai",
-    "overview.no_ai": "Without an Anthropic key the run works from templates. For AI copy, add "
-                      "a key under Settings - or use your Claude subscription: the 'with "
-                      "claude.ai' buttons on Analysis, Strategy, Assets and every draft.",
-    "settings.anthropic_hint": "Without a key the app works from templates. With a key, "
-                               "analysis, strategy summaries, drafts and ad copy are written "
-                               "freely. No key but a Claude subscription? Use the 'with "
-                               "claude.ai' buttons - the app prepares the request, you paste it "
-                               "into claude.ai and the answer back.",
+    "claudeai.applied": "The answer was used.",
+    "claudeai.nothing_to_ask": "There is nothing to ask the AI here.",
+    "assets.source.claudeai": "Claude chat",
+    "assets.source.chat_claudeai": "Claude chat",
+    "assets.source.chat_chatgpt": "ChatGPT chat",
+    "assets.source.chat_gemini": "Gemini chat",
+    "assets.source.gemini": "Gemini API",
+    "assets.source.anthropic": "Claude API",
+    "assets.source.openai": "OpenAI API",
+    "overview.use_ai": "use AI (key on file)",
+    "overview.no_ai": "Without an AI key the run works from templates. For AI copy, add a key "
+                      "for Claude, OpenAI or Gemini under Settings - or use your own "
+                      "subscription: the 'via chat' buttons on Analysis, Strategy, Assets and "
+                      "every draft.",
+    "settings.anthropic": "AI provider (optional)",
+    "settings.anthropic_hint": "Without a key the app works from templates. With a key - Claude, "
+                               "OpenAI or Google Gemini - analysis, strategy summaries, drafts "
+                               "and ad copy are written freely. Gemini keys from Google AI Studio "
+                               "come with a free allowance. No key but a subscription? The 'via "
+                               "chat' buttons take each request to Claude, ChatGPT or Gemini.",
+    "settings.provider": "Provider",
+    "settings.ai_test": "Test",
+    "settings.ai_ok": "{provider} answers ({model}).",
+    "settings.get_key": "Get a key",
+    "error.no_api_key": "No AI key on file. Add one under Settings - or use 'via chat'.",
+    "error.ai_status": "{provider} answered with {status}: {detail}",
+    "seeds.needs_key": "That needs an AI key in Settings - or use 'Suggestions via chat'.",
+    "run.skipped.seeds_no_key": "No seed suggestion: that needs an AI key. Enter subreddits and "
+                                "forums under Seed lists yourself, or use 'Suggestions via chat'.",
+    "analysis.step.api": "Free analysis via the AI",
 
     # -- Mutexx account ------------------------------------------------------
     "account.title": "Mutexx account",
@@ -399,7 +424,6 @@ DE_UI: dict[str, str] = {
     "overview.no_one_liner": "Noch kein Einzeiler - im Produktprofil ergänzen.",
     "overview.budget": "{amount} EUR Budget im Monat",
     "overview.no_budget": "Kein Budget - nur organisch",
-    "overview.use_ai": "KI verwenden (Anthropic-Schlüssel hinterlegt)",
     "overview.next": "Nächster Schritt",
     "overview.kpi.communities": "Communities",
     "overview.kpi.green": "{count} ohne Werbeverbot",
@@ -566,39 +590,68 @@ DE_UI: dict[str, str] = {
     "update.up_to_date": "Du hast die neueste Version ({version}).",
     "update.check_failed": "Die Suche nach Updates ist fehlgeschlagen: {error}",
     "settings.version": "Version",
-    "claudeai.button": "mit claude.ai",
-    "claudeai.analyse": "Mit claude.ai analysieren",
-    "claudeai.strategy": "Zusammenfassung mit claude.ai",
-    "claudeai.seeds": "Vorschläge mit claude.ai",
-    "claudeai.title.draft": "Diesen Beitrag mit claude.ai schreiben",
-    "claudeai.title.asset": "Diese Werbetexte mit claude.ai schreiben",
-    "claudeai.title.analysis": "Das Produkt mit claude.ai analysieren",
-    "claudeai.title.strategy": "Die Strategie mit claude.ai zusammenfassen",
-    "claudeai.title.seeds": "Startpunkte mit claude.ai vorschlagen",
-    "claudeai.intro": "Nutzt dein eigenes Claude-Abo statt eines API-Schlüssels. Anthropic "
-                      "erlaubt anderen Apps nicht, ein Abo in deinem Namen zu nutzen - deshalb "
-                      "bringst du den Auftrag selbst zu claude.ai: kopieren, in einen neuen Chat "
-                      "einfügen, Claudes ganze Antwort hierher zurückkopieren. Sie wird genauso "
-                      "geprüft wie eine Antwort der API.",
-    "claudeai.copy_open": "Auftrag kopieren und claude.ai öffnen",
-    "claudeai.copied": "Kopiert. In einen neuen Chat auf claude.ai einfügen und abschicken.",
+    "claudeai.button": "per Chat",
+    "claudeai.analyse": "Per Chat analysieren",
+    "claudeai.strategy": "Zusammenfassung per Chat",
+    "claudeai.seeds": "Vorschläge per Chat",
+    "claudeai.title.draft": "Diesen Beitrag in deinem KI-Chat schreiben",
+    "claudeai.title.asset": "Diese Werbetexte in deinem KI-Chat schreiben",
+    "claudeai.title.analysis": "Das Produkt in deinem KI-Chat analysieren",
+    "claudeai.title.strategy": "Die Strategie in deinem KI-Chat zusammenfassen",
+    "claudeai.title.seeds": "Startpunkte in deinem KI-Chat vorschlagen",
+    "claudeai.intro": "Nutzt dein eigenes Abo - Claude, ChatGPT oder Gemini - statt eines "
+                      "API-Schlüssels. Keiner der Anbieter erlaubt anderen Apps, ein Abo in "
+                      "deinem Namen zu nutzen; deshalb geht der Auftrag in den Chat, und du "
+                      "schickst ihn dort selbst ab. Danach die ganze Antwort hierher "
+                      "zurückkopieren - sie wird genauso geprüft wie eine Antwort der API.",
+    "claudeai.pick": "Wohin",
+    "claudeai.service.claudeai": "Claude (Web)",
+    "claudeai.service.claudeapp": "Claude-App",
+    "claudeai.service.chatgpt": "ChatGPT",
+    "claudeai.service.gemini": "Gemini",
+    "claudeai.copy_open": "{service} mit dem Auftrag öffnen",
+    "claudeai.copy_open_paste": "Auftrag kopieren und {service} öffnen",
+    "claudeai.copied": "Geöffnet, der Auftrag ist schon eingefügt - dort abschicken. Er liegt "
+                       "auch in der Zwischenablage.",
+    "claudeai.copied_paste": "Kopiert. Im Chat einfügen (Strg+V) und abschicken.",
     "claudeai.show": "Auftrag anzeigen ({count} Zeichen)",
-    "claudeai.step2": "Claudes Antwort einfügen - komplett; das JSON sucht die App selbst heraus.",
-    "claudeai.answer_ph": "Claudes Antwort ...",
+    "claudeai.step2": "Die ganze Antwort einfügen - das JSON sucht die App selbst heraus.",
+    "claudeai.answer_ph": "Die Antwort aus dem Chat ...",
     "claudeai.apply": "Antwort übernehmen",
-    "claudeai.applied": "Claudes Antwort wurde übernommen.",
-    "claudeai.nothing_to_ask": "Hier gibt es nichts, was Claude gefragt werden müsste.",
-    "assets.source.claudeai": "claude.ai",
-    "overview.no_ai": "Ohne Anthropic-Schlüssel arbeitet der Durchlauf mit Vorlagen. Für "
-                      "KI-Texte einen Schlüssel unter Einstellungen hinterlegen - oder dein "
-                      "Claude-Abo nutzen: die Knöpfe „mit claude.ai“ bei Analyse, Strategie, "
-                      "Werbemitteln und jedem Entwurf.",
-    "settings.anthropic_hint": "Ohne Schlüssel arbeitet die App mit Vorlagen. Mit Schlüssel "
-                               "werden Analyse, Strategie-Zusammenfassung, Entwürfe und "
-                               "Werbetexte frei geschrieben. Kein Schlüssel, aber ein "
-                               "Claude-Abo? Die Knöpfe „mit claude.ai“ nutzen - die App bereitet "
-                               "den Auftrag vor, du fügst ihn in claude.ai ein und die Antwort "
-                               "zurück.",
+    "claudeai.applied": "Die Antwort wurde übernommen.",
+    "claudeai.nothing_to_ask": "Hier gibt es nichts, was die KI gefragt werden müsste.",
+    "assets.source.claudeai": "Claude-Chat",
+    "assets.source.chat_claudeai": "Claude-Chat",
+    "assets.source.chat_chatgpt": "ChatGPT-Chat",
+    "assets.source.chat_gemini": "Gemini-Chat",
+    "assets.source.gemini": "Gemini-API",
+    "assets.source.anthropic": "Claude-API",
+    "assets.source.openai": "OpenAI-API",
+    "overview.use_ai": "KI verwenden (Schlüssel hinterlegt)",
+    "overview.no_ai": "Ohne KI-Schlüssel arbeitet der Durchlauf mit Vorlagen. Für KI-Texte "
+                      "unter Einstellungen einen Schlüssel für Claude, OpenAI oder Gemini "
+                      "hinterlegen - oder dein eigenes Abo nutzen: die Knöpfe „per Chat“ bei "
+                      "Analyse, Strategie, Werbemitteln und jedem Entwurf.",
+    "settings.anthropic": "KI-Anbieter (optional)",
+    "settings.anthropic_hint": "Ohne Schlüssel arbeitet die App mit Vorlagen. Mit Schlüssel - "
+                               "Claude, OpenAI oder Google Gemini - werden Analyse, "
+                               "Strategie-Zusammenfassung, Entwürfe und Werbetexte frei "
+                               "geschrieben. Gemini-Schlüssel aus Google AI Studio haben ein "
+                               "kostenloses Kontingent. Kein Schlüssel, aber ein Abo? Die Knöpfe "
+                               "„per Chat“ bringen jeden Auftrag zu Claude, ChatGPT oder Gemini.",
+    "settings.provider": "Anbieter",
+    "settings.ai_test": "Testen",
+    "settings.ai_ok": "{provider} antwortet ({model}).",
+    "settings.get_key": "Schlüssel holen",
+    "error.no_api_key": "Kein KI-Schlüssel hinterlegt. Unter Einstellungen einen eintragen - "
+                        "oder „per Chat“ nutzen.",
+    "error.ai_status": "{provider} antwortete mit {status}: {detail}",
+    "seeds.needs_key": "Dafür braucht es einen KI-Schlüssel in den Einstellungen - oder "
+                       "„Vorschläge per Chat“.",
+    "run.skipped.seeds_no_key": "Kein Vorschlag für die Startlisten: dafür braucht es einen "
+                                "KI-Schlüssel. Subreddits und Foren unter Startlisten selbst "
+                                "eintragen oder „Vorschläge per Chat“ nutzen.",
+    "analysis.step.api": "Freie Analyse per KI",
     "account.title": "Mutexx Konto",
     "account.optional": "freiwillig",
     "account.local_only": "nicht angemeldet - alles bleibt lokal",

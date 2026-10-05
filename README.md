@@ -65,13 +65,14 @@ read the interface in English.
 
 ## State
 
-**Version 0.6.** What works:
+**Version 0.7.** What works:
 
 * **A Windows app** - installer, its own window, Python included, nothing else to
   install. Updates are checked at start, signed, and installed after asking
-* **Your Claude subscription or an API key** - with an Anthropic API key the app writes
-  on its own; without one, "with claude.ai" buttons prepare each request for you to paste
-  into claude.ai and take the answer back, checked like an API answer
+* **Claude, ChatGPT or Gemini - by API key or with your own subscription.** With a key
+  for Anthropic, OpenAI or Google Gemini the app writes on its own. Without one, "via chat"
+  opens Claude (web or desktop app), ChatGPT or Gemini with the request ready; you send it
+  and paste the answer back, checked like an API answer
 * **Mutexx account** - optional. Signed in, products and campaigns sync between your
   computers; keys and passwords never do
 

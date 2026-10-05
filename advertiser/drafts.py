@@ -535,9 +535,7 @@ Answer only as JSON: {"title": "...", "body": "..."}"""
 def build_with_api(entry: dict, product: dict, config: dict,
                    analysis_result: dict | None = None, angle: str | None = None,
                    language: str | None = None) -> dict:
-    api = config.get("anthropic", {})
-    key = (api.get("api_key") or "").strip()
-    if not key:
+    if not core.ai_ready(config):
         raise ValueError(i18n.t("error.no_api_key"))
 
     analysis_result = analysis_result or {}
@@ -578,12 +576,12 @@ Angle: {i18n.t(ANGLES[angle], language)}
 Sprache des Beitrags: {'Deutsch' if language == 'de' else 'Englisch'}
 Länge: 120 bis 220 Wörter."""
 
-    parsed = core.ask_claude_json(config, _SYSTEM, prompt)
+    parsed = core.ask_ai_json(config, _SYSTEM, prompt)
 
     draft = build(entry, product, analysis_result, angle, language=language)
     draft.update({
         "title": str(parsed.get("title") or draft["title"]).strip(),
         "body": str(parsed.get("body") or draft["body"]).strip(),
-        "generated_by": "anthropic",
+        "generated_by": core.ai_source(config),
     })
     return draft

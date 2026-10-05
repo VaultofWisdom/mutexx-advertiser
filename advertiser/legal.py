@@ -27,8 +27,8 @@ PROVIDER = {
     "website": "https://mutexxproduction.de",
 }
 
-STAND = "04.10.2026"
-STAND_EN = "4 October 2026"
+STAND = "05.10.2026"
+STAND_EN = "5 October 2026"
 
 
 def _address(country_key: str) -> str:
@@ -125,10 +125,16 @@ gelten:</p>
 <li><b>Anthropic (Claude API)</b>, Anthropic PBC: Mit deinem API-Schlüssel gehen die Angaben
 aus deinem Produktprofil, die Analyse der Produktseite und die Angaben zur jeweiligen
 Community an Anthropic, um Texte zu erzeugen.</li>
-<li><b>claude.ai mit deinem Claude-Abo</b>: Nutzt du die Knöpfe „mit claude.ai“, bereitet die
-App einen Auftrag vor, den du selbst kopierst und in claude.ai einfügst. Er enthält Angaben
-aus deinem Produktprofil, der Analyse und gegebenenfalls zur Community. Die App selbst
-überträgt dabei nichts an Anthropic; es gelten deine Vereinbarungen mit Anthropic.</li>
+<li><b>OpenAI-API</b>: Mit deinem OpenAI-Schlüssel gehen dieselben Angaben an
+OpenAI.</li>
+<li><b>Gemini-API (Google)</b>: Mit deinem Gemini-Schlüssel gehen dieselben
+Angaben an Google.</li>
+<li><b>KI-Chats mit deinem eigenen Abo</b> (Claude, ChatGPT, Gemini): Nutzt du die Knöpfe „per
+Chat“, bereitet die App einen Auftrag vor und öffnet den gewählten Chat - bei Claude und
+ChatGPT mit dem Auftrag bereits im Eingabefeld, bei Gemini über die Zwischenablage. Der Auftrag
+enthält Angaben aus deinem Produktprofil, der Analyse und gegebenenfalls zur Community.
+Abgeschickt wird er von dir, in deinem Konto beim jeweiligen Anbieter; dessen Bedingungen
+gelten. Die App selbst überträgt dabei nichts an den Anbieter.</li>
 <li><b>Reddit-API</b>: Anfragen zu Subreddits und ihren Regeln, mit deinem App-Zugang.</li>
 <li><b>Discord-Webhooks und Mastodon</b>: Was du in deine eigenen Kanäle veröffentlichst,
 geht an diese Dienste und ist dort öffentlich.</li>
@@ -206,10 +212,14 @@ account with the provider, whose privacy terms then apply:</p>
 <li><b>Anthropic (Claude API)</b>, Anthropic PBC: with your API key, your product profile,
 the analysis of your product page and the details of a community go to Anthropic to write
 copy.</li>
-<li><b>claude.ai with your Claude subscription</b>: with the "with claude.ai" buttons the app
-prepares a request that you copy and paste into claude.ai yourself. It contains details from
-your product profile, the analysis and, where relevant, the community. The app itself sends
-nothing to Anthropic; your own agreements with Anthropic apply.</li>
+<li><b>OpenAI API</b>: with your OpenAI key the same details go to OpenAI.</li>
+<li><b>Gemini API (Google)</b>: with your Gemini key the same details go to Google.</li>
+<li><b>AI chats with your own subscription</b> (Claude, ChatGPT, Gemini): with the "via chat"
+buttons the app prepares a request and opens the chosen chat - for Claude and ChatGPT with the
+request already in the input field, for Gemini through the clipboard. The request contains
+details from your product profile, the analysis and, where relevant, the community. You send
+it, from your own account with that provider, whose terms apply. The app itself sends nothing
+to the provider.</li>
 <li><b>Reddit API</b>: requests about subreddits and their rules, with your app access.</li>
 <li><b>Discord webhooks and Mastodon</b>: what you publish to your own channels goes to these
 services and is public there.</li>

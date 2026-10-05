@@ -819,13 +819,31 @@ dialog.cai{width:min(640px,calc(100vw - 32px))}
         <div class="card">
           <h2 data-i18n="settings.anthropic"></h2>
           <p class="card-sub" data-i18n="settings.anthropic_hint"></p>
-          <div class="fields">
+          <div class="chips" id="aiTabs" role="tablist" style="margin-bottom:14px"></div>
+          <div data-ai="anthropic" class="fields">
             <label class="field"><span data-i18n="settings.api_key"></span><input id="cfgApiKey" type="password" autocomplete="off" placeholder="sk-ant-...">
               <small id="cfgApiKeyState"></small></label>
-            <label class="field"><span data-i18n="settings.model"></span><input id="cfgModel" list="modelList" placeholder="claude-opus-5-5">
+            <label class="field"><span data-i18n="settings.model"></span><input id="cfgModel" list="modelAnthropic" placeholder="claude-opus-5-5">
               <small data-i18n="settings.model_hint"></small></label>
           </div>
-          <datalist id="modelList"><option value="claude-opus-5-5"><option value="claude-sonnet-5-5"><option value="claude-fable-5-1"><option value="claude-haiku-4-5"></datalist>
+          <div data-ai="openai" class="fields" hidden>
+            <label class="field"><span data-i18n="settings.api_key"></span><input id="cfgOpenaiKey" type="password" autocomplete="off" placeholder="sk-...">
+              <small id="cfgOpenaiKeyState"></small></label>
+            <label class="field"><span data-i18n="settings.model"></span><input id="cfgOpenaiModel" list="modelOpenai" placeholder="gpt-6.1-sol"></label>
+          </div>
+          <div data-ai="gemini" class="fields" hidden>
+            <label class="field"><span data-i18n="settings.api_key"></span><input id="cfgGeminiKey" type="password" autocomplete="off" placeholder="AIza...">
+              <small id="cfgGeminiKeyState"></small></label>
+            <label class="field"><span data-i18n="settings.model"></span><input id="cfgGeminiModel" list="modelGemini" placeholder="gemini-3.8-flash"></label>
+          </div>
+          <div class="row" style="margin-top:14px">
+            <button class="btn ghost sm" id="aiTest"></button>
+            <a class="small" id="aiGetKey" target="_blank" rel="noopener noreferrer"></a>
+          </div>
+          <div id="aiMsg"></div>
+          <datalist id="modelAnthropic"><option value="claude-opus-5-5"><option value="claude-sonnet-5-5"><option value="claude-fable-5-1"><option value="claude-haiku-4-5"></datalist>
+          <datalist id="modelOpenai"><option value="gpt-6.1-sol"><option value="gpt-6-astra"><option value="gpt-6-luna"></datalist>
+          <datalist id="modelGemini"><option value="gemini-3.8-flash"><option value="gemini-3.5-flash-lite"></datalist>
         </div>
         <div class="card">
           <h2 data-i18n="settings.reddit"></h2>
@@ -895,6 +913,7 @@ dialog.cai{width:min(640px,calc(100vw - 32px))}
 <dialog id="caiDlg" class="cai"><div class="dlg">
   <h2 id="caiTitle"></h2>
   <p class="hint" id="caiIntro"></p>
+  <div class="chips" id="caiServices" style="margin:0 0 14px"></div>
   <div class="cai-step"><b>1</b><div style="flex:1;min-width:0">
     <button type="button" class="btn" id="caiCopy"></button>
     <p class="hint small" id="caiCopied" hidden></p>
@@ -1074,6 +1093,7 @@ function applyStatic(){
   label($('testLemmy'), 'link', 'settings.test_connection');
   label($('saveCfg'), 'check', 'settings.save');
   label($('checkUpdate'), 'refresh', 'update.check');
+  label($('aiTest'), 'link', 'settings.ai_test');
   label($('anaCai'), 'spark', 'claudeai.analyse');
   label($('strCai'), 'spark', 'claudeai.strategy');
   label($('seedCai'), 'spark', 'claudeai.seeds');
@@ -2470,6 +2490,31 @@ $('checkUpdate').onclick = () => {
 const CAI_TITLE = {draft:'claudeai.title.draft', asset:'claudeai.title.asset',
   analysis:'claudeai.title.analysis', strategy:'claudeai.title.strategy', seeds:'claudeai.title.seeds'};
 
+/* Where a request can go. Claude (web and desktop app) and ChatGPT open with the
+   request already in the input field; Gemini has no such link, so there it is
+   pasted. A very long request does not fit a link - then it is pasted everywhere.
+   Either way it is on the clipboard too. */
+const CHAT_SERVICES = ['claudeai', 'claudeapp', 'chatgpt', 'gemini'];
+let CHAT_PICK = null;
+function chatService(){
+  if (!CHAT_PICK){ try { CHAT_PICK = localStorage.getItem('mutexx.chat'); } catch (e) {} }
+  return CHAT_SERVICES.includes(CHAT_PICK) ? CHAT_PICK : 'claudeai';
+}
+function chatLink(service, text){
+  const q = encodeURIComponent(text);
+  // Claude documents a cut at about 14,000 characters; links that long are also
+  // where browsers and servers start to refuse. Past that: paste.
+  const fits = text.length <= 12000 && q.length <= 30000;
+  const links = {
+    claudeai: ['https://claude.ai/new?q=', 'https://claude.ai/new'],
+    claudeapp: ['claude://claude.ai/new?q=', 'claude://claude.ai/new'],
+    chatgpt: ['https://chatgpt.com/?q=', 'https://chatgpt.com/'],
+    gemini: [null, 'https://gemini.google.com/app'],
+  }[service];
+  if (fits && links[0]) return {url: links[0] + q, prefilled: true};
+  return {url: links[1], prefilled: false};
+}
+
 async function claudeAi(task, params, done){
   const res = await api('/api/claudeai/prompt', {task, ...params});
   if (res.error){ toast(res.error, 'err'); return; }
@@ -2482,10 +2527,23 @@ async function claudeAi(task, params, done){
   $('caiPrompt').value = res.text;
   $('caiAnswer').value = '';
   $('caiCopied').hidden = true;
+  const pick = () => {
+    $('caiServices').innerHTML = CHAT_SERVICES.map(id =>
+      `<button type="button" class="chip ${id === chatService() ? 'on' : ''}" data-svc="${id}">${esc(t('claudeai.service.' + id))}</button>`).join('');
+    $('caiServices').querySelectorAll('[data-svc]').forEach(b => b.onclick = () => {
+      try { localStorage.setItem('mutexx.chat', b.dataset.svc); } catch (e) {}
+      CHAT_PICK = b.dataset.svc; pick();
+    });
+    const pasteOnly = !chatLink(chatService(), res.text).prefilled;
+    $('caiCopy').innerHTML = ic(pasteOnly ? 'copy' : 'ext','sm') + `<span>${esc(t(pasteOnly ? 'claudeai.copy_open_paste' : 'claudeai.copy_open',
+      {service: t('claudeai.service.' + chatService())}))}</span>`;
+  };
+  pick();
   $('caiCopy').onclick = async () => {
     await copyText(res.text);
-    window.open('https://claude.ai/new', '_blank', 'noopener,noreferrer');
-    $('caiCopied').textContent = t('claudeai.copied');
+    const link = chatLink(chatService(), res.text);
+    window.open(link.url, '_blank', 'noopener,noreferrer');
+    $('caiCopied').textContent = t(link.prefilled ? 'claudeai.copied' : 'claudeai.copied_paste');
     $('caiCopied').hidden = false;
     $('caiAnswer').focus();
   };
@@ -2493,7 +2551,8 @@ async function claudeAi(task, params, done){
   $('caiApply').onclick = async () => {
     if (!$('caiAnswer').value.trim()){ $('caiAnswer').focus(); return; }
     $('caiApply').disabled = true;
-    const out = await api('/api/claudeai/answer', {task, ...params, answer: $('caiAnswer').value});
+    const out = await api('/api/claudeai/answer', {task, ...params, service: chatService(),
+                                                   answer: $('caiAnswer').value});
     $('caiApply').disabled = false;
     if (out.error){ toast(out.error, 'err'); return; }
     dlg.close();
@@ -2622,11 +2681,12 @@ function renderAccount(){
 /* =====================================================================
    Settings
    ===================================================================== */
-const SETTINGS_FIELDS = ['cfgApiKey','cfgModel','cfgRedditId','cfgRedditSecret','cfgBotUser','cfgBotPass',
+const SETTINGS_FIELDS = ['cfgApiKey','cfgModel','cfgOpenaiKey','cfgOpenaiModel','cfgGeminiKey','cfgGeminiModel','cfgRedditId','cfgRedditSecret','cfgBotUser','cfgBotPass',
   'cfgMax','cfgDeep','cfgMinSubs','cfgDelay','cfgMaxDay','cfgMinDays'];
 SETTINGS_FIELDS.forEach(id => $(id).addEventListener('input', () => { SETTINGS_DIRTY = true; $('cfgDirty').hidden = false; }));
 
-const SECRET_FIELDS = {cfgApiKey:'anthropic.api_key', cfgRedditSecret:'reddit.client_secret',
+const SECRET_FIELDS = {cfgApiKey:'anthropic.api_key', cfgOpenaiKey:'openai.api_key',
+                       cfgGeminiKey:'gemini.api_key', cfgRedditSecret:'reddit.client_secret',
                        cfgBotPass:'reddit.bot_password'};
 
 function secretLine(path){
@@ -2652,12 +2712,16 @@ function fillSettings(){
   $('checkUpdate').hidden = !STATE.desktop;
   for (const [id, path] of Object.entries(SECRET_FIELDS)){
     const stored = secretState(path);
-    $(id).placeholder = stored ? '••••••••••••' : (id === 'cfgApiKey' ? 'sk-ant-...' : '');
+    $(id).placeholder = stored ? '••••••••••••' : ({cfgApiKey:'sk-ant-...', cfgOpenaiKey:'sk-...',
+                                                      cfgGeminiKey:'AIza...'}[id] || '');
     $(id + 'State').innerHTML = stored ? secretLine(path) : '';
   }
   bindSecretRemove();
+  renderAiTabs();
   $('cfgDirty').hidden = !SETTINGS_DIRTY;
   if (SETTINGS_DIRTY) return;
+  $('cfgOpenaiModel').value = (c.openai||{}).model || '';
+  $('cfgGeminiModel').value = (c.gemini||{}).model || '';
   Object.keys(SECRET_FIELDS).forEach(id => $(id).value = '');
   $('cfgMax').value = c.discovery.max_communities;
   $('cfgDeep').value = c.discovery.deep_scan_top_n;
@@ -2669,6 +2733,32 @@ function fillSettings(){
   $('cfgRedditId').value = (c.reddit||{}).client_id || '';
   $('cfgBotUser').value = (c.reddit||{}).bot_username || '';
 }
+
+/* One provider writes; the tabs choose it. A tab with a stored key carries a dot. */
+let AI_TAB = null;
+const AI_KEY_LINKS = {anthropic: 'https://console.anthropic.com/settings/keys',
+  openai: 'https://platform.openai.com/api-keys', gemini: 'https://aistudio.google.com/apikey'};
+function renderAiTabs(){
+  if (!AI_TAB) AI_TAB = STATE.ai_provider || 'anthropic';
+  const names = STATE.ai_providers || {anthropic:'Anthropic Claude', openai:'OpenAI', gemini:'Google Gemini'};
+  $('aiTabs').innerHTML = Object.entries(names).map(([id, name]) =>
+    `<button class="chip ${id === AI_TAB ? 'on' : ''}" data-ai-tab="${id}" role="tab">
+      ${secretState(id + '.api_key') ? '<i style="background:var(--green)"></i>' : ''}${esc(name)}</button>`).join('');
+  $('aiTabs').querySelectorAll('[data-ai-tab]').forEach(b => b.onclick = () => {
+    AI_TAB = b.dataset.aiTab; SETTINGS_DIRTY = true; $('cfgDirty').hidden = false;
+    $('aiMsg').innerHTML = ''; renderAiTabs();
+  });
+  document.querySelectorAll('[data-ai]').forEach(box => box.hidden = box.dataset.ai !== AI_TAB);
+  $('aiGetKey').href = AI_KEY_LINKS[AI_TAB];
+  $('aiGetKey').textContent = t('settings.get_key') + ' ↗';
+}
+$('aiTest').onclick = async () => {
+  $('aiMsg').innerHTML = `<div class="row muted small" style="margin-top:12px"><div class="spin"></div>${esc(t('status.running'))}</div>`;
+  // Save first: the key typed into the field is what should be tested.
+  await $('saveCfg').onclick();
+  const res = await api('/api/ai/test', {provider: AI_TAB});
+  $('aiMsg').innerHTML = note(res.ok ? 'ok' : 'bad', esc(tr(res.detail) || res.error || ''));
+};
 
 const redditCfg = () => ({client_id: $('cfgRedditId').value.trim(),
   client_secret: $('cfgRedditSecret').value.trim(),
@@ -2700,7 +2790,10 @@ $('saveCfg').onclick = async () => {
     request_delay_seconds: Math.max(0.5, num('cfgDelay', c.request_delay_seconds)),
     safety:{max_reddit_posts_per_day: Math.max(1, num('cfgMaxDay', c.safety.max_reddit_posts_per_day)),
             min_days_between_same_subreddit: Math.max(0, num('cfgMinDays', c.safety.min_days_between_same_subreddit))},
+    ai:{provider: AI_TAB},
     anthropic:{api_key: $('cfgApiKey').value.trim(), model: $('cfgModel').value.trim()},
+    openai:{api_key: $('cfgOpenaiKey').value.trim(), model: $('cfgOpenaiModel').value.trim()},
+    gemini:{api_key: $('cfgGeminiKey').value.trim(), model: $('cfgGeminiModel').value.trim()},
     reddit: redditCfg()}});
   if (res.error){ toast(res.error, 'err'); return; }
   SETTINGS_DIRTY = false;
